@@ -240,4 +240,9 @@ fieldset { min-width: 0; border: 1px solid #e0e5ee; border-radius: 8px; padding:
 legend { font-weight: 600 }
 
 form, .partner-detail { margin-top: 16px; overflow-wrap: anywhere; min-width: 0 }
+
+dl { margin: 12px 0; font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; color: var(--nx-ink-2); overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

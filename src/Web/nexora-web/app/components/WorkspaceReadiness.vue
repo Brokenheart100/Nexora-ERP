@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { BackfillResult, ReadinessView } from '~/utils/readiness'
+import type { TableColumn } from '@nuxt/ui'
+import type { BackfillResult, PendingCost, ReadinessDocument, ReadinessView } from '~/utils/readiness'
 
 const props = defineProps<{ workspaceId: string }>()
 const path = computed(() => '/bff/api/finance/workspaces/' + props.workspaceId + '/readiness')
@@ -13,6 +14,18 @@ const money = (value: string) => formatDecimal(value, view.value?.book.minorUnit
 const summary = computed(() => view.value
   ? readinessSummary(view.value.ready, view.value.missingDocumentCount, view.value.pendingCostCount)
   : '')
+const costColumns: TableColumn<PendingCost>[] = [
+  { accessorKey: 'on', header: '业务日期' },
+  { id: 'kind', header: '类型', accessorFn: cost => costKindLabel(cost.kind) },
+  { id: 'amount', header: '金额' },
+  { accessorKey: 'reason', header: '原因' },
+]
+const documentColumns: TableColumn<ReadinessDocument>[] = [
+  { accessorKey: 'on', header: '业务日期' },
+  { accessorKey: 'number', header: '编号' },
+  { id: 'kind', header: '类型', accessorFn: doc => doc.kind === 'bill' ? '账单' : '发票' },
+  { id: 'amount', header: '金额' },
+]
 
 async function check() {
   if (busy.value) return
@@ -78,31 +91,15 @@ onMounted(check)
       <div v-if="view.pendingCostCount > 0" class="table-block">
         <h4>未入账库存成本（{{ view.pendingCostCount }}）</h4>
         <UButton type="button" color="primary" :disabled="busy" @click="backfill">按业务日期补记</UButton>
-        <table data-testid="readiness-costs">
-          <thead><tr><th>业务日期</th><th>类型</th><th class="num">金额</th><th>原因</th></tr></thead>
-          <tbody>
-            <tr v-for="cost in view.pendingCosts" :key="cost.id">
-              <td>{{ cost.on }}</td>
-              <td>{{ costKindLabel(cost.kind) }}</td>
-              <td class="num">{{ money(cost.amount) }}</td>
-              <td>{{ cost.reason }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <UTable data-testid="readiness-costs" :data="view.pendingCosts" :columns="costColumns" :get-row-id="cost => cost.id">
+          <template #amount-cell="{ row }"><span class="num">{{ money(row.original.amount) }}</span></template>
+        </UTable>
       </div>
       <div v-if="view.missingDocumentCount > 0" class="table-block">
         <h4>缺少分录的已过账单据（{{ view.missingDocumentCount }}）</h4>
-        <table>
-          <thead><tr><th>业务日期</th><th>编号</th><th>类型</th><th class="num">金额</th></tr></thead>
-          <tbody>
-            <tr v-for="doc in view.missingDocuments" :key="doc.id">
-              <td>{{ doc.on }}</td>
-              <td>{{ doc.number }}</td>
-              <td>{{ doc.kind === 'bill' ? '账单' : '发票' }}</td>
-              <td class="num">{{ money(doc.amount) }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <UTable :data="view.missingDocuments" :columns="documentColumns" :get-row-id="doc => doc.id">
+          <template #amount-cell="{ row }"><span class="num">{{ money(row.original.amount) }}</span></template>
+        </UTable>
       </div>
       <div v-if="result && result.blocked.length > 0" class="table-block">
         <h4>补记受阻（{{ result.blocked.length }}）</h4>
@@ -136,10 +133,7 @@ onMounted(check)
 .check-message { color: var(--nx-muted, #55637a); }
 .table-block { display: grid; gap: 8px; }
 .table-block h4 { margin: 0; font-size: 13px; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--nx-line, #d9e1ec); }
-th { font-weight: 600; color: var(--nx-muted, #55637a); }
-.num { text-align: right; font-variant-numeric: tabular-nums; }
+.num { display: block; text-align: right; font-variant-numeric: tabular-nums; }
 .blocked { margin: 0; padding-left: 18px; font-size: 13px; }
 .quiet, .primary { border-radius: 8px; padding: 5px 12px; font-size: 13px; cursor: pointer; }
 .quiet { border: 1px solid var(--nx-line, #d9e1ec); background: transparent; }

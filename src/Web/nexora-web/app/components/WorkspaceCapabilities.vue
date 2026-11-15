@@ -36,3 +36,12 @@ async function read() {
     <UAlert v-if="notice" role="status" :description="notice" />
   </section>
 </template>
+
+<style scoped>
+article { padding: 12px 14px; margin: 10px 0; background: #fbfcff; border: 1px solid #e9eef6; border-radius: 12px }
+article h3 { margin: 0 0 4px; font-size: 13.5px }
+article p { margin: 0; font-size: 12.5px; color: var(--nx-ink-3) }
+dl { margin: 12px 0; font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; color: var(--nx-ink-2); overflow-wrap: anywhere }
+</style>

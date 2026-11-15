@@ -231,4 +231,9 @@ legend { font-weight: 600 }
 .catalog-pages { display: flex; align-items: center; gap: 10px; margin-top: 12px }
 .catalog-definitions { margin: 12px 0; overflow-wrap: anywhere }
 .catalog-definitions li { margin: 4px 0 }
+
+details { padding: 4px 14px; background: var(--nx-surface-muted); border: 1px solid #e8edf5; border-radius: 12px }
+summary { padding: 10px 0; font-size: 12.5px; font-weight: 650; color: #2c4f8f; cursor: pointer }
+summary::marker { color: #8fa6c8 }
+li { overflow-wrap: anywhere }
 </style>

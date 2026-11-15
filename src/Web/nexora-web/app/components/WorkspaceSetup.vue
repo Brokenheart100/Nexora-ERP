@@ -376,4 +376,9 @@ fieldset { display: grid; gap: 10px; margin: 12px 0; border: 1px solid var(--nx-
 label { display: grid; gap: 4px }
 select { font: inherit; padding: 8px; border: 1px solid var(--nx-border); border-radius: 6px; background: var(--nx-surface) }
 input[type='color'] { width: 60px; height: 38px; padding: 4px }
+/* Phase 5: scoped equivalents of the removed global detail/list rules. */
+dl { font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { color: var(--nx-ink-2); overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

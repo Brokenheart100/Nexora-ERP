@@ -101,6 +101,10 @@ const moduleName = (key: string) => moduleNames[key] ?? key
 .pricing-note h2 { margin-bottom: 10px }
 .pricing-note p { line-height: 1.8; margin: 0 0 10px }
 .pricing-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px }
+/* Phase 5: scoped equivalents of the removed global article/list rules. */
+article { margin: 10px 0 }
+article p { font-size: 12.5px; color: var(--nx-ink-3) }
+li { overflow-wrap: anywhere }
 @media (max-width: 640px) {
   .pricing-hero h1 { font-size: 26px }
   .pricing-card { padding: 16px }

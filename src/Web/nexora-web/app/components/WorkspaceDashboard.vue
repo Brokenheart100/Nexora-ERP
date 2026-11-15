@@ -457,4 +457,8 @@ onMounted(() => { void load() })
 .dashboard-buckets { padding-left: 18px }
 .dashboard-drill { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px }
 .dashboard-journal { font-weight: 600 }
+
+dl { font-size: 13px }
+dd { color: var(--nx-ink-2); overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

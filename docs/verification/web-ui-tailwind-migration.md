@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css 验证记录
 
 - 日期：2026-11-15
-- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5–8 待执行。
+- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5 已完成（表格与详情规则迁 scoped / UTable，main.css 535 → 393 行）；Phase 6–8 待执行。
 - 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
 
 ## 终态定义
@@ -28,7 +28,7 @@
 | Phase 2 域级语义类 | quiet / primary / hint / heading-icon / actions，4 批（card / heading / eyebrow / status-pill / empty-state 留 Phase 3–5） | 完成 | 本文「Phase 2」 |
 | Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive → layout 与页面 scoped / utility（暗色区段删除并入 Phase 5） | 完成 | 本文「Phase 3」 |
 | Phase 4 表单基础 | 原生 input / file 控件 → UFormField / UInput / USelect / UCheckbox / UFileUpload；日期控件保留 UInput type=date | 完成 | 本文「Phase 4」 |
-| Phase 5 表格 / 详情 | Tables / Details / lists / dl / Module internals | 待执行 | |
+| Phase 5 表格 / 详情 | Tables / Details / lists 迁组件 scoped；Readiness → UTable；暗色收尾 | 完成 | 本文「Phase 5」 |
 | Phase 6 拆分 tokens.css | tokens 与 `@theme inline` 拆到独立文件 | 待执行 | |
 | Phase 7 删除死 CSS | 删除未使用选择器、暗色残余与重复 reset | 待执行 | |
 | Phase 8 收尾 | main.css 只剩 @import；全量验证与文档 | 待执行 | |
@@ -144,6 +144,19 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 - 全量 e2e：45 passed（16.5m）。
 - 计划偏差：日期控件保留 `UInput type="date"` 而非 `UInputDate`（理由见上）；`fieldset` / `legend` 全局样式保留到组件化。
 - 提交：`feat(web): Tailwind migration Phase 4 (form controls)`。
+
+## Phase 5 表格 / 详情 / 列表残余（2026-11-15）
+
+- 表格：`WorkspaceReadiness` 两个原生 `<table>` → `UTable`（`costColumns` / `documentColumns` 用 `TableColumn<...>` + `accessorFn` 生成「类型」列，`#amount-cell` 插槽保留右对齐 `.num`；`data-testid="readiness-costs"` 保留在 UTable 根节点，`readiness.spec.ts` 断言不变并通过）。`WorkspaceFinancialReports` 保留自定义表格（打印 / 固定列 / 高密度，ADR 记录），把全局 Tables 规则 1:1 补进其 scoped（`.table-scroll`、`table`、`th,td`、`thead th`、`tbody th[scope='row']`、`tbody tr` hover / last-child、`html.dark` 表格、`@media (max-width: 700px)` 与打印 `.table-scroll` overflow）。
+- 详情 / 列表：删除全局 Details / lists 规则前，把 `details` / `summary` / `dl` / `dt` / `dd` / `li` / `article` 规则按使用点 1:1 补进组件 scoped（3 个 subagent，write scopes 互斥）：`AccountSecurity`（新建 scoped）、`BankReconciliationPanel`、`WorkspaceAging`、`WorkspaceBilling`、`WorkspaceBook`；`WorkspaceCapabilities`（新建 scoped）、`WorkspaceCatalog`、`WorkspaceDashboard`、`WorkspacePartners`、`WorkspaceScopedRoleGrants`；`WorkspaceSetup`、`pages/pricing.vue`、`WorkspaceGovernance`、`WorkspaceMemberEditor`。`WorkspaceChart` 补 `li { overflow-wrap: anywhere }`；`WorkspaceReadiness` 已有 `.facts` / `.checks` scoped、`pages/index.vue` overview-card 已覆盖，无需补。
+- main.css 清理：删除 Tables 区段（`.table-scroll` / `table` / `th,td` / `thead th` / `tbody th[scope=row]` / `tbody tr` 全套）与 Details / lists 区段（`details` / `summary` / `dl` / `dt` / `dd` / `li` / `article` 全套）、Dark theme 3 条表格规则、`@media (max-width: 700px)` 2 条表格规则、打印 `.table-scroll` overflow 规则、冗余 `html.dark .card` / `html.dark fieldset`。**回归修复**：`html.dark fieldset` 不能删——base fieldset 边框是硬编码 `#e6ebf3` 非 token，基线 37fa507 有该暗色覆盖，已恢复（388 → 393 行）。main.css 535 → 393 行。
+- 暗色收尾：`WorkspaceAging` 合计框、`WorkspaceFinancialReports` 表格容器在暗色下原本是白块（基线全局规则 `#fbfcfe` / `#fff` 硬编码、无暗色覆盖，属既有缺陷），Phase 5 一并补 `html.dark` scoped 覆盖。审计页签 `.audit-tabs .active` 仍为硬编码浅色（Phase 2 起的自定义 scoped 决策），暗色下保持浅色胶囊，已记录为已知外观差异。
+- 静态验证：typecheck exit 0；lint 0 error / 63 warning（全部 `vue/first-attribute-linebreak`）；单测 16 文件 / 89 通过（44.4s）；build 23.5s 通过。
+- 截图：`artifacts/ui-tailwind-phase5/` 8 张（账簿就绪 light/dark、财务报表 light/dark、财务概览与账龄 light/dark、审计查询 light/dark）。审计页表头「蓝色半段」经排查为 Nuxt UI `UTable` 的 `:loading` 指示条（`thead::after` + `animate-[carousel]`，`bg-primary` 1px），非缺陷，截图前等待数据加载。目视确认暗色表格 / 合计框 / fieldset 正常。
+- 聚焦 e2e：`readiness.spec.ts` 2 passed（9.2s，含「按业务日期补记」与 blocked backfill）；报表 / 账龄 / 审计 / 账簿相关用例在 Windows 下 `--grep` 含 `|` 会被 cmd 拆分未能单独运行，改由全量套件覆盖并通过。
+- 全量 e2e：45 passed（17.0m；workspace.spec.ts 单文件 13.3m）。
+- 计划偏差：Tables / Details 全局规则以「组件 scoped 1:1 复制」收尾而非全部 utility / UTable；裸 `<table>` 仅剩 `WorkspaceFinancialReports`（ADR 允许）；Nuxt dev 不热更新 `app/`，每次改 scoped 需 `aspire stop` → `start` → `wait gateway` 后验证。
+- 提交：`feat(web): Tailwind migration Phase 5 (tables and details)`。
 
 ## 复现命令
 

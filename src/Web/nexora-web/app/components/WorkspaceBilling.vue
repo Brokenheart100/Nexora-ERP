@@ -369,4 +369,9 @@ onMounted(load)
 .plan ul { margin: 0; padding-left: 18px }
 .plan .modules { font-size: 0.85em; opacity: 0.8; margin: 0 }
 .current-label { font-weight: 600; color: var(--nx-primary); margin: 0 }
+article { margin: 10px 0; background: #fbfcff }
+article p { margin: 0; font-size: 12.5px; color: var(--nx-ink-3) }
+dl { font-size: 13px }
+dd { color: var(--nx-ink-2); overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

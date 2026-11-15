@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：执行中（2026-11-15）。Phase 0–4 已完成（Phase 3 暗色区段删除并入 Phase 5；Phase 4 日期控件保留 `UInput type=date`）；Phase 5–8 待执行。基线数据来自当前工作区实测。
+> 状态：执行中（2026-11-15）。Phase 0–5 已完成（Phase 3 暗色区段删除并入 Phase 5 完成；Phase 4 日期控件保留 `UInput type=date`）；Phase 6–8 待执行。基线数据来自当前工作区实测。
 
 ---
 
@@ -223,11 +223,11 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 - [x] 验收：聚焦 e2e 批次 1（Company presentation / session policy / Custom roles）与批次 2（Custom roles / Chart hierarchy / Effective tax rates / Opening journal reports / Setup wizard）共 7 passed；全量 45 passed（16.5m）
 
 ### Phase 5 — 表格 / 详情 / 列表残余（约 1 天）
-- [ ] WorkspaceFinancialReports 自定义表格保留（ADR 记录），仅迁周边类
-- [ ] WorkspaceReadiness 表格 → UTable（或 utility），e2e `.readiness .summary/.tbody` 改 data-testid
-- [ ] 全局 Tables（52 行）+ Details/lists（76 行）删除前确认无裸元素依赖
-- [ ] 裸 `<table>` 全量复查（目标：仅 WorkspaceFinancialReports 保留）
-- [ ] 聚焦 e2e：Readiness / Reports / Aging / Audit
+- [x] WorkspaceFinancialReports 自定义表格保留（ADR 记录），仅迁周边类：全局 Tables 规则 1:1 补进组件 scoped
+- [x] WorkspaceReadiness 两个原生 `<table>` → `UTable`（`data-testid="readiness-costs"` 保留在 UTable 根节点，e2e 断言不变）
+- [x] 全局 Tables（52 行）+ Details/lists（76 行）删除前补齐组件 scoped（3 批 14 文件）；main.css 535 → 393 行
+- [x] 裸 `<table>` 全量复查：仅 WorkspaceFinancialReports 保留（ADR 允许）
+- [x] 聚焦 e2e：`readiness.spec.ts` 2 passed；报表 / 账龄 / 审计 / 账簿由全量套件覆盖；全量 45 passed（17.0m）
 
 ### Phase 6 — 删除 main.css 分区 + tokens 拆分（约 1 天）
 - [ ] 逐段删除已归零的 CSS 分区（每删一段跑 typecheck/lint/unit/build）

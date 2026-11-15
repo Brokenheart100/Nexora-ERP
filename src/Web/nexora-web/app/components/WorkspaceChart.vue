@@ -244,4 +244,5 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
 .chart { margin-top: 20px; min-width: 0 }
 fieldset { min-width: 0; display: grid; gap: 10px; border: 1px solid #d1d9e6; border-radius: 8px; margin: 12px 0; padding: 12px }
 label { display: grid; gap: 4px }
+li { overflow-wrap: anywhere }
 </style>

@@ -123,6 +123,8 @@ v-if="selected?.state === 'pending' && canPrepare" variant="outline" color="neut
 <style scoped>
 fieldset { display: grid; gap: 8px; min-width: 0; margin: 12px 0 }
 label { display: grid; gap: 4px }
-dl { grid-template-columns: max-content 1fr }
+dl { grid-template-columns: max-content 1fr; margin: 12px 0; font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; color: var(--nx-ink-2); overflow-wrap: anywhere }
 li { overflow-wrap: anywhere }
 </style>

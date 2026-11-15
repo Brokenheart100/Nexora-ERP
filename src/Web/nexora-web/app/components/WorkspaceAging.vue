@@ -126,4 +126,10 @@ fieldset { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-widt
 .aging-totals dt { font-size: 11.5px }
 .aging-totals dd { font-weight: 650; color: #1b2b43 }
 html.dark .aging li { background: var(--nx-surface-muted); border-color: var(--nx-border) }
+html.dark .aging-totals { background: var(--nx-surface-muted); border-color: var(--nx-border) }
+html.dark .aging-totals dd { color: var(--nx-ink-2) }
+dl { font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

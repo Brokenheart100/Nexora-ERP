@@ -179,4 +179,11 @@ v-if="canManage && approvable(grant)" variant="outline" color="neutral" size="xs
 .grant { border-top: 1px solid var(--nx-border); padding: 12px 0; }
 .grant > div { flex: 1; overflow-wrap: anywhere; }
 .grant p { margin: 4px 0; }
+
+article { margin: 10px 0; background: #fbfcff; border: 1px solid #e9eef6; border-radius: 12px; }
+article p { font-size: 12.5px; color: var(--nx-ink-3); }
+details { padding: 4px 14px; background: var(--nx-surface-muted); border: 1px solid #e8edf5; border-radius: 12px; }
+summary { padding: 10px 0; font-size: 12.5px; font-weight: 650; color: #2c4f8f; cursor: pointer; }
+summary::marker { color: #8fa6c8; }
+li { overflow-wrap: anywhere; }
 </style>

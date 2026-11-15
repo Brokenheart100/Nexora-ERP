@@ -111,4 +111,8 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 <style scoped>
 .book { margin-top: 20px; min-width: 0 }
 fieldset { margin-top: 16px; border: 1px solid #d1d9e6; border-radius: 8px; padding: 12px; display: grid; gap: 10px; min-width: 0 }
+dl { margin: 12px 0; font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; color: var(--nx-ink-2); overflow-wrap: anywhere }
+li { overflow-wrap: anywhere }
 </style>

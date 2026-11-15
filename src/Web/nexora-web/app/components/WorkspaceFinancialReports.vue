@@ -260,11 +260,28 @@ fieldset { margin: 12px 0; border: 1px solid #d1d9e6; border-radius: 8px }
 label { display: grid; gap: 4px }
 .comparison { display: flex; align-items: center }
 .comparison input { width: auto }
-.table-scroll { overflow-x: auto }
-table { width: 100%; border-collapse: collapse; font-size: 14px }
-th, td { border-bottom: 1px solid #e4e9f0; padding: 8px; text-align: right }
+.table-scroll { max-width: 100%; margin: 14px 0; overflow-x: auto; background: #fff; border: 1px solid var(--nx-border); border-radius: 12px; -webkit-overflow-scrolling: touch }
+table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { border-bottom: 1px solid #e4e9f0; padding: 8px; text-align: right; vertical-align: middle }
 th:first-child { text-align: left; overflow-wrap: anywhere }
 td { white-space: nowrap }
+thead th { font-weight: 700; letter-spacing: 0.07em; color: #6b7b93; text-transform: uppercase; white-space: nowrap; background: #f8fafc }
+tbody th[scope='row'] { font-weight: 650; color: #21324a }
+tbody tr { transition: background 0.12s ease }
+tbody tr:hover { background: #fafcff }
+tbody tr:last-child > * { border-bottom: 0 }
+html.dark .table-scroll { background: var(--nx-surface-muted) }
+html.dark th, html.dark td { border-color: var(--nx-border) }
+html.dark table th { color: var(--nx-ink-3); background: #152135 }
+html.dark tbody th[scope='row'] { color: var(--nx-ink-3) }
+html.dark tbody tr:hover { background: #152135 }
+@media (max-width: 700px) {
+  .table-scroll > table { min-width: 640px }
+  .table-scroll th:first-child { min-width: 128px; white-space: nowrap }
+}
+@media print {
+  html[data-print-section] [data-print-target] .table-scroll { overflow: visible !important }
+}
 .report-result { padding: 18px; margin-top: 8px; background: #fbfcff; border: 1px solid #e8edf5; border-radius: 14px }
 .report-result > h3 { margin-top: 0 }
 .report-result > p { font-size: 12.5px; color: var(--nx-ink-3) }

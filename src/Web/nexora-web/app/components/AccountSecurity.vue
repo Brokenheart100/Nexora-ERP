@@ -43,3 +43,9 @@ onMounted(load)
     <UAlert v-if="error" role="alert" color="error" icon="i-lucide-circle-alert" :description="error" />
   </section>
 </template>
+
+<style scoped>
+dl { margin: 12px 0; font-size: 13px }
+dt { color: var(--nx-ink-3) }
+dd { margin: 0; color: var(--nx-ink-2); overflow-wrap: anywhere }
+</style>

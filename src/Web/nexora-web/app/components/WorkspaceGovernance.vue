@@ -232,4 +232,6 @@ v-if="['PendingApproval', 'Pending'].includes(invitation.state) &&
 .invitation-row { padding: 12px 0; margin: 8px 0; background: #fbfcfe; border: 1px solid #edf1f7; border-top: 1px solid var(--nx-border); border-radius: 12px; overflow-wrap: anywhere; }
 .invitation-row > div { flex: 1; min-width: min(220px, 100%); }
 .invitation-row p { margin: 4px 0; }
+/* Phase 5: scoped equivalents of the removed global article rules. */
+article p { font-size: 12.5px; color: var(--nx-ink-3) }
 </style>

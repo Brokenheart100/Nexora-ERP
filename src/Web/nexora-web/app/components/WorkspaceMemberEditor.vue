@@ -103,4 +103,6 @@ html.dark .member-row:last-child { border-bottom-color: #edf1f7 }
 .editor { display: grid; justify-items: start; gap: 12px; padding: 14px; background: var(--nx-surface-muted); border-radius: 8px; }
 .editor form { width: 100%; }
 .editor form > .primary { margin-top: 10px; }
+/* Phase 5: scoped equivalents of the removed global article rules. */
+article p { margin: 0; font-size: 12.5px; color: var(--nx-ink-3) }
 </style>
