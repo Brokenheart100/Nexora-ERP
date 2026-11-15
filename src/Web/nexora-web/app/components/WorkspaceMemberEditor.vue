@@ -93,7 +93,9 @@ v-if="canApprove" variant="outline" color="neutral" size="xs" type="button" :dis
 </template>
 
 <style scoped>
-.member-row { border-top: 1px solid var(--nx-border); padding: 16px 0; }
+.member-row { padding: 16px 0; margin: 8px 0; background: #fbfcfe; border: 1px solid #edf1f7; border-top: 1px solid var(--nx-border); border-radius: 12px }
+html.dark .member-row { background: var(--nx-surface-muted); border-color: var(--nx-border) }
+html.dark .member-row:last-child { border-bottom-color: #edf1f7 }
 .summary { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; overflow-wrap: anywhere; }
 .summary p { margin: 4px 0; }
 .pending, .governance-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 8px; }

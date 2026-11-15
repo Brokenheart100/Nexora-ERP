@@ -29,14 +29,14 @@ function continueAuthorization() {
 </script>
 
 <template>
-  <section class="card login-card">
+  <section class="card max-w-[520px]">
     <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-terminal" aria-hidden="true" />CLI 设备授权</h1>
     <p>Nexora CLI 正在请求只读访问你当前可访问的工作区。授权在身份服务页面完成，可选择同意或拒绝。</p>
     <p v-if="code" class="setup-sub">
       设备代码：{{ code }}
     </p>
     <UAlert v-if="error" role="alert" color="error" icon="i-lucide-circle-alert" :description="error" />
-    <div v-else class="login-actions">
+    <div v-else class="flex flex-wrap gap-[10px]">
       <UButton v-if="identityUrl" color="primary" type="button" :disabled="loading" @click="continueAuthorization">
         继续授权
       </UButton>

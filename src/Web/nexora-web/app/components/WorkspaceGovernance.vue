@@ -221,15 +221,15 @@ v-if="['PendingApproval', 'Pending'].includes(invitation.state) &&
 <style scoped>
 .governance { display: grid; gap: 20px; }
 .section-top, .invite-fields, .invitation-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-.section-top { justify-content: space-between; }
+.section-top { justify-content: space-between; padding-bottom: 4px; }
 .section-top p { margin: 0; }
-.invite-form { display: grid; justify-items: start; gap: 12px; }
+.invite-form { display: grid; justify-items: start; gap: 12px; margin: 6px 0 18px; }
 .invite-fields { align-items: end; width: 100%; }
 .invite-role { display: grid; gap: 5px; }
 .invite-fields > :first-child { flex: 1; min-width: min(220px, 100%); }
 .invite-form fieldset { width: 100%; }
 .invitation-code { display: grid; gap: 8px; justify-items: start; }
-.invitation-row { padding: 12px 0; border-top: 1px solid var(--nx-border); overflow-wrap: anywhere; }
+.invitation-row { padding: 12px 0; margin: 8px 0; background: #fbfcfe; border: 1px solid #edf1f7; border-top: 1px solid var(--nx-border); border-radius: 12px; overflow-wrap: anywhere; }
 .invitation-row > div { flex: 1; min-width: min(220px, 100%); }
 .invitation-row p { margin: 4px 0; }
 </style>

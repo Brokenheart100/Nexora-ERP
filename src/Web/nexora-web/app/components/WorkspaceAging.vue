@@ -122,5 +122,8 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 <style scoped>
 .aging { margin-top: 24px }
 fieldset { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-width: 0; margin: 12px 0 }
-.aging-totals { display: grid; grid-template-columns: max-content 1fr }
+.aging-totals { display: grid; grid-template-columns: max-content 1fr; padding: 15px 18px; margin: 14px 0; background: #fbfcfe; border: 1px solid #e9eef5; border-radius: 13px }
+.aging-totals dt { font-size: 11.5px }
+.aging-totals dd { font-weight: 650; color: #1b2b43 }
+html.dark .aging li { background: var(--nx-surface-muted); border-color: var(--nx-border) }
 </style>

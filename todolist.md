@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：执行中（2026-11-15）。Phase 0–2 已完成；Phase 3–8 待执行。基线数据来自当前工作区实测。
+> 状态：执行中（2026-11-15）。Phase 0–3 已完成（Phase 3 暗色区段删除并入 Phase 5）；Phase 4–8 待执行。基线数据来自当前工作区实测。
 
 ---
 
@@ -196,24 +196,24 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 ### Phase 3 — 壳层与页面语义（2 批，约 2–3 天）
 
 #### 3.1 应用壳层
-- [ ] `.shell/.aside/.main/main > header` + 响应式 → `default.vue` utility + scoped
-- [ ] 断点对照：900 / 1100 / 700 / 550；移动端导航、语言切换、主题切换、PWA 安全区
-- [ ] `.theme-toggle`、`.locale-switch` 迁 scoped
-- [ ] 删除 main.css Shell / Main column / Responsive / Theme controls 区段
-- [ ] 截图：desktop light/dark + mobile light/dark
+- [x] `.shell/.aside/.main/main > header` + 响应式 → `default.vue` scoped（模板与 class 名保留；`.shell > aside` / `.shell > main` 子选择器隔离其他 aside/main）
+- [x] 断点对照：1180 / 980 / 700 / 550 / 420（沿用基线断点）；移动端导航、语言切换、主题切换、PWA 安全区
+- [x] `.theme-toggle`、`.locale-switch` 迁 scoped（`:deep(svg)` 处理图标）
+- [x] 删除 main.css Shell / Main column / Responsive / Theme controls 区段
+- [x] 截图：desktop light/dark + mobile light/dark（`artifacts/ui-tailwind-phase3/`）
 
 #### 3.2 页面级语义
-- [ ] pages/index.vue 控制台壳层：`console-tabs/console-panel/console-bar/console-chip/console-workspace...` → utility 或 scoped（保留 data-testid）
-- [ ] pages/pricing.vue：`pricing-*` / `plan` → 页面 utility（e2e 的 `.plan` 改 data-testid）
-- [ ] pages/join.vue、pages/cli/authorize.vue：`login-card/login-actions` → utility
-- [ ] pages/companies/*：`heading` → utility
-- [ ] WorkspaceDashboard：`kpi/dashboard-*` → utility 或 scoped
-- [ ] WorkspaceSetup：`setup-*`（8 个类）→ utility 或 scoped
-- [ ] WorkspaceFinancialReports：`report-screen/table-scroll` 保留 scoped，打印规则 scoped
-- [ ] WorkspaceAudit：`audit-tabs` 保留 scoped（记录原因）
-- [ ] 删除 main.css Hero / Workspace hero / Deck / Library / Module internals / Login state 区段
-- [ ] **暗色收尾**：确认所有颜色走 token utility 后，删除 main.css Dark theme 区段（408 行）
-- [ ] 截图矩阵 + 聚焦 e2e：Dashboard / Setup / Pricing / Join / CLI authorize / Reports
+- [x] pages/index.vue 控制台壳层：`console-tabs/console-panel/console-bar/console-chip/console-workspace...` → scoped（保留 data-testid；scoped unlayered 优先，不混 utility）
+- [x] pages/pricing.vue：`pricing-*` / `plan` → 页面 scoped（e2e `.plan` 已在 Phase 0 改 data-testid）
+- [x] pages/join.vue、pages/cli/authorize.vue：`login-card/login-actions` → `card` + utility
+- [x] pages/companies/*：`heading` 保留 class（打印隐藏依赖）+ 页面 scoped
+- [x] WorkspaceDashboard：`card-head/card-sub` → utility + 局部 scoped
+- [x] WorkspaceSetup：`setup-*`（8 个类）基线已是 scoped，无需迁移
+- [x] WorkspaceFinancialReports：`report-screen` 局部 scoped、`.table-scroll` 全局规则留 Phase 5，打印规则 scoped
+- [x] WorkspaceAudit：`audit-tabs` 保留 scoped（Phase 2 已记录原因）
+- [x] 删除 main.css Hero / Workspace hero / Deck / Library / Module internals / Login state 区段
+- [ ] **暗色收尾**：推迟到 Phase 5 末（Forms / Tables / Cards 仍依赖 `html.dark` 覆盖；Phase 3 已删除壳层与页面暗色块）
+- [x] 截图矩阵 + 聚焦 e2e：Dashboard / Setup / Pricing / Join / CLI authorize / Reports（聚焦 8 passed，全量 45 passed）
 
 ### Phase 4 — 表单基础元素与原生控件（2–3 天）
 - [ ] 原生日期/时间 32 处 / 16 组件 → `UInputDate`（e2e `fill` 改 click + option；label 文本不变）

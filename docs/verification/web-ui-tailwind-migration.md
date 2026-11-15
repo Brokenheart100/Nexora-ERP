@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css 验证记录
 
 - 日期：2026-11-15
-- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3–8 待执行。
+- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4–8 待执行。
 - 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
 
 ## 终态定义
@@ -26,7 +26,7 @@
 | Phase 0 基线与护栏 | git 基线提交、明暗 / 移动截图、e2e 类选择器改 data-testid、全量 e2e 基线、冻结规则 | 完成 | 本文「Phase 0」 |
 | Phase 1 搬出新增样式 | version-notice / status-overlay / PWA 安全区 → 组件 / layout scoped | 完成 | 本文「Phase 1」 |
 | Phase 2 域级语义类 | quiet / primary / hint / heading-icon / actions，4 批（card / heading / eyebrow / status-pill / empty-state 留 Phase 3–5） | 完成 | 本文「Phase 2」 |
-| Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive / 暗色 → layout 与页面 utility | 待执行 | |
+| Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive → layout 与页面 scoped / utility（暗色区段删除并入 Phase 5） | 完成 | 本文「Phase 3」 |
 | Phase 4 表单基础 | 原生 input/select/textarea 基础样式 → UFormField / UInput / USelect / UInputDate / UFileUpload | 待执行 | |
 | Phase 5 表格 / 详情 | Tables / Details / lists / dl / Module internals | 待执行 | |
 | Phase 6 拆分 tokens.css | tokens 与 `@theme inline` 拆到独立文件 | 待执行 | |
@@ -115,6 +115,21 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 - 已知数据卫生问题与处理：本地长期反复运行全量 e2e 使 alice 拥有 1001 个工作区（pro 计划上限 1000），`OpenWorkspaceUseCase` 抛 `PlanLimitExceededException`（409 `billing.quota_exceeded`）。处理：删除 `organization.workspace_navigation_links` 33 行后，删除 alice / bob 今日之前的工作区 935 行，剩余 alice 174 / bob 66，配额恢复。仅清理本地测试累积数据；其他服务库中的对应记录成为孤儿（无跨库外键），后续全量 e2e 前需关注配额。
 - 全量 e2e：45 passed（16.8m）。首次运行 44 passed / 1 failed（`Account session registry lists devices, revokes other sessions and blocks replay` 在撤销设备后重新登录时等待 Keycloak 重定向 60s 超时，`workspace.spec.ts:700`）；该用例单独重跑 1 passed（1.1m），判定为认证流程 flake，与本次 UI 改动无关；第二次全量 45/45 通过。
 - 提交：`feat(web): Tailwind migration Phase 2 (semantic classes to UButton/utility)`（前端 app/ + 本文档 + ADR 0020 + todolist；`docs/计划.md` 仅暂存样式段落 hunk，避免混入并发会话改动）。
+
+## Phase 3 应用壳层与页面语义（2026-11-15）
+
+- 3.1 壳层：`app/layouts/default.vue` 模板与 class 名保持不变，壳层 CSS 1:1 搬入 `<style scoped>`（约 437 行）：`.shell` 264px 网格、`.shell > aside` sticky 深色渐变 + `::before` 网格、导航 hover / `aria-current`、`.shell > main` 内边距、`main > header` sticky 70px + blur、面包屑 / 头像 / 用户名 / 移动端导航与遮罩、主题与语言控件；断点沿用基线 1180 / 980 / 700 / 550 / 420；PWA `env(safe-area-inset-*)` 放最后覆盖响应式内边距。用 `.shell > aside` / `.shell > main` 子选择器隔离，避免命中 `AppInstallPrompt`、`AppSessionGuard`、`WorkspaceAssistant`、`InvoiceShareDownload` 的 `aside` / `main`。
+- Vue 3.5 scoped 陷阱：`:global(html.dark) .x` 会被编译成裸 `html.dark { … }`，后代选择器整体丢失；已全部改为普通 `html.dark .x`（default.vue 9 处、pages/index.vue 既有 1 处 console 页签选中态，属既有 bug 修复）。`:global(body.nx-scroll-lock)`、`:global(:root)` 完整选择器仍可用。
+- 3.2 页面语义：`pages/index.vue` 模板 / 脚本未动，+591 行 scoped，逐条 1:1 复制 main.css 目标规则（与 main.css 逐规则 diff，85 条规则声明差异 0；scoped 样式 unlayered 优先于 Tailwind utilities，故不与 utility 混用）；`pages/pricing.vue` 页面级 scoped（pricing-hero / eyebrow / grid / card / note / links，颜色走 token）；`join.vue` / `cli/authorize.vue` 的 `card` + `max-w-[520px]`、login-actions → flex utility；`pages/companies/[workspaceId]/{setup,members,roles,billing}.vue` 保留 `heading` 类（打印隐藏依赖）并新增页面 scoped；`WorkspaceDashboard` 的 card-head / card-sub → utility + 局部 scoped；`WorkspaceGovernance` / `WorkspaceFinancialReports` / `WorkspaceAging` / `WorkspacePartners` / `WorkspaceMemberEditor` 局部 scoped；`AccountSessions` status-pill → utility；`WorkspaceCatalog` 基线已有 scoped 未改；`WorkspaceSetup` 的 setup-* 与 pricing-* 基线已是 scoped。
+- main.css 清理：删除 Shell（160–331）、Main column（332–429）、Hero、Workspace hero、Deck、Library、Login state、Module internals、Responsive 中的壳层块、Theme controls / language switch、Dark theme 中壳层与 19 个页面块、@media 700 / 420 中 7 条页面规则；保留 Cards / Forms / Buttons / Tables / Details / fieldset actions / print / 剩余暗色（依赖剩余全局类，Phase 5 末删除）。main.css 1895 → 732 行（净 +34 / −1197）。
+- 事故与修复：`ops_read_files` 读取 800 行 main.css 时被字节预算静默截断（实际 748 行），整文件写回导致尾部丢失，build 报 `CssSyntaxError: Missing closing } at @media print`；从 git d810447 取回 print 尾部并追加恢复。教训：大文件读取必须检查 `nextOffset` / `complete`，不得直接整文件写回。
+- Nuxt UI 主色修复：Phase 2 引入的 `UButton color="primary"` 曾渲染为透明底白字（空按钮）。根因：main.css 的 `@theme inline` 不输出 CSS 变量，Nuxt UI 运行时插件注入的 `--ui-color-primary-500: var(--color-brand-500, "")` 解析为空 → `--ui-primary` 为空 → `bg-primary` 透明。改为 `@theme static` 强制输出 brand 调色板后 `--ui-primary=#2f5fbf`、按钮背景 `rgb(47,95,191)`；`app.config.ts` 无需改动。
+- 静态验证：typecheck exit 0；lint 0 error / 63 warning（全部 `vue/first-attribute-linebreak`）；单测 16 文件 / 89 通过（33.1s）；build 22.6s 通过。
+- 截图：`artifacts/ui-tailwind-phase3/` 15 张（workspaces、dashboard、reports、partners、audit、pricing 的 light / dark，setup light，workspaces mobile light / dark）。与基线逐像素 diff：pricing light / dark 完全一致；audit 4.6–4.8%、partners 1.8%、reports 12.4–20.9% 的差异来自数据（审计记录行数、报表合计）与加载时机；workspaces / dashboard 高度差异同因。目视确认主色按钮、暗色主题与移动端布局正常。
+- 聚焦 e2e：8 passed（2.7m；dashboard / reports / audit / setup / pricing / join / cli / company settings / team roles / billing 相关用例）。
+- 全量 e2e：45 passed（16.4m）。
+- 计划偏差（已记录）：暗色区段整体删除推迟到 Phase 5 末（Forms / Tables / Cards 仍依赖 `html.dark`）；`pages/companies/*` 的 `heading` 保留 class + scoped（打印钩子）；`.table-scroll` 仍为全局规则（Phase 5）。
+- 提交：`feat(web): Tailwind migration Phase 3 (shell and page semantics)`（前端 app/ 17 文件 +1168/−1215 + 本文档 + ADR 0020 + todolist；并发会话改动不纳入）。
 
 ## 复现命令
 

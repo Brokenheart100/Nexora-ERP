@@ -34,12 +34,12 @@ async function join() {
 </script>
 
 <template>
-  <section v-if="ready" class="card login-card">
+  <section v-if="ready" class="card max-w-[520px]">
     <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-mail-open" aria-hidden="true" />{{ t('invitation.title') }}</h1>
     <p v-if="!code">{{ t('invitation.missing') }}</p>
     <template v-else>
       <p>{{ t('invitation.useInvitedEmail') }}</p>
-      <div class="login-actions">
+      <div class="flex flex-wrap gap-[10px]">
         <UButton v-if="user" color="primary" type="button" :disabled="accepting" @click="join">
           {{ t('invitation.accept') }}
         </UButton>

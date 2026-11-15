@@ -253,7 +253,17 @@ table { width: 100%; border-collapse: collapse; font-size: 14px }
 th, td { border-bottom: 1px solid #e4e9f0; padding: 8px; text-align: right }
 th:first-child { text-align: left; overflow-wrap: anywhere }
 td { white-space: nowrap }
-.totals { display: grid; grid-template-columns: max-content 1fr; margin: 14px 0 }
+.report-result { padding: 18px; margin-top: 8px; background: #fbfcff; border: 1px solid #e8edf5; border-radius: 14px }
+.report-result > h3 { margin-top: 0 }
+.report-result > p { font-size: 12.5px; color: var(--nx-ink-3) }
+.report-result .totals { display: grid; grid-template-columns: max-content 1fr; gap: 2px 16px; padding: 10px 14px; margin: 14px 0; background: #fff; border: 1px solid var(--nx-border); border-radius: 10px }
+.report-result .totals dt { padding: 4px 0; font-size: 12px; color: var(--nx-ink-3) }
+.report-result .totals dd { margin: 0; padding: 4px 0; font-size: 12.5px; font-weight: 650; color: var(--nx-ink-2) }
+html.dark .report-result { background: var(--nx-surface-muted); border-color: var(--nx-border) }
+html.dark .report-result .totals { background: var(--nx-surface-muted); border-color: var(--nx-border) }
+@media (max-width: 700px) {
+  .report-result { padding: 13px }
+}
 li { margin: 6px 0; overflow-wrap: anywhere }
 </style>
 

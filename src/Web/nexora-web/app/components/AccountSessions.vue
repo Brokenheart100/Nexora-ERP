@@ -73,7 +73,7 @@ onMounted(load)
     <ul v-if="sessions.length">
       <li v-for="session in sessions" :key="session.id">
         <strong>{{ device(session.userAgent) }}</strong>
-        <span v-if="session.current" class="status-pill" data-tone="ok">当前设备</span>
+        <span v-if="session.current" class="inline-flex items-center gap-1.5 rounded-full border border-[rgba(13,138,99,0.16)] bg-nx-success-soft py-[3px] pl-[7px] pr-[9px] text-[11.5px] font-semibold text-nx-success dark:border-[#1e4a3b]" data-tone="ok">当前设备</span>
         <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">最近活动 {{ when(session.lastSeenAt) }} · 登录于 {{ when(session.createdAt) }}</p>
         <UButton v-if="!session.current" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="revoke(session.id)">撤销</UButton>
       </li>

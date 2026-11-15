@@ -283,10 +283,10 @@ onMounted(() => { void load() })
 
 <template>
   <section class="card dashboard" aria-labelledby="dashboard-title">
-    <div class="card-head">
+    <div class="flex items-baseline justify-between gap-3 mb-2">
       <div>
         <h2 id="dashboard-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-gauge" aria-hidden="true" />经营仪表盘</h2>
-        <p class="card-sub">
+        <p class="dashboard-sub text-[12.5px] text-nx-ink-3">
           {{ workspaceName }} · {{ period.from || '—' }} 至 {{ period.through || '—' }} · {{ currency }} · 过账水位
           {{ overview ? overview.watermark : '—' }}
         </p>
@@ -440,6 +440,8 @@ onMounted(() => { void load() })
 
 <style scoped>
 .dashboard { margin-top: 24px }
+.dashboard h2 { margin: 0 }
+.dashboard-sub { margin: 0 0 20px }
 .dashboard-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 16px 0 }
 .kpi { border: 1px solid var(--nx-border, #e4e9f0); border-radius: 10px; padding: 10px 12px }
 .kpi dt { font-size: 12px; color: var(--nx-muted, #667085) }

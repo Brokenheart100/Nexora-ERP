@@ -70,7 +70,8 @@ const moduleName = (key: string) => moduleNames[key] ?? key
 <style scoped>
 .pricing-hero { max-width: 780px; margin: 28px 0 22px }
 .pricing-hero h1 { font-size: 32px; margin: 6px 0 12px; letter-spacing: -0.03em }
-.pricing-hero .eyebrow { color: var(--nx-primary); font-size: 0.78em; font-weight: 700; letter-spacing: 0.16em; margin: 0 }
+.pricing-hero .eyebrow { display: flex; gap: 10px; align-items: center; color: var(--nx-primary); font-size: 0.78em; font-weight: 700; letter-spacing: 0.16em; margin: 0 }
+.pricing-hero .eyebrow::before { display: block; width: 24px; height: 1px; content: ""; background: linear-gradient(90deg, #7292d4, transparent) }
 .lede { color: var(--nx-ink-2); font-size: 15px; line-height: 1.8; margin: 0 }
 .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; align-items: stretch }
 .pricing-card {

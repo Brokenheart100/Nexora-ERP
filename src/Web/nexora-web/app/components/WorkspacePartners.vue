@@ -235,9 +235,9 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 
 <style scoped>
 .partners { margin-top: 20px; min-width: 0 }
-.partner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
+.partner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0 }
 fieldset { min-width: 0; border: 1px solid #e0e5ee; border-radius: 8px; padding: 12px; display: grid; gap: 10px }
 legend { font-weight: 600 }
 
-form, .partner-detail { margin-top: 16px; overflow-wrap: anywhere }
+form, .partner-detail { margin-top: 16px; overflow-wrap: anywhere; min-width: 0 }
 </style>
