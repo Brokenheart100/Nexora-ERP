@@ -80,8 +80,8 @@ onMounted(async () => {
           @update:model-value="value => selectedCode = String(value)" />
       </UFormField>
       <template v-if="selected">
-        <h2><UIcon class="heading-icon" name="i-lucide-shield" aria-hidden="true" />{{ workspaceRoleName(selected.code) }}</h2>
-        <p class="hint">{{ selected.area ? executionAreaNames[selected.area] : '工作区' }} · {{ selected.permissions.length }} 项权限</p>
+        <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-shield" aria-hidden="true" />{{ workspaceRoleName(selected.code) }}</h2>
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ selected.area ? executionAreaNames[selected.area] : '工作区' }} · {{ selected.permissions.length }} 项权限</p>
         <ul class="permissions" aria-label="权限明细">
           <li v-for="permission in selected.permissions" :key="permission">
             <span>{{ permissionNames[permission] ?? permission }}</span>

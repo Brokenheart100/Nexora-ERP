@@ -7,7 +7,7 @@ useHead({ title: '初始化向导' })
 <template>
   <section class="heading">
     <div>
-      <h1><UIcon class="heading-icon" name="i-lucide-list-checks" aria-hidden="true" />初始化向导</h1>
+      <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-list-checks" aria-hidden="true" />初始化向导</h1>
       <p v-if="workspace">{{ workspace.name }} · 本位币 {{ workspace.baseCurrency }} · 国家/地区 {{ workspace.countryCode }}</p>
     </div>
     <NuxtLink to="/">返回工作台</NuxtLink>

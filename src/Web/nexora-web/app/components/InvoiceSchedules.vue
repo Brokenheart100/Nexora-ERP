@@ -60,8 +60,8 @@ function change(row: Schedule, action: 'pause' | 'run') {
 <template>
   <section aria-label="周期开票计划">
     <h3>周期开票</h3>
-    <button class="quiet" type="button" :disabled="busy" @click="run(async () => { })">{{ schedules ? '刷新周期开票' : '打开周期开票'
-      }}</button>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(async () => { })">{{ schedules ? '刷新周期开票' : '打开周期开票'
+      }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="schedules">
       <form v-if="canDraft" @submit.prevent="save">
@@ -91,8 +91,8 @@ function change(row: Schedule, action: 'pause' | 'run') {
           <UFormField label="付款期限天数" name="dueDays">
             <UInput :model-value="form.dueDays" type="number" min="0" max="180" required @update:model-value="value => form.dueDays = Number(value) || 0" />
           </UFormField>
-          <button class="primary">保存周期计划</button>
-          <button v-if="editing" class="quiet" type="button" @click="reset">退出计划编辑</button>
+          <UButton type="submit" color="primary">保存周期计划</UButton>
+          <UButton v-if="editing" variant="outline" color="neutral" size="sm" type="button" @click="reset">退出计划编辑</UButton>
         </fieldset>
       </form>
       <ul>
@@ -102,14 +102,14 @@ function change(row: Schedule, action: 'pause' | 'run') {
           · {{ row.terms.brand.timeZone }} · v{{ row.version }}
           <p>日期预览 {{ row.preview.join('、') || '无剩余日期' }}</p>
           <p v-if="row.pendingReason">{{ row.pendingReason }}</p>
-          <button class="quiet" type="button" :disabled="busy"
-            @click="run(async () => { selected = row.id })">查看执行记录</button>
+          <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy"
+            @click="run(async () => { selected = row.id })">查看执行记录</UButton>
           <template v-if="canDraft">
-            <button class="quiet" type="button" :disabled="busy" @click="edit(row)">编辑计划</button>
-            <button v-if="row.nextOn" class="quiet" type="button" :disabled="busy" @click="change(row, 'pause')">{{
-              row.paused ? '恢复计划' : '暂停计划' }}</button>
-            <button v-if="row.nextOn && !row.paused" class="quiet" type="button" :disabled="busy"
-              @click="change(row, 'run')">执行到期计划</button>
+            <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="edit(row)">编辑计划</UButton>
+            <UButton v-if="row.nextOn" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="change(row, 'pause')">{{
+              row.paused ? '恢复计划' : '暂停计划' }}</UButton>
+            <UButton v-if="row.nextOn && !row.paused" variant="outline" color="neutral" size="xs" type="button" :disabled="busy"
+              @click="change(row, 'run')">执行到期计划</UButton>
           </template>
           <ul v-if="selected === row.id">
             <li v-for="entry in history" :key="entry.on">

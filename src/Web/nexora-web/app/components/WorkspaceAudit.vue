@@ -129,17 +129,17 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
 
 <template>
   <section class="card audit" aria-labelledby="audit-title">
-    <h2 id="audit-title"><UIcon class="heading-icon" name="i-lucide-shield-check" aria-hidden="true" />审计查询</h2>
+    <h2 id="audit-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-shield-check" aria-hidden="true" />审计查询</h2>
     <div class="audit-tabs" role="tablist" aria-label="审计视图">
-      <button id="audit-view-audit" type="button" role="tab" class="quiet" :class="{ active: tab === 'audit' }"
+      <button id="audit-view-audit" type="button" role="tab" class="audit-tab" :class="{ active: tab === 'audit' }"
         :aria-selected="tab === 'audit'" aria-controls="audit-view-panel" data-testid="audit-tab-audit"
         @click="tab = 'audit'">审计查询</button>
-      <button id="audit-view-changes" type="button" role="tab" class="quiet" :class="{ active: tab === 'changes' }"
+      <button id="audit-view-changes" type="button" role="tab" class="audit-tab" :class="{ active: tab === 'changes' }"
         :aria-selected="tab === 'changes'" aria-controls="audit-view-panel" data-testid="audit-tab-changes"
         @click="tab = 'changes'">记录变更</button>
     </div>
     <div v-if="tab === 'audit'" id="audit-view-panel" role="tabpanel" aria-labelledby="audit-view-audit">
-    <p class="hint">统一查询组织与安全、财务、销售和采购审计记录；记录保留 {{ retentionDays }} 天，跨工作区不可见。</p>
+    <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">统一查询组织与安全、财务、销售和采购审计记录；记录保留 {{ retentionDays }} 天，跨工作区不可见。</p>
     <form @submit.prevent="query">
       <fieldset :disabled="busy">
         <legend>审计筛选</legend>
@@ -164,12 +164,12 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
         <UFormField label="来源" name="auditSource">
           <USelect v-model="sourceSelection" :items="sourceOptions" />
         </UFormField>
-        <button class="primary" :disabled="busy">查询审计记录</button>
+        <UButton type="submit" color="primary" :disabled="busy">查询审计记录</UButton>
       </fieldset>
     </form>
-    <div class="actions">
-      <button class="quiet" type="button" :disabled="busy" @click="query">刷新审计记录</button>
-      <button class="quiet" type="button" :disabled="busy || !entries.length" @click="exportRows">导出审计记录 CSV</button>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="query">刷新审计记录</UButton>
+      <UButton variant="outline" color="neutral" size="sm" :disabled="busy || !entries.length" @click="exportRows">导出审计记录 CSV</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <UAlert v-if="denied.length" role="status" color="warning" icon="i-lucide-triangle-alert"
@@ -191,10 +191,10 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
       <template #targetId-cell="{ row }">{{ row.original.targetId ?? '—' }}</template>
       <template #version-cell="{ row }">{{ row.original.version ?? '—' }}</template>
       <template #detail-cell="{ row }">
-        <button class="quiet" type="button" :aria-expanded="!!expandedRows[rowId(row.original)]"
+        <UButton variant="outline" color="neutral" size="xs" :aria-expanded="!!expandedRows[rowId(row.original)]"
           @click="toggle(rowId(row.original))">
           {{ expandedRows[rowId(row.original)] ? '收起' : '展开' }}
-        </button>
+        </UButton>
       </template>
       <template #expanded="{ row }">
         <p class="audit-detail">
@@ -203,7 +203,7 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
         </p>
       </template>
     </UTable>
-    <button v-if="hasMore" class="quiet" type="button" :disabled="busy" @click="more">加载更多</button>
+    <UButton v-if="hasMore" variant="outline" color="neutral" size="sm" :disabled="busy" @click="more">加载更多</UButton>
     </div>
     <WorkspaceRecordChanges v-else :workspace-id="workspaceId" />
   </section>
@@ -212,8 +212,10 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
 <style scoped>
 .audit { margin-top: 24px }
 .audit-tabs { display: flex; gap: 8px; margin: 12px 0 }
+/* Tabs keep a custom scoped look (ADR 0020 Phase 5): tokens follow the dark theme. */
+.audit-tab { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600; color: var(--nx-ink-2); background: var(--nx-surface); border: 1px solid var(--nx-border); border-radius: 9px; box-shadow: var(--nx-shadow-sm) }
+.audit-tab:hover { background: var(--nx-primary-soft); border-color: var(--nx-border-strong); color: var(--nx-primary-strong) }
 .audit-tabs .active { background: #e8eefb; border-color: #274580; color: #274580 }
 fieldset { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-width: 0; margin: 12px 0 }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px }
 .audit-detail { font-size: 0.9em; opacity: 0.85 }
 </style>

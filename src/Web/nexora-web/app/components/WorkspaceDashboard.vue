@@ -285,13 +285,13 @@ onMounted(() => { void load() })
   <section class="card dashboard" aria-labelledby="dashboard-title">
     <div class="card-head">
       <div>
-        <h2 id="dashboard-title"><UIcon class="heading-icon" name="i-lucide-gauge" aria-hidden="true" />经营仪表盘</h2>
+        <h2 id="dashboard-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-gauge" aria-hidden="true" />经营仪表盘</h2>
         <p class="card-sub">
           {{ workspaceName }} · {{ period.from || '—' }} 至 {{ period.through || '—' }} · {{ currency }} · 过账水位
           {{ overview ? overview.watermark : '—' }}
         </p>
       </div>
-      <UButton class="quiet" type="button" :loading="loading" :disabled="loading" @click="load">刷新仪表盘</UButton>
+      <UButton variant="outline" color="neutral" size="sm" type="button" :loading="loading" :disabled="loading" @click="load">刷新仪表盘</UButton>
     </div>
     <UAlert v-if="error" role="alert" color="error" icon="i-lucide-circle-alert" :description="error" />
     <div v-if="loading && !overview" class="space-y-3 py-2" role="status" aria-label="正在读取经营仪表盘">
@@ -355,7 +355,7 @@ onMounted(() => { void load() })
             :get-row-id="row => row.key"
             :ui="{ td: 'whitespace-normal', th: 'whitespace-nowrap' }"
           />
-          <p class="hint">上期区间与本期等长；账簿起始日之前的区间不计入。</p>
+          <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">上期区间与本期等长；账簿起始日之前的区间不计入。</p>
         </section>
       </div>
 
@@ -374,7 +374,7 @@ onMounted(() => { void load() })
               {{ partner.name }} · {{ partner.count }} 单 · {{ money(partner.amount) }}
             </li>
           </ul>
-          <p v-if="!topReceivablePartners.length" class="hint">暂无未结应收。</p>
+          <p v-if="!topReceivablePartners.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">暂无未结应收。</p>
         </section>
         <section class="dashboard-block" aria-labelledby="dashboard-payable-title">
           <h3 id="dashboard-payable-title">供应商应付账龄</h3>
@@ -390,19 +390,19 @@ onMounted(() => { void load() })
               {{ partner.name }} · {{ partner.count }} 单 · {{ money(partner.amount) }}
             </li>
           </ul>
-          <p v-if="!topPayablePartners.length" class="hint">暂无未结应付。</p>
+          <p v-if="!topPayablePartners.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">暂无未结应付。</p>
         </section>
       </div>
-      <UButton class="quiet" type="button" @click="emit('open', 'aging')">查看账龄明细</UButton>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="emit('open', 'aging')">查看账龄明细</UButton>
 
       <section class="dashboard-block" aria-labelledby="dashboard-drill-title">
         <h3 id="dashboard-drill-title">损益明细与钻取</h3>
-        <p v-if="!profitRows.length" class="hint">本期暂无损益发生额；完成销售、采购或手工凭证后显示。</p>
+        <p v-if="!profitRows.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">本期暂无损益发生额；完成销售、采购或手工凭证后显示。</p>
         <ul v-else class="dashboard-drill">
           <li v-for="line in profitRows" :key="line.row.key">
-            <button class="quiet" type="button" :disabled="drillBusy" @click="drillRow(line.row.key)">
+            <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="drillBusy" @click="drillRow(line.row.key)">
               {{ line.row.code }} · {{ line.row.name }} · {{ money(line.row.amount) }}
-            </button>
+            </UButton>
           </li>
         </ul>
         <div v-if="drill">
@@ -416,25 +416,25 @@ onMounted(() => { void load() })
           >
             <template #account-cell="{ row }">{{ row.original.code }} · {{ row.original.name }}</template>
             <template #actions-cell="{ row }">
-              <button class="quiet" type="button" @click="openJournal(row.original.journalId)">查看凭证</button>
+              <UButton variant="outline" color="neutral" size="xs" type="button" @click="openJournal(row.original.journalId)">查看凭证</UButton>
             </template>
           </UTable>
-          <p v-if="!drill.postings.length" class="hint">该科目本期没有过账记录。</p>
+          <p v-if="!drill.postings.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">该科目本期没有过账记录。</p>
         </div>
         <p v-if="journal" class="dashboard-journal">
           {{ journal.journal.sourceNumber }} · {{ journal.journal.on }} · {{ journal.journal.memo }}
         </p>
-        <UButton class="quiet" type="button" @click="emit('open', 'reports')">打开财务报表</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" @click="emit('open', 'reports')">打开财务报表</UButton>
       </section>
 
-      <p v-if="projection" class="hint">
+      <p v-if="projection" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
         经营投影版本 {{ projection.version }} · 更新于 {{ new Date(projection.projectedAtUtc).toLocaleString() }}
       </p>
-      <p v-else-if="pendingProjection" class="hint">
+      <p v-else-if="pendingProjection" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
         经营投影尚未生成；报表数字以 Finance 过账水位 {{ overview.watermark }} 为准。
       </p>
     </template>
-    <button v-else-if="!loading" class="primary" type="button" @click="load">打开经营仪表盘</button>
+    <UButton v-else-if="!loading" color="primary" type="button" @click="load">打开经营仪表盘</UButton>
   </section>
 </template>
 

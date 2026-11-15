@@ -120,14 +120,14 @@ onMounted(() => run())
 
 <template>
   <section class="scoped-grants" aria-label="自定义角色授权">
-    <h2><UIcon class="heading-icon" name="i-lucide-key-round" aria-hidden="true" />自定义角色授权</h2>
+    <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-key-round" aria-hidden="true" />自定义角色授权</h2>
     <UAlert v-if="status" role="status" :description="status" />
     <form v-if="canManage" class="scope-form" @submit.prevent="addDepartment">
       <UFormField label="新部门名称" name="departmentName">
         <UInput :model-value="departmentName" maxlength="80" required :disabled="isBusy"
           @update:model-value="value => departmentName = String(value).trim()" />
       </UFormField>
-      <button class="quiet" :disabled="isBusy">创建部门</button>
+      <UButton variant="outline" color="neutral" size="sm" type="submit" :disabled="isBusy">创建部门</UButton>
     </form>
     <form v-if="canManage && roles.length" class="scope-form" @submit.prevent="request">
       <UFormField label="授权成员" name="grantMember">
@@ -154,10 +154,10 @@ onMounted(() => run())
           <input v-model="endsOn" data-testid="grant-ends-on" type="date" required :disabled="isBusy">
         </UFormField>
       </template>
-      <p v-if="periodScoped" class="hint">财务期间授权最长 60 个月；期间外的凭证与报表不可读取或过账。</p>
-      <button class="primary" :disabled="isBusy || !memberId || !selected || (periodScoped && (!startsOn || !endsOn))">提交角色授权</button>
+      <p v-if="periodScoped" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">财务期间授权最长 60 个月；期间外的凭证与报表不可读取或过账。</p>
+      <UButton color="primary" type="submit" :disabled="isBusy || !memberId || !selected || (periodScoped && (!startsOn || !endsOn))">提交角色授权</UButton>
     </form>
-    <p v-else-if="canManage && !roles.length" class="hint">在侧栏「角色与权限」创建自定义角色后，可在此分配。</p>
+    <p v-else-if="canManage && !roles.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">在侧栏「角色与权限」创建自定义角色后，可在此分配。</p>
     <article v-for="grant in grants" :key="grant.id" class="grant" :data-grant-id="grant.id">
       <div>
         <strong>{{ roles.find(role => role.id === grant.roleId)?.name }} · v{{ grant.roleRevision }}</strong>
@@ -165,10 +165,10 @@ onMounted(() => run())
           {{ roleGrantApprovalName(grant) }}</p>
         <details><summary>查看授权权限</summary><ul><li v-for="permission in grant.permissions" :key="permission">{{ permission }}</li></ul></details>
       </div>
-      <button
-v-if="canManage && approvable(grant)" class="quiet" type="button" :disabled="isBusy"
-        @click="decide(grant, 'approve')">批准角色授权</button>
-      <button v-if="canManage" class="quiet" type="button" :disabled="isBusy" @click="decide(grant, 'revoke')">撤销角色授权</button>
+      <UButton
+v-if="canManage && approvable(grant)" variant="outline" color="neutral" size="xs" type="button" :disabled="isBusy"
+        @click="decide(grant, 'approve')">批准角色授权</UButton>
+      <UButton v-if="canManage" variant="outline" color="neutral" size="xs" type="button" :disabled="isBusy" @click="decide(grant, 'revoke')">撤销角色授权</UButton>
     </article>
   </section>
 </template>

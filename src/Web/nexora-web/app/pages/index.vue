@@ -153,14 +153,14 @@ async function acceptInvitation() {
   </section>
 
   <section v-if="!user" class="card login-card">
-    <h2><UIcon class="heading-icon" name="i-lucide-log-in" aria-hidden="true" />{{ t('workspaces.login.title') }}</h2>
+    <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-log-in" aria-hidden="true" />{{ t('workspaces.login.title') }}</h2>
     <p>{{ t('workspaces.login.body') }}</p>
     <div class="login-actions">
-      <a class="primary" href="/bff/email-login">{{ t('workspaces.login.action') }}</a>
-      <a class="quiet" href="/bff/register">{{ t('workspaces.login.register') }}</a>
-      <NuxtLink class="quiet" to="/pricing" data-testid="choose-plan-first">先选套餐再注册</NuxtLink>
-      <a v-if="isLocalDevelopment" class="quiet" href="/bff/login">{{ t('workspaces.login.demo') }}</a>
-      <UButton v-if="ssoHint" class="quiet" type="button" :disabled="loggingOut" @click="store.logout">
+      <a class="inline-flex items-center justify-center gap-[7px] whitespace-nowrap rounded-[10px] bg-nx-primary px-[17px] py-[9px] text-[13px] font-semibold text-white transition hover:bg-nx-primary-strong" href="/bff/email-login">{{ t('workspaces.login.action') }}</a>
+      <a class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-nx-border bg-nx-surface px-3 py-[7px] text-[12px] font-semibold text-nx-ink-2 shadow-nx-sm transition-colors hover:border-nx-border-strong hover:bg-nx-surface-muted hover:text-nx-primary-strong" href="/bff/register">{{ t('workspaces.login.register') }}</a>
+      <UButton variant="outline" color="neutral" size="sm" to="/pricing" data-testid="choose-plan-first">先选套餐再注册</UButton>
+      <a v-if="isLocalDevelopment" class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-nx-border bg-nx-surface px-3 py-[7px] text-[12px] font-semibold text-nx-ink-2 shadow-nx-sm transition-colors hover:border-nx-border-strong hover:bg-nx-surface-muted hover:text-nx-primary-strong" href="/bff/login">{{ t('workspaces.login.demo') }}</a>
+      <UButton v-if="ssoHint" variant="outline" color="neutral" size="sm" type="button" :disabled="loggingOut" @click="store.logout">
         {{ loggingOut ? t('header.loggingOut') : t('workspaces.login.logout') }}
       </UButton>
     </div>
@@ -194,7 +194,7 @@ async function acceptInvitation() {
       <template v-if="active === 'home' || !selected">
         <div class="deck">
           <section class="card create-card">
-            <h2><UIcon class="heading-icon" name="i-lucide-square-plus" aria-hidden="true" />{{ t('workspaces.create.title') }}</h2>
+            <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-square-plus" aria-hidden="true" />{{ t('workspaces.create.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.create.subtitle') }}</p>
             <form @submit.prevent="create">
               <label class="personal-option">
@@ -207,23 +207,23 @@ async function acceptInvitation() {
               <div class="formrow">
                 <UInput id="name" v-model="name" required maxlength="160" size="lg"
                   :placeholder="t('workspaces.create.namePlaceholder')" />
-                <UButton type="submit" class="primary" icon="i-lucide-plus" :loading="busy" :disabled="busy">
+                <UButton type="submit" color="primary" icon="i-lucide-plus" :loading="busy" :disabled="busy">
                   {{ busy ? t('workspaces.create.busy') : t('workspaces.create.submit') }}
                 </UButton>
               </div>
-              <p class="hint">{{ t('workspaces.create.hint') }}</p>
+              <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.create.hint') }}</p>
             </form>
           </section>
 
           <section class="card join-card">
-            <h2><UIcon class="heading-icon" name="i-lucide-ticket" aria-hidden="true" />{{ t('workspaces.join.title') }}</h2>
+            <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-ticket" aria-hidden="true" />{{ t('workspaces.join.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.join.subtitle') }}</p>
             <form @submit.prevent="acceptInvitation">
               <label for="invitation-code">{{ t('workspaces.join.code') }}</label>
               <div class="formrow">
                 <UInput id="invitation-code" v-model="invitationCode" required autocomplete="off" size="lg"
                   :placeholder="t('workspaces.join.placeholder')" />
-                <UButton type="submit" class="primary" icon="i-lucide-ticket-check" :loading="accepting" :disabled="accepting">
+                <UButton type="submit" color="primary" icon="i-lucide-ticket-check" :loading="accepting" :disabled="accepting">
                   {{ t('workspaces.join.submit') }}
                 </UButton>
               </div>
@@ -233,7 +233,7 @@ async function acceptInvitation() {
 
           <section class="card workspace-card">
             <div class="card-head">
-              <h2><UIcon class="heading-icon" name="i-lucide-layers" aria-hidden="true" />{{ t('workspaces.list.title') }} <small>{{ filteredWorkspaces.length }} / {{ workspaces.length
+              <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-layers" aria-hidden="true" />{{ t('workspaces.list.title') }} <small>{{ filteredWorkspaces.length }} / {{ workspaces.length
                   }}</small></h2>
               <div class="list-tools">
                 <UInput v-model="query" class="ws-search" size="sm" icon="i-lucide-search"
@@ -241,8 +241,8 @@ async function acceptInvitation() {
                 <span class="card-hint">{{ t('workspaces.list.hint') }}</span>
               </div>
             </div>
-            <p v-if="!workspaces.length" class="hint">{{ t('workspaces.list.empty') }}</p>
-            <p v-else-if="!filteredWorkspaces.length" class="hint">{{ t('workspaces.list.noMatch') }}</p>
+            <p v-if="!workspaces.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.list.empty') }}</p>
+            <p v-else-if="!filteredWorkspaces.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.list.noMatch') }}</p>
             <div v-else class="workspace-list">
               <button v-for="workspace in filteredWorkspaces" :key="workspace.id" class="workspace"
                 :aria-current="selected?.id === workspace.id ? 'true' : undefined" @click="store.select(workspace)">
@@ -260,7 +260,7 @@ async function acceptInvitation() {
           <div class="rail">
             <div class="card overview-card">
               <div class="card-head">
-                <h2><UIcon class="heading-icon" name="i-lucide-gauge" aria-hidden="true" />{{ t('workspaces.overview.title') }}</h2>
+                <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-gauge" aria-hidden="true" />{{ t('workspaces.overview.title') }}</h2>
               </div>
               <template v-if="selected">
                 <div class="overview-hero">
@@ -281,20 +281,20 @@ async function acceptInvitation() {
                       t('workspaces.overview.pending') }}
                   </dd>
                 </dl>
-                <p v-if="projection" class="hint">
+                <p v-if="projection" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
                   {{ t('workspaces.overview.updated', {
                     time: new Date(projection.projectedAtUtc).toLocaleString(locale
                       === 'en' ? 'en-US' : 'zh-CN') }) }}
                 </p>
-                <UButton class="quiet" type="button" icon="i-lucide-refresh-cw" @click="store.select(selected)">{{ t('workspaces.overview.refresh')
+                <UButton class="mt-2.5" variant="outline" color="neutral" size="sm" type="button" icon="i-lucide-refresh-cw" @click="store.select(selected)">{{ t('workspaces.overview.refresh')
                   }}</UButton>
-                <UButton v-if="selected && !selected.isPersonal" class="quiet" type="button" icon="i-lucide-list-checks" @click="openSetup">
+                <UButton v-if="selected && !selected.isPersonal" class="mt-2.5" variant="outline" color="neutral" size="sm" type="button" icon="i-lucide-list-checks" @click="openSetup">
                   初始化向导
                 </UButton>
               </template>
               <div v-else class="empty-state">
                 <span class="empty-icon" aria-hidden="true"><UIcon name="i-lucide-inbox" /></span>
-                <p class="hint">{{ t('workspaces.overview.empty') }}</p>
+                <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.overview.empty') }}</p>
               </div>
               <WorkspaceCapabilities v-if="selected" :key="'capabilities-' + selected.id" :workspace-id="selected.id" />
             </div>

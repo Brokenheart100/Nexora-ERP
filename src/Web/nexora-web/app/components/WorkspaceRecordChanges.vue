@@ -158,8 +158,8 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
 
 <template>
   <section class="record-changes" aria-labelledby="record-changes-title">
-    <h2 id="record-changes-title"><UIcon class="heading-icon" name="i-lucide-history" aria-hidden="true" />记录变更</h2>
-    <p class="hint">按服务查询实体创建、更新和删除快照；记录保留 {{ retentionDays }} 天，跨工作区不可见。</p>
+    <h2 id="record-changes-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-history" aria-hidden="true" />记录变更</h2>
+    <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">按服务查询实体创建、更新和删除快照；记录保留 {{ retentionDays }} 天，跨工作区不可见。</p>
     <form @submit.prevent="query">
       <fieldset :disabled="busy">
         <legend>记录变更筛选</legend>
@@ -187,12 +187,12 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
         <UFormField label="来源" name="changeSource">
           <USelect v-model="sourceSelection" :items="sourceOptions" />
         </UFormField>
-        <button class="primary" :disabled="busy">查询记录变更</button>
+        <UButton type="submit" color="primary" :disabled="busy">查询记录变更</UButton>
       </fieldset>
     </form>
-    <div class="actions">
-      <button class="quiet" type="button" :disabled="busy" @click="query">刷新记录变更</button>
-      <button class="quiet" type="button" :disabled="busy || !changes.length" @click="exportRows">导出记录变更 CSV</button>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="query">刷新记录变更</UButton>
+      <UButton variant="outline" color="neutral" size="sm" :disabled="busy || !changes.length" @click="exportRows">导出记录变更 CSV</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <UAlert v-if="denied.length" role="status" color="warning" icon="i-lucide-triangle-alert"
@@ -216,10 +216,10 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
       </template>
       <template #operation-cell="{ row }">{{ recordChangeOperationLabel(row.original.operation) }}</template>
       <template #detail-cell="{ row }">
-        <button class="quiet" type="button" :aria-expanded="!!expandedRows[rowId(row.original)]"
+        <UButton variant="outline" color="neutral" size="xs" :aria-expanded="!!expandedRows[rowId(row.original)]"
           @click="toggle(rowId(row.original))">
           {{ expandedRows[rowId(row.original)] ? '收起' : '展开' }}
-        </button>
+        </UButton>
       </template>
       <template #expanded="{ row }">
         <p>操作 ID {{ row.original.id }} · 颁发方 {{ row.original.actorIssuer }} · 主体 {{ row.original.actorSubject }}
@@ -230,14 +230,13 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
         </div>
       </template>
     </UTable>
-    <button v-if="hasMore" class="quiet" type="button" :disabled="busy" @click="more">加载更多</button>
+    <UButton v-if="hasMore" variant="outline" color="neutral" size="sm" :disabled="busy" @click="more">加载更多</UButton>
   </section>
 </template>
 
 <style scoped>
 .record-changes { margin-top: 24px }
 fieldset { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-width: 0; margin: 12px 0 }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px }
 .entity-id { display: block; font-size: 0.8em; opacity: 0.65; word-break: break-all }
 .snapshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 8px }
 pre { margin: 4px 0 0; padding: 8px; max-height: 240px; overflow: auto; background: #f7f9fc; border-radius: 8px; font-size: 0.85em }

@@ -81,7 +81,7 @@ async function decide(entry: Dispatch, decision: string) {
             <UInput :model-value="lifetime" type="number" min="1" max="10080" required
               @update:model-value="value => lifetime = Number(value) || 0" />
           </UFormField>
-          <button class="primary">签发分享链接</button>
+          <UButton type="submit" color="primary">签发分享链接</UButton>
           <UFormField v-if="shareUrl" label="本次分享链接" name="issuedShareUrl">
             <UInput :model-value="shareUrl" readonly class="w-full"
               @focus="($event.target as HTMLInputElement).select()" />
@@ -90,7 +90,7 @@ async function decide(entry: Dispatch, decision: string) {
       </form>
       <ul><li v-for="entry in shares" :key="entry.id">
         {{ entry.id }} · {{ entry.revokedAtUtc ? '已撤销' : '有效期至 ' + new Date(entry.expiresAtUtc).toLocaleString('zh-CN') }}
-        <button v-if="!entry.revokedAtUtc" class="quiet" type="button" :disabled="busy" @click="revoke(entry)">撤销分享</button>
+        <UButton v-if="!entry.revokedAtUtc" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="revoke(entry)">撤销分享</UButton>
       </li></ul>
       <form @submit.prevent="queue">
         <fieldset :disabled="busy"><legend>发送发票附件</legend>
@@ -98,19 +98,19 @@ async function decide(entry: Dispatch, decision: string) {
             <UInput :model-value="recipient" type="email" maxlength="254" required
               @update:model-value="value => recipient = String(value).trim()" />
           </UFormField>
-          <button class="primary">提交发票邮件</button>
+          <UButton type="submit" color="primary">提交发票邮件</UButton>
         </fieldset>
       </form>
-      <button class="quiet" type="button" :disabled="busy" @click="run(async () => {})">刷新分享与投递记录</button>
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(async () => {})">刷新分享与投递记录</UButton>
       <ul><li v-for="entry in dispatches" :key="entry.id">
         {{ entry.recipient }} · {{ labels[entry.state] }} · 尝试 {{ entry.attempt }}{{ entry.detail ? ' · ' + entry.detail : '' }}
-        <button v-if="entry.state === 'failed'" class="quiet" type="button" :disabled="busy" @click="decide(entry, 'retry')">重试</button>
-        <button
-v-if="['sent', 'unknown'].includes(entry.state) && !entry.resentAsId" class="quiet" type="button"
-          :disabled="busy" @click="decide(entry, 'resend')">重新发送</button>
-        <button
-v-if="['queued', 'failed', 'unknown'].includes(entry.state) && !entry.resentAsId" class="quiet" type="button"
-          :disabled="busy" @click="decide(entry, 'abandon')">放弃投递</button>
+        <UButton v-if="entry.state === 'failed'" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="decide(entry, 'retry')">重试</UButton>
+        <UButton
+v-if="['sent', 'unknown'].includes(entry.state) && !entry.resentAsId" variant="outline" color="neutral" size="xs" type="button"
+          :disabled="busy" @click="decide(entry, 'resend')">重新发送</UButton>
+        <UButton
+v-if="['queued', 'failed', 'unknown'].includes(entry.state) && !entry.resentAsId" variant="outline" color="neutral" size="xs" type="button"
+          :disabled="busy" @click="decide(entry, 'abandon')">放弃投递</UButton>
       </li></ul>
     </template>
     <UAlert v-if="message" role="status" :description="message" />

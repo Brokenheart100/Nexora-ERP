@@ -35,16 +35,16 @@ async function join() {
 
 <template>
   <section v-if="ready" class="card login-card">
-    <h1><UIcon class="heading-icon" name="i-lucide-mail-open" aria-hidden="true" />{{ t('invitation.title') }}</h1>
+    <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-mail-open" aria-hidden="true" />{{ t('invitation.title') }}</h1>
     <p v-if="!code">{{ t('invitation.missing') }}</p>
     <template v-else>
       <p>{{ t('invitation.useInvitedEmail') }}</p>
       <div class="login-actions">
-        <UButton v-if="user" class="primary" type="button" :disabled="accepting" @click="join">
+        <UButton v-if="user" color="primary" type="button" :disabled="accepting" @click="join">
           {{ t('invitation.accept') }}
         </UButton>
-        <a class="quiet" href="/bff/email-login?join=true">{{ user ? t('invitation.switchAccount') : t('workspaces.login.action') }}</a>
-        <a v-if="!user" class="quiet" href="/bff/register?join=true">{{ t('workspaces.login.register') }}</a>
+        <a class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-nx-border bg-nx-surface px-3 py-[7px] text-[12px] font-semibold text-nx-ink-2 shadow-nx-sm transition-colors hover:border-nx-border-strong hover:bg-nx-surface-muted hover:text-nx-primary-strong" href="/bff/email-login?join=true">{{ user ? t('invitation.switchAccount') : t('workspaces.login.action') }}</a>
+        <a v-if="!user" class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-nx-border bg-nx-surface px-3 py-[7px] text-[12px] font-semibold text-nx-ink-2 shadow-nx-sm transition-colors hover:border-nx-border-strong hover:bg-nx-surface-muted hover:text-nx-primary-strong" href="/bff/register?join=true">{{ t('workspaces.login.register') }}</a>
       </div>
       <UAlert v-if="failed" role="alert" color="error" icon="i-lucide-circle-alert" :description="t('status.invitationFailed')" />
     </template>

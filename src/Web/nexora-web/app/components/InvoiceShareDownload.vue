@@ -41,9 +41,9 @@ async function download() {
 <template>
   <main class="shared-invoice">
     <section class="card">
-      <h1><UIcon class="heading-icon" name="i-lucide-file-text" aria-hidden="true" />客户发票</h1>
+      <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-file-text" aria-hidden="true" />客户发票</h1>
       <p v-if="!token">请打开完整的发票分享链接。</p>
-      <button v-else type="button" class="primary" :disabled="busy" @click="download">下载共享发票 PDF</button>
+      <UButton v-else type="button" color="primary" :disabled="busy" @click="download">下载共享发票 PDF</UButton>
       <UAlert v-if="notice" role="status" :description="notice" />
     </section>
   </main>

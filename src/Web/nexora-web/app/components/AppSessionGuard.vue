@@ -54,13 +54,13 @@ watch(() => store.loggingOut, loggingOut => { if (loggingOut) stop() })
         <strong>登录即将超时</strong>
         <p>因工作区闲置策略，{{ remainingText }} 后将自动退出。取最短值：{{ sourceSummary }}</p>
       </div>
-      <button class="primary" type="button" @click="continueSession">继续使用</button>
+      <UButton color="primary" type="button" @click="continueSession">继续使用</UButton>
     </aside>
   </Transition>
   <Transition name="session-fade">
     <aside v-if="notice" class="session-policy-notice" role="status">
       <span>{{ notice }}</span>
-      <button class="quiet" type="button" @click="closeNotice">关闭</button>
+      <UButton variant="outline" color="neutral" size="xs" type="button" @click="closeNotice">关闭</UButton>
     </aside>
   </Transition>
 </template>

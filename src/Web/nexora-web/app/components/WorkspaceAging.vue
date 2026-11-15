@@ -74,8 +74,8 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section class="card aging" aria-labelledby="aging-title">
-    <h2 id="aging-title"><UIcon class="heading-icon" name="i-lucide-hourglass" aria-hidden="true" />财务概览与账龄</h2>
-    <button v-if="!startsOn" class="quiet" :disabled="busy" type="button" @click="run(open)">打开财务概览与账龄</button>
+    <h2 id="aging-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-hourglass" aria-hidden="true" />财务概览与账龄</h2>
+    <UButton v-if="!startsOn" variant="outline" color="neutral" size="sm" :disabled="busy" type="button" @click="run(open)">打开财务概览与账龄</UButton>
     <form v-else @submit.prevent="run(query)">
       <fieldset :disabled="busy"><legend>财务概览与账龄查询</legend>
         <UFormField label="概览开始日期" name="agingFrom">
@@ -90,7 +90,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
           <USelect :model-value="form.kind" :items="kindOptions"
             @update:model-value="value => setKind(String(value))" />
         </UFormField>
-        <button class="primary">查询财务概览与账龄</button>
+        <UButton type="submit" color="primary">查询财务概览与账龄</UButton>
       </fieldset>
     </form>
     <UAlert v-if="notice" role="status" :description="notice" />
@@ -111,7 +111,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
         :ui="{ td: 'align-top whitespace-normal', th: 'whitespace-nowrap' }"
       >
         <template #action-cell="{ row }">
-          <button class="quiet" type="button" :disabled="busy" @click="run(() => detail(row.original.journalId))">查看未结项凭证</button>
+          <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="run(() => detail(row.original.journalId))">查看未结项凭证</UButton>
         </template>
       </UTable>
       <p v-if="journal">{{ journal.journal.sourceNumber }} · {{ journal.journal.on }} · {{ journal.journal.memo }}</p>

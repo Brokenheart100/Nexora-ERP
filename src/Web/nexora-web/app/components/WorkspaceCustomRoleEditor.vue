@@ -80,9 +80,9 @@ onMounted(load)
 
 <template>
   <section class="card custom-roles">
-    <div class="actions">
-      <h2><UIcon class="heading-icon" name="i-lucide-user-cog" aria-hidden="true" />自定义角色</h2>
-      <button class="quiet" type="button" :disabled="busy" @click="load">重新加载角色</button>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-user-cog" aria-hidden="true" />自定义角色</h2>
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="load">重新加载角色</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="catalog">
@@ -105,8 +105,8 @@ onMounted(load)
             </template>
           </UCheckbox>
         </fieldset>
-        <p v-if="selectedId" class="hint">保存会生成角色版本，已批准的授权继续使用原权限。可为成员申请新版授权。</p>
-        <button class="primary" :disabled="busy || !permissions.length">保存自定义角色</button>
+        <p v-if="selectedId" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">保存会生成角色版本，已批准的授权继续使用原权限。可为成员申请新版授权。</p>
+        <UButton color="primary" type="submit" :disabled="busy || !permissions.length">保存自定义角色</UButton>
       </form>
       <ul v-else-if="selectedId">
         <li v-for="permission in permissions" :key="permission">{{ permissionNames[permission] ?? permission }}</li>
@@ -119,7 +119,6 @@ onMounted(load)
 .custom-roles { display: grid; gap: 12px; }
 .custom-roles form { display: grid; justify-items: start; gap: 10px; }
 .custom-roles fieldset { width: 100%; }
-.actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
 .permission { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
 .permission small { color: var(--nx-ink-3); }
 </style>

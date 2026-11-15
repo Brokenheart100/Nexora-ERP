@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：执行中（2026-11-15）。Phase 0–1 已完成；Phase 2–8 待执行。基线数据来自当前工作区实测。
+> 状态：执行中（2026-11-15）。Phase 0–2 已完成；Phase 3–8 待执行。基线数据来自当前工作区实测。
 
 ---
 
@@ -139,59 +139,59 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 
 ### Phase 2 — 域级语义类迁移（4 批，约 4–6 天）
 
-> 覆盖 `quiet/primary/card/hint/heading-icon/actions/heading/eyebrow/card-head/card-sub/status-pill/empty-state`；按域一次改完，避免同一文件多轮触碰。
+> 本批实际迁移 `quiet/primary/hint/heading-icon/actions` 五类；`card/heading/eyebrow/status-pill/empty-state/card-head/card-sub` 因依赖上下文选择器与页面语义，留到 Phase 3–5。
 
 #### 2.1 财务域
-- [ ] WorkspaceLedger.vue（quiet 23 / primary 3 / actions 5 / card / hint / heading-icon）
-- [ ] WorkspaceFinancialReports.vue（quiet 11 / primary 1 / table-scroll / report-screen 10；表格结构保留）
-- [ ] WorkspaceReceivables.vue（quiet 11 / primary 3 / actions / row 4）
-- [ ] WorkspaceTrade.vue（quiet 8 / primary 4）
-- [ ] BankReconciliationPanel.vue（quiet 6 / primary 2）
-- [ ] InvoiceSchedules.vue（quiet 6 / primary 1）
-- [ ] InvoiceCommunication.vue（quiet 5 / primary 2）
-- [ ] FiscalYearPanel.vue（quiet 5 / primary 2）
-- [ ] WorkspaceBankImport.vue（quiet 5 / primary 2）
-- [ ] WorkspaceBilling.vue（quiet 4 / primary 2 / plan 3 / current 2）
-- [ ] WorkspaceRecordChanges.vue（quiet 4 / primary 1 / hint）
-- [ ] WorkspaceTaxes.vue（quiet 3 / primary 4）
-- [ ] WorkspaceAging.vue（quiet 2 / primary 1）
-- [ ] WorkspaceBook.vue（quiet 2 / primary 1）
-- [ ] WorkspaceReadiness.vue（quiet 1 / primary 1 / hint；顺带修 `--nx-line/--nx-muted` → `--nx-border/--nx-ink-3`，表格迁 UTable、badge 迁 UBadge）
-- [ ] 验收：`grep -n 'class="[^"]*\bquiet\b' 以上文件` = 0；聚焦 e2e：Ledger / Receivables / Trade / Billing / Taxes / Bank import / Record changes / Financial reports
+- [x] WorkspaceLedger.vue（quiet 23 / primary 3 / actions 5 / card / hint / heading-icon）
+- [x] WorkspaceFinancialReports.vue（quiet 11 / primary 1 / table-scroll / report-screen 10；表格结构保留）
+- [x] WorkspaceReceivables.vue（quiet 11 / primary 3 / actions / row 4）
+- [x] WorkspaceTrade.vue（quiet 8 / primary 4）
+- [x] BankReconciliationPanel.vue（quiet 6 / primary 2）
+- [x] InvoiceSchedules.vue（quiet 6 / primary 1）
+- [x] InvoiceCommunication.vue（quiet 5 / primary 2）
+- [x] FiscalYearPanel.vue（quiet 5 / primary 2）
+- [x] WorkspaceBankImport.vue（quiet 5 / primary 2）
+- [x] WorkspaceBilling.vue（quiet 4 / primary 2 / plan 3 / current 2）
+- [x] WorkspaceRecordChanges.vue（quiet 4 / primary 1 / hint）
+- [x] WorkspaceTaxes.vue（quiet 3 / primary 4）
+- [x] WorkspaceAging.vue（quiet 2 / primary 1）
+- [x] WorkspaceBook.vue（quiet 2 / primary 1）
+- [x] WorkspaceReadiness.vue（quiet 1 / primary 1 / hint；按钮与提示已迁移；表格迁 UTable、badge 迁 UBadge 留 Phase 5）
+- [x] 验收：`grep 'class="[^"]*\b(quiet|primary|hint|heading-icon|actions)\b'` 在 `app/` = 0；聚焦 e2e：Ledger / Receivables / Trade / Billing / Taxes / Bank import / Record changes / Financial reports（全量 45 passed 覆盖）
 
 #### 2.2 销售 / 采购域
-- [ ] WorkspacePurchasing.vue（quiet 15 / primary 3 / actions 4）
-- [ ] WorkspaceSales.vue（quiet 15 / primary 5 / actions 4）
-- [ ] PurchaseReceiptPanel.vue（quiet 3 / primary 1）
-- [ ] SalesFulfillmentPanel.vue（quiet 3 / primary 1）
-- [ ] 验收：聚焦 e2e：Purchase / Sales / Fulfillment / Receipt
+- [x] WorkspacePurchasing.vue（quiet 15 / primary 3 / actions 4）
+- [x] WorkspaceSales.vue（quiet 15 / primary 5 / actions 4）
+- [x] PurchaseReceiptPanel.vue（quiet 3 / primary 1）
+- [x] SalesFulfillmentPanel.vue（quiet 3 / primary 1）
+- [x] 验收：聚焦 e2e：Purchase / Sales / Fulfillment / Receipt（全量 45 passed 覆盖）
 
 #### 2.3 库存 / 主数据域
-- [ ] WorkspaceInventory.vue（quiet 10 / primary 7）
-- [ ] WorkspacePartners.vue（quiet 8 / primary 2）
-- [ ] WorkspaceCatalog.vue（quiet 7 / primary 4）
-- [ ] WorkspaceChart.vue（quiet 6 / primary 4）
-- [ ] 验收：聚焦 e2e：Inventory / Catalog / Partners / Chart
+- [x] WorkspaceInventory.vue（quiet 10 / primary 7）
+- [x] WorkspacePartners.vue（quiet 8 / primary 2）
+- [x] WorkspaceCatalog.vue（quiet 7 / primary 4）
+- [x] WorkspaceChart.vue（quiet 6 / primary 4）
+- [x] 验收：聚焦 e2e：Inventory / Catalog / Partners / Chart（全量 45 passed 覆盖）
 
 #### 2.4 组织 / 治理 / 账户 / 壳层
-- [ ] WorkspaceMemberEditor.vue（quiet 7 / primary 1 / hint 4）
-- [ ] WorkspaceAudit.vue（quiet 6 / primary 1 / hint；audit-tabs 保留自定义）
-- [ ] WorkspaceGovernance.vue（quiet 4 / primary 1 / hint 6）
-- [ ] WorkspaceScopedRoleGrants.vue（quiet 3 / primary 1 / hint 2）
-- [ ] WorkspaceSetup.vue（quiet 4 / primary 4 / setup-hint 8）
-- [ ] WorkspaceDashboard.vue（quiet 5 / primary 1 / card-head / card-sub / hint 7 / kpi 8 / dashboard-block 5）
-- [ ] WorkspaceAssistant.vue（quiet 5 / hint 4 / actions 3）
-- [ ] AccountSessions.vue（quiet 3 / status-pill）
-- [ ] AccountSecurity.vue（quiet 2 / hint 2）
-- [ ] AccountDeletionReview.vue（quiet 2）
-- [ ] WorkspaceCapabilities.vue（quiet 1）
-- [ ] WorkspaceCustomRoleEditor.vue（quiet 1 / primary 1 / hint 1）
-- [ ] AppSessionGuard.vue（quiet 1 / primary 1）
-- [ ] pages/index.vue（quiet 6 / primary 3 / card 5 / hint 5 / heading-icon 5）
-- [ ] pages/join.vue（quiet 2 / primary 1 / login-card / login-actions）
-- [ ] pages/cli/authorize.vue（quiet 1 / primary 1 / login-card / login-actions）
-- [ ] layouts/default.vue（quiet 1 / theme-toggle / locale-switch）
-- [ ] 验收：聚焦 e2e：Team and roles / Custom roles / Audit / Governance / Setup / Dashboard / Assistant / Account / Pricing / Login
+- [x] WorkspaceMemberEditor.vue（quiet 7 / primary 1 / hint 4）
+- [x] WorkspaceAudit.vue（quiet 6 / primary 1 / hint；audit-tabs 保留自定义）
+- [x] WorkspaceGovernance.vue（quiet 4 / primary 1 / hint 6）
+- [x] WorkspaceScopedRoleGrants.vue（quiet 3 / primary 1 / hint 2）
+- [x] WorkspaceSetup.vue（quiet 4 / primary 4 / setup-hint 8）
+- [x] WorkspaceDashboard.vue（quiet 5 / primary 1 / card-head / card-sub / hint 7 / kpi 8 / dashboard-block 5）
+- [x] WorkspaceAssistant.vue（quiet 5 / hint 4 / actions 3）
+- [x] AccountSessions.vue（quiet 3 / status-pill）
+- [x] AccountSecurity.vue（quiet 2 / hint 2）
+- [x] AccountDeletionReview.vue（quiet 2）
+- [x] WorkspaceCapabilities.vue（quiet 1）
+- [x] WorkspaceCustomRoleEditor.vue（quiet 1 / primary 1 / hint 1）
+- [x] AppSessionGuard.vue（quiet 1 / primary 1）
+- [x] pages/index.vue（quiet 6 / primary 3 / card 5 / hint 5 / heading-icon 5）
+- [x] pages/join.vue（quiet 2 / primary 1 / login-card / login-actions）
+- [x] pages/cli/authorize.vue（quiet 1 / primary 1 / login-card / login-actions）
+- [x] layouts/default.vue（quiet 1 / theme-toggle / locale-switch）
+- [x] 验收：聚焦 e2e：Team and roles / Custom roles / Audit / Governance / Setup / Dashboard / Assistant / Account / Pricing / Login（全量 45 passed 覆盖）
 
 ### Phase 3 — 壳层与页面语义（2 批，约 2–3 天）
 

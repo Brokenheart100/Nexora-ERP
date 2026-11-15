@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css 验证记录
 
 - 日期：2026-11-15
-- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2–8 待执行。
+- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3–8 待执行。
 - 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
 
 ## 终态定义
@@ -25,7 +25,7 @@
 |---|---|---|---|
 | Phase 0 基线与护栏 | git 基线提交、明暗 / 移动截图、e2e 类选择器改 data-testid、全量 e2e 基线、冻结规则 | 完成 | 本文「Phase 0」 |
 | Phase 1 搬出新增样式 | version-notice / status-overlay / PWA 安全区 → 组件 / layout scoped | 完成 | 本文「Phase 1」 |
-| Phase 2 域级语义类 | quiet / primary / card / hint / heading-icon / actions，4 批 | 待执行 | |
+| Phase 2 域级语义类 | quiet / primary / hint / heading-icon / actions，4 批（card / heading / eyebrow / status-pill / empty-state 留 Phase 3–5） | 完成 | 本文「Phase 2」 |
 | Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive / 暗色 → layout 与页面 utility | 待执行 | |
 | Phase 4 表单基础 | 原生 input/select/textarea 基础样式 → UFormField / UInput / USelect / UInputDate / UFileUpload | 待执行 | |
 | Phase 5 表格 / 详情 | Tables / Details / lists / dl / Module internals | 待执行 | |
@@ -95,6 +95,26 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 - 截图对照：`artifacts/ui-tailwind-phase1/` 35 张与基线 `artifacts/ui-tailwind-baseline/` 逐像素比较——32 张 0 差异；`02-workspaces-light`、`02-workspaces-dark`、`40-workspaces-mobile` 仅高度变化（e2e 反复创建工作区导致列表增长）；`09-purchasing-light`、`10-sales-light` 各 3.49% 差异集中在单据列表区域（数据变化），无样式回归。
 - 全量 e2e：`playwright test e2e` 全目录 47 passed（18.4m），其中 2 个为临时截图用例（`ui-tailwind-baseline.spec.ts`，收尾已删除），业务用例 45 个全部通过。注：截图用例复用了基线目录，因 Phase 1 与基线像素等价（32/35 完全一致），覆盖后的基线仍可作 Phase 2 对照。
 - 提交：`git commit`（Phase 0–1 前端改动 + 本文档 + ADR 0020 + todolist）。
+
+## Phase 2 域级语义类迁移（2026-11-15）
+
+- 范围调整：本批实际迁移 `quiet`、`primary`、`hint`、`heading-icon`、`actions` 五类；`card` / `heading` / `eyebrow` / `status-pill` / `empty-state` / `card-head` / `card-sub` 依赖上下文选择器（`main > section.card`、`.deck .card`、`html.dark` 覆盖）与页面语义，留到 Phase 3–5 一并处理。
+- 映射：`quiet` → `UButton variant="outline" color="neutral"`（普通 `size="sm"`，表格内 `size="xs"`）；`primary` → `UButton color="primary"`，表单内补 `type="submit"`；`hint` → `mt-2 text-[12px] leading-[1.62] text-nx-ink-3`；`heading-icon` → `mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary`；`actions` → `mb-3 mt-2 flex flex-wrap gap-2` 并删除组件 scoped `.actions`。BFF 下载 / 跳转链接保留 `<a>`，改 `rounded-nx border border-nx-border bg-nx-surface px-2.5 py-1.5 text-xs font-semibold text-nx-ink-2 hover:text-nx-primary`。
+- token 桥接：main.css `@theme inline` 恢复 `--color-nx-*`（bg / surface / surface-muted / border / border-strong / ink / ink-2 / ink-3 / ink-4 / primary / primary-strong / primary-soft / success / success-soft / warning / warning-soft / danger）与 `--radius-nx`、`--radius-nx-sm`、`--shadow-nx-sm`、`--shadow-nx-md`，供 utility 使用（属 Phase 6 tokens.css 的预置）。
+- 实施：lead 先试点 `WorkspaceRecordChanges.vue`、`WorkspaceAudit.vue`（审计页签保留自定义 scoped，class 改 `audit-tab`），再按 4 批并行委派：财务域 14 文件 118 个 UButton + hint 6 + heading-icon 5 + actions 9；销售 / 采购域 4 文件 46 个 UButton；库存 / 主数据域 4 文件 48 个 UButton；组织 / 治理 / 账户 / 壳层 16 文件 94 个 UButton + hint 36 + heading-icon 19 + actions 4。lead 再收尾 7 个文件（`WorkspaceCompanySettings`、`InvoiceShareDownload`、`WorkspaceBusinessRolePicker`、`WorkspaceRoleCatalog`、4 个 `pages/companies/[workspaceId]/*.vue` 标题图标、`pages/index.vue` 两个 overview-card 按钮）。
+- 合计 `src/Web/nexora-web/app` 49 个文件 +509/−619；`<UButton>` 289 处 / 46 个文件。
+- 上下文 CSS 修复：
+  - `main > section.card > button.quiet` 失效 → `AccountSecurity.vue`、`AccountSessions.vue`、`AccountDeletionReview.vue`、`WorkspaceCapabilities.vue` 的 UButton 加 `col-start-2 justify-self-end`。
+  - `fieldset > .primary` 失效但 `fieldset > button { justify-self:start }` 仍覆盖，无回归。
+  - 响应式 `.formrow > .primary { width:100% }` 改 `.formrow > button`。
+  - `html.dark .hint` / `html.dark .quiet` 中的 `.hint` / `.quiet` 选择器移除。
+- main.css 清理：删除 `.heading-icon`、`.user .quiet`（3 处）、`main > section.card > button.quiet`、`.join-card .formrow .primary`、`.card-head .hint`、`.overview-card .quiet`、`.empty-state .hint`、`.hint`、`.primary` 全套、`.quiet` 全套（含 `td/th`）、`fieldset > .primary`、`html.dark` 中的 `.hint` / `.quiet`；main.css 2000 → 1895 行（净 diff 24+/129−）。`grep 'class="[^"]*\b(quiet|primary|hint|heading-icon|actions)\b'` 在 `app/` = 0；main.css 内 `.quiet/.primary/.hint/.heading-icon/.actions` = 0。
+- 静态验证：typecheck exit 0；lint 0 error / 63 warning（全部 `vue/first-attribute-linebreak`）；单测 16 文件 / 89 通过（44.3s）；build 通过（1m27s，冷启动含类型生成）。
+- 截图：`artifacts/ui-tailwind-phase2/` 5 张（`01-audit-light`、`02-record-changes-light`、`03-catalog-light`、`04-partners-light`、`05-audit-dark`）。按钮统一为 Nuxt UI outline / primary 外观，布局与信息层级不变；审计页签保留原自定义外观；暗色正常。
+- 聚焦 e2e：`workspace.spec.ts -g 'Unified audit trail|Record changes capture|Catalog UI|Partner profiles'` 首次 3 passed / 1 failed，失败为工作区创建 409（见下）；配额清理后随全量套件回归通过。
+- 已知数据卫生问题与处理：本地长期反复运行全量 e2e 使 alice 拥有 1001 个工作区（pro 计划上限 1000），`OpenWorkspaceUseCase` 抛 `PlanLimitExceededException`（409 `billing.quota_exceeded`）。处理：删除 `organization.workspace_navigation_links` 33 行后，删除 alice / bob 今日之前的工作区 935 行，剩余 alice 174 / bob 66，配额恢复。仅清理本地测试累积数据；其他服务库中的对应记录成为孤儿（无跨库外键），后续全量 e2e 前需关注配额。
+- 全量 e2e：45 passed（16.8m）。首次运行 44 passed / 1 failed（`Account session registry lists devices, revokes other sessions and blocks replay` 在撤销设备后重新登录时等待 Keycloak 重定向 60s 超时，`workspace.spec.ts:700`）；该用例单独重跑 1 passed（1.1m），判定为认证流程 flake，与本次 UI 改动无关；第二次全量 45/45 通过。
+- 提交：`feat(web): Tailwind migration Phase 2 (semantic classes to UButton/utility)`（前端 app/ + 本文档 + ADR 0020 + todolist；`docs/计划.md` 仅暂存样式段落 hunk，避免混入并发会话改动）。
 
 ## 复现命令
 

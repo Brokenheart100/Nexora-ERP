@@ -56,9 +56,9 @@ onMounted(check)
   <section class="readiness" aria-labelledby="readiness-heading">
     <header class="head">
       <h3 id="readiness-heading">开账就绪检查</h3>
-      <button type="button" class="quiet" :disabled="busy" @click="check">{{ view ? '重新检查' : '开始检查' }}</button>
+      <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="check">{{ view ? '重新检查' : '开始检查' }}</UButton>
     </header>
-    <p class="hint">启用财务过账前，确认已过账发票与账单都有总账分录，并补记尚未入账的库存成本。</p>
+    <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">启用财务过账前，确认已过账发票与账单都有总账分录，并补记尚未入账的库存成本。</p>
     <p v-if="notice" class="notice" role="status">{{ notice }}</p>
     <template v-if="view">
       <p class="summary" data-testid="readiness-summary" :data-ready="view.ready">{{ summary }}</p>
@@ -77,7 +77,7 @@ onMounted(check)
       </ul>
       <div v-if="view.pendingCostCount > 0" class="table-block">
         <h4>未入账库存成本（{{ view.pendingCostCount }}）</h4>
-        <button type="button" class="primary" :disabled="busy" @click="backfill">按业务日期补记</button>
+        <UButton type="button" color="primary" :disabled="busy" @click="backfill">按业务日期补记</UButton>
         <table data-testid="readiness-costs">
           <thead><tr><th>业务日期</th><th>类型</th><th class="num">金额</th><th>原因</th></tr></thead>
           <tbody>

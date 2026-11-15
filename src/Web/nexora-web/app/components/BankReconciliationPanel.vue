@@ -86,32 +86,32 @@ function exportReport() {
           <UFormField label="对账单期末余额" name="statementBalance">
             <UInput :model-value="statementBalance" inputmode="decimal" required @update:model-value="value => statementBalance = String(value).trim()" />
           </UFormField>
-          <button class="quiet">预览银行对账</button>
-          <button v-if="canPrepare && through && statementBalance" type="button" class="primary" @click="prepare(true)">提交对账复核</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit">预览银行对账</UButton>
+          <UButton v-if="canPrepare && through && statementBalance" type="button" color="primary" @click="prepare(true)">提交对账复核</UButton>
         </fieldset>
       </form>
       <ul><li v-for="row in rows" :key="row.id">
-        <button type="button" class="quiet" @click="selected = row">{{ row.report.through }} · {{ labels[row.state] }} · {{ money(row.report.difference) }}</button>
+        <UButton type="button" variant="outline" color="neutral" size="xs" @click="selected = row">{{ row.report.through }} · {{ labels[row.state] }} · {{ money(row.report.difference) }}</UButton>
       </li></ul>
       <template v-if="report">
         <dl><template v-for="[key, label] in fields" :key="key"><dt>{{ label }}</dt><dd>{{ money(report[key]) }}</dd></template></dl>
         <ul><li v-for="item in report.books" :key="item.id">账面未达 {{ item.on }} · {{ money(item.amount) }} · {{ item.journalId }}</li></ul>
         <ul><li v-for="item in report.statement" :key="item.id">银行未达 {{ item.on }} · {{ money(item.amount) }} · {{ item.reference }}</li></ul>
-        <button class="quiet" type="button" @click="exportReport">导出对账报告 JSON</button>
+        <UButton variant="outline" color="neutral" size="sm" type="button" @click="exportReport">导出对账报告 JSON</UButton>
         <a
-v-if="selected && ['completed', 'undone'].includes(selected.state)" class="quiet"
+v-if="selected && ['completed', 'undone'].includes(selected.state)" class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-nx border border-nx-border bg-nx-surface px-2.5 py-1.5 text-xs font-semibold text-nx-ink-2 hover:text-nx-primary"
           :href="tradePath + '/reconciliations/' + selected.id + '/pdf'">下载银行对账 PDF</a>
-        <button
-v-if="selected?.state === 'pending' && canReview" class="primary" type="button" :disabled="busy"
-          @click="decide('finish')">完成银行对账</button>
-        <button
-v-if="selected?.state === 'pending' && canPrepare" class="quiet" type="button" :disabled="busy"
-          @click="decide('cancel')">取消待审对账</button>
+        <UButton
+v-if="selected?.state === 'pending' && canReview" color="primary" type="button" :disabled="busy"
+          @click="decide('finish')">完成银行对账</UButton>
+        <UButton
+v-if="selected?.state === 'pending' && canPrepare" variant="outline" color="neutral" size="sm" type="button" :disabled="busy"
+          @click="decide('cancel')">取消待审对账</UButton>
         <form v-if="selected?.state === 'completed' && canReview" @submit.prevent="decide('undo')">
           <UFormField label="撤销对账原因" name="reason">
             <UInput :model-value="reason" maxlength="300" required @update:model-value="value => reason = String(value).trim()" />
           </UFormField>
-          <button class="quiet" :disabled="busy">撤销银行对账</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit" :disabled="busy">撤销银行对账</UButton>
         </form>
         <p v-if="selected?.undoReason">撤销原因 {{ selected.undoReason }}</p>
       </template>

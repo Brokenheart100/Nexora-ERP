@@ -51,25 +51,25 @@ watch(() => props.member, () => { editing.value = false })
     <div class="summary">
       <div>
         <strong>{{ member.email ?? member.subject }}</strong>
-        <p class="hint">{{ member.isActive ? '有效成员' : '已停用' }} · {{ workspaceRoleName(member.role) }}</p>
-        <p class="hint">{{ businessRoleNames(current) }}</p>
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ member.isActive ? '有效成员' : '已停用' }} · {{ workspaceRoleName(member.role) }}</p>
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ businessRoleNames(current) }}</p>
       </div>
-      <button
+      <UButton
 v-if="!editing && (canEdit || canManageBusinessRoles && member.isActive)"
-        class="quiet" type="button" :disabled="busy" @click="open">编辑权限</button>
+        variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="open">编辑权限</UButton>
     </div>
 
     <div v-if="canManageBusinessRoles && pending" class="pending">
       <span>{{ proposalCurrent ? '待审批' : '申请已失效，请重新提交' }} · {{ businessRoleNames(pending) }}</span>
-      <button v-if="canApprove" class="quiet" type="button" :disabled="busy" @click="emit('business', 'approve')">批准业务角色</button>
-      <button class="quiet" type="button" :disabled="busy" @click="emit('business', 'cancel')">撤销申请</button>
+      <UButton v-if="canApprove" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="emit('business', 'approve')">批准业务角色</UButton>
+      <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="emit('business', 'cancel')">撤销申请</UButton>
     </div>
     <div v-else-if="canManageBusinessRoles && legacy?.role" class="pending">
       <span>{{ proposalCurrent ? '待审批' : '申请已失效，请重新提交' }} · {{ workspaceRoleName(legacy.role) }}</span>
-      <button
-v-if="canApprove" class="quiet" type="button" :disabled="busy"
-        @click="emit('legacy', legacy.area, 'approve')">批准业务角色</button>
-      <button class="quiet" type="button" :disabled="busy" @click="emit('legacy', legacy.area, 'revoke')">撤销申请</button>
+      <UButton
+v-if="canApprove" variant="outline" color="neutral" size="xs" type="button" :disabled="busy"
+        @click="emit('legacy', legacy.area, 'approve')">批准业务角色</UButton>
+      <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="emit('legacy', legacy.area, 'revoke')">撤销申请</UButton>
     </div>
 
     <div v-if="editing" class="editor">
@@ -79,15 +79,15 @@ v-if="canApprove" class="quiet" type="button" :disabled="busy"
             @update:model-value="value => role = String(value)" />
         </UFormField>
         <UCheckbox v-model="active" label="启用" :disabled="busy" />
-        <button class="quiet" :disabled="busy">保存成员</button>
-        <p v-if="lastOwner" class="hint">工作区须至少保留一位有效所有者。</p>
-        <p v-if="current.length" class="hint">更改成员角色或停用成员会清除已授予的业务角色。</p>
+        <UButton variant="outline" color="neutral" size="sm" type="submit" :disabled="busy">保存成员</UButton>
+        <p v-if="lastOwner" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">工作区须至少保留一位有效所有者。</p>
+        <p v-if="current.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">更改成员角色或停用成员会清除已授予的业务角色。</p>
       </form>
       <form v-if="canManageBusinessRoles && member.isActive" @submit.prevent="emit('business', 'submit', selection)">
         <WorkspaceBusinessRolePicker v-model="selection" :roles="businessRoles" :disabled="busy" />
-        <button class="primary" :disabled="busy || !changed">{{ addsRole ? '提交业务角色申请' : '保存业务角色' }}</button>
+        <UButton color="primary" type="submit" :disabled="busy || !changed">{{ addsRole ? '提交业务角色申请' : '保存业务角色' }}</UButton>
       </form>
-      <button class="quiet" type="button" :disabled="busy" @click="editing = false">关闭编辑</button>
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="editing = false">关闭编辑</UButton>
     </div>
   </article>
 </template>

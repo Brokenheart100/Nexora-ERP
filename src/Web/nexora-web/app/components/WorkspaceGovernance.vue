@@ -147,14 +147,14 @@ onMounted(() => run())
 <template>
   <section class="card governance" aria-label="工作区成员与授权">
     <div class="section-top">
-      <p v-if="access" class="hint">{{ workspaceRoleName(access.role) }} · 当前公司</p>
-      <button class="quiet" type="button" :disabled="busy" @click="run()">刷新权限与成员</button>
+      <p v-if="access" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ workspaceRoleName(access.role) }} · 当前公司</p>
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run()">刷新权限与成员</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
-    <p v-if="access && !can('organization.members.read')" class="hint">成员管理由工作区所有者或访问管理员负责。</p>
+    <p v-if="access && !can('organization.members.read')" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">成员管理由工作区所有者或访问管理员负责。</p>
 
     <form v-if="can('organization.members.invite')" class="invite-form" @submit.prevent="invite">
-      <h2><UIcon class="heading-icon" name="i-lucide-user-plus" aria-hidden="true" />邀请成员</h2>
+      <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-user-plus" aria-hidden="true" />邀请成员</h2>
       <div class="invite-fields">
         <UFormField label="受邀邮箱" name="inviteEmail">
           <UInput id="invite-email" :model-value="email" type="email" required maxlength="254"
@@ -171,19 +171,19 @@ onMounted(() => run())
       <WorkspaceBusinessRolePicker
 v-if="canManageBusinessRoles" v-model="selection"
         :roles="businessRoles" :disabled="busy" show-presets />
-      <p v-if="selection.length" class="hint">业务角色邀请须由另一位工作区所有者批准，批准后才会发送邮件。</p>
-      <button class="primary" :disabled="busy">创建邀请</button>
+      <p v-if="selection.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">业务角色邀请须由另一位工作区所有者批准，批准后才会发送邮件。</p>
+      <UButton color="primary" type="submit" :disabled="busy">创建邀请</UButton>
     </form>
 
     <div v-if="code" class="invitation-code">
       <UFormField label="一次性邀请码" name="issuedCode">
         <UInput id="issued-code" :model-value="code" readonly autocomplete="off" class="w-full" />
       </UFormField>
-      <button class="quiet" type="button" @click="code = ''">隐藏邀请码</button>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="code = ''">隐藏邀请码</UButton>
     </div>
 
     <section v-if="access && can('organization.members.read')">
-      <h2><UIcon class="heading-icon" name="i-lucide-users-round" aria-hidden="true" />成员列表</h2>
+      <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-users-round" aria-hidden="true" />成员列表</h2>
       <WorkspaceMemberEditor
 v-for="member in members" :key="member.id" :member="member" :access="access"
         :available-roles="availableRoles" :business-roles="businessRoles" :can-edit="canEdit(member)"
@@ -198,21 +198,21 @@ v-if="access && can('organization.roles.assign')" :workspace-id="workspaceId"
       :access="access" :members="members" :busy="busy" @changed="run()" />
 
     <section v-if="can('organization.members.invite')">
-      <h2><UIcon class="heading-icon" name="i-lucide-mail-check" aria-hidden="true" />邀请记录</h2>
-      <p v-if="!invitations.length" class="hint">暂无邀请。</p>
+      <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-mail-check" aria-hidden="true" />邀请记录</h2>
+      <p v-if="!invitations.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">暂无邀请。</p>
       <article v-for="invitation in invitations" :key="invitation.id" class="invitation-row" :data-email="invitation.email">
         <div>
           <strong>{{ invitation.email }}</strong>
-          <p class="hint">{{ workspaceRoleName(invitation.role) }} · {{ invitationStates[invitation.state] }}</p>
-          <p class="hint">{{ businessRoleNames(invitation.businessRoles) }} · {{ new Date(invitation.expiresAtUtc).toLocaleString('zh-CN') }}</p>
+          <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ workspaceRoleName(invitation.role) }} · {{ invitationStates[invitation.state] }}</p>
+          <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ businessRoleNames(invitation.businessRoles) }} · {{ new Date(invitation.expiresAtUtc).toLocaleString('zh-CN') }}</p>
         </div>
-        <button
+        <UButton
 v-if="canManageBusinessRoles && invitation.state === 'PendingApproval' && invitation.inviterMemberId !== access?.memberId"
-          class="quiet" type="button" :disabled="busy" @click="approve(invitation)">批准邀请</button>
-        <button
+          variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="approve(invitation)">批准邀请</UButton>
+        <UButton
 v-if="['PendingApproval', 'Pending'].includes(invitation.state) &&
           (isOwner || invitation.role === 'WorkspaceReader' && !invitation.businessRoles?.length)"
-          class="quiet" type="button" :disabled="busy" @click="revoke(invitation)">撤销邀请</button>
+          variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="revoke(invitation)">撤销邀请</UButton>
       </article>
     </section>
   </section>

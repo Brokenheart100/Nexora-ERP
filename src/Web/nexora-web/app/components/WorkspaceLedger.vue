@@ -207,13 +207,13 @@ async function readTrial() {
 <template>
   <section class="ledger" aria-labelledby="ledger-heading">
     <h3 id="ledger-heading">会计期间、期初与凭证</h3>
-    <button type="button" class="quiet" :disabled="busy" @click="run(readHome)">{{ home ? '刷新总账' : '打开总账' }}</button>
+    <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(readHome)">{{ home ? '刷新总账' : '打开总账' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="home">
       <p>本位币 {{ home.currency }} · 核算起点 {{ home.startsOn }}</p>
       <h4>会计期间</h4>
       <ul><li v-for="entry in home.periods" :key="entry.month">
-        <button type="button" class="quiet" :disabled="busy" @click="run(() => readPeriod(entry.month))">{{ entry.month.slice(0, 7) }} · {{ states[entry.state] }}</button>
+        <UButton type="button" variant="outline" color="neutral" size="xs" :disabled="busy" @click="run(() => readPeriod(entry.month))">{{ entry.month.slice(0, 7) }} · {{ states[entry.state] }}</UButton>
       </li></ul>
       <fieldset v-if="home.canManagePeriods" :disabled="busy">
         <legend>管理会计期间</legend>
@@ -223,11 +223,11 @@ async function readTrial() {
         <UFormField label="期间操作原因" name="periodReason">
           <UInput :model-value="periodForm.reason" maxlength="300" @update:model-value="value => periodForm.reason = String(value)" />
         </UFormField>
-        <button type="button" class="quiet" :disabled="!periodForm.month || !periodForm.reason.trim()" @click="movePeriod('open')">开放期间</button>
-        <div v-if="period" class="actions">
-          <button v-if="period.period.state === 'open'" type="button" class="quiet" :disabled="!periodForm.reason.trim()" @click="movePeriod('begin-close')">开始关账</button>
-          <button v-if="period.period.state === 'closing'" type="button" class="quiet" :disabled="!periodForm.reason.trim()" @click="movePeriod('close')">确认关闭</button>
-          <button v-if="period.period.state !== 'open'" type="button" class="quiet" :disabled="!periodForm.reason.trim()" @click="movePeriod('reopen')">重开期间</button>
+        <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="!periodForm.month || !periodForm.reason.trim()" @click="movePeriod('open')">开放期间</UButton>
+        <div v-if="period" class="mb-3 mt-2 flex flex-wrap gap-2">
+          <UButton v-if="period.period.state === 'open'" type="button" variant="outline" color="neutral" size="sm" :disabled="!periodForm.reason.trim()" @click="movePeriod('begin-close')">开始关账</UButton>
+          <UButton v-if="period.period.state === 'closing'" type="button" variant="outline" color="neutral" size="sm" :disabled="!periodForm.reason.trim()" @click="movePeriod('close')">确认关闭</UButton>
+          <UButton v-if="period.period.state !== 'open'" type="button" variant="outline" color="neutral" size="sm" :disabled="!periodForm.reason.trim()" @click="movePeriod('reopen')">重开期间</UButton>
         </div>
       </fieldset>
       <template v-if="period">
@@ -264,12 +264,12 @@ async function readTrial() {
             <UFormField :label="`贷方 ${index + 1}`" :name="`credit-${index}`">
               <UInput :model-value="line.credit" inputmode="decimal" maxlength="24" required @update:model-value="value => line.credit = String(value).trim()" />
             </UFormField>
-            <button type="button" class="quiet" :disabled="form.lines.length <= 2" @click="form.lines.splice(index, 1)">移除分录</button>
+            <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="form.lines.length <= 2" @click="form.lines.splice(index, 1)">移除分录</UButton>
           </div>
-          <div class="actions">
-            <button type="button" class="quiet" :disabled="form.lines.length >= 200" @click="form.lines.push(blankLine())">增加分录</button>
-            <button v-if="form.id" type="button" class="quiet" @click="resetDraft">放弃编辑</button>
-            <button class="primary">保存凭证草稿</button>
+          <div class="mb-3 mt-2 flex flex-wrap gap-2">
+            <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="form.lines.length >= 200" @click="form.lines.push(blankLine())">增加分录</UButton>
+            <UButton v-if="form.id" type="button" variant="outline" color="neutral" size="sm" @click="resetDraft">放弃编辑</UButton>
+            <UButton type="submit" color="primary">保存凭证草稿</UButton>
           </div>
         </fieldset>
       </form>
@@ -284,31 +284,31 @@ async function readTrial() {
             <USelect :model-value="filter.accountId || '__all__'" :items="journalAccountFilterOptions" @update:model-value="value => filter.accountId = value === '__all__' ? '' : String(value)" />
           </UFormField>
           <UCheckbox v-model="filter.postedOnly" label="仅已过账" />
-          <button class="quiet">查询凭证</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit">查询凭证</UButton>
         </fieldset>
       </form>
       <p v-if="!journals.length">没有符合条件的凭证。</p>
       <ul><li v-for="journal in journals" :key="journal.id">
-        <button type="button" class="quiet" :disabled="busy" @click="run(() => readJournal(journal.id))">{{ journal.on }} · {{ journal.sourceNumber }} · {{ journal.memo }} · {{ states[journal.state] }}</button>
+        <UButton type="button" variant="outline" color="neutral" size="xs" :disabled="busy" @click="run(() => readJournal(journal.id))">{{ journal.on }} · {{ journal.sourceNumber }} · {{ journal.memo }} · {{ states[journal.state] }}</UButton>
       </li></ul>
-      <div class="actions">
-        <button type="button" class="quiet" :disabled="busy || filter.page === 1" @click="queryList(filter.page - 1)">上一页凭证</button>
-        <button type="button" class="quiet" :disabled="busy || journals.length < 50" @click="queryList(filter.page + 1)">下一页凭证</button>
+      <div class="mb-3 mt-2 flex flex-wrap gap-2">
+        <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy || filter.page === 1" @click="queryList(filter.page - 1)">上一页凭证</UButton>
+        <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy || journals.length < 50" @click="queryList(filter.page + 1)">下一页凭证</UButton>
       </div>
       <template v-if="detail">
         <h4>{{ kinds[detail.journal.kind] }}凭证 · {{ detail.journal.sourceNumber }}</h4>
         <p>{{ detail.journal.memo }} · {{ states[detail.journal.state] }} · v{{ detail.journal.version }}<span v-if="detail.journal.postingNumber"> · 过账号 {{ detail.journal.postingNumber }} · 复核版本 {{ detail.approvedVersion }}</span></p>
         <p v-if="detail.journal.reversesId">
-          <button type="button" class="quiet" :disabled="busy" @click="run(() => readJournal(detail!.journal.reversesId!))">查看原凭证</button>
+          <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(() => readJournal(detail!.journal.reversesId!))">查看原凭证</UButton>
         </p>
         <ul><li v-for="(line, index) in detail.lines" :key="index">{{ line.code }} · {{ line.name }} · 借 {{ money(line.debit) }} / 贷 {{ money(line.credit) }}</li></ul>
-        <div class="actions">
-          <button v-if="home.canDraft && detail.isMaker && detail.journal.state === 'draft'" type="button" class="quiet" :disabled="busy" @click="editJournal">编辑草稿</button>
-          <button v-if="home.canDraft && detail.isMaker && detail.journal.state === 'draft'" type="button" class="primary" :disabled="busy" @click="decide('submit')">提交复核</button>
-          <button v-if="home.canDraft && detail.isMaker && ['draft', 'submitted'].includes(detail.journal.state)" type="button" class="quiet" :disabled="busy" @click="decide('cancel')">作废草稿</button>
-          <button
+        <div class="mb-3 mt-2 flex flex-wrap gap-2">
+          <UButton v-if="home.canDraft && detail.isMaker && detail.journal.state === 'draft'" type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="editJournal">编辑草稿</UButton>
+          <UButton v-if="home.canDraft && detail.isMaker && detail.journal.state === 'draft'" type="button" color="primary" :disabled="busy" @click="decide('submit')">提交复核</UButton>
+          <UButton v-if="home.canDraft && detail.isMaker && ['draft', 'submitted'].includes(detail.journal.state)" type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="decide('cancel')">作废草稿</UButton>
+          <UButton
 v-if="home.canPost && !detail.isMaker && detail.journal.state === 'submitted' && (detail.journal.kind !== 'reversal' || home.canReverse)"
-            type="button" class="primary" :disabled="busy" @click="decide('post')">复核并过账</button>
+            type="button" color="primary" :disabled="busy" @click="decide('post')">复核并过账</UButton>
         </div>
         <form v-if="home.canDraft && detail.journal.kind === 'manual' && detail.journal.state === 'posted'" @submit.prevent="reverse">
           <fieldset :disabled="busy">
@@ -319,13 +319,13 @@ v-if="home.canPost && !detail.isMaker && detail.journal.state === 'submitted' &&
             <UFormField label="冲销原因" name="reversalReason">
               <UInput :model-value="reversal.reason" required maxlength="300" @update:model-value="value => reversal.reason = String(value).trim()" />
             </UFormField>
-            <button class="quiet">提交冲销复核</button>
+            <UButton variant="outline" color="neutral" size="sm" type="submit">提交冲销复核</UButton>
           </fieldset>
         </form>
       </template>
       <section class="ledger-links" aria-labelledby="ledger-links-heading">
         <h4 id="ledger-links-heading">关联分录与完整性扫描</h4>
-        <p class="quiet">已过账凭证可建立相关、调整或结算关联；扫描会检查悬挂引用、非过账关联、重复关联与冲销断链。</p>
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">已过账凭证可建立相关、调整或结算关联；扫描会检查悬挂引用、非过账关联、重复关联与冲销断链。</p>
         <form v-if="home.canDraft" @submit.prevent="createLink">
           <fieldset :disabled="busy">
             <legend>建立关联分录</legend>
@@ -341,19 +341,19 @@ v-if="home.canPost && !detail.isMaker && detail.journal.state === 'submitted' &&
             <UFormField label="关联说明" name="linkMemo">
               <UInput :model-value="linkForm.memo" maxlength="300" data-testid="link-memo" @update:model-value="value => linkForm.memo = String(value).trim()" />
             </UFormField>
-            <button class="quiet" data-testid="link-create" :disabled="!linkForm.fromJournalId || !linkForm.toJournalId">建立关联</button>
+            <UButton variant="outline" color="neutral" size="sm" type="submit" data-testid="link-create" :disabled="!linkForm.fromJournalId || !linkForm.toJournalId">建立关联</UButton>
           </fieldset>
         </form>
-        <div class="actions">
-          <button type="button" class="quiet" :disabled="busy" data-testid="link-refresh" @click="run(readLinks)">刷新关联分录</button>
-          <button type="button" class="quiet" :disabled="busy" data-testid="link-scan" @click="scanLinks">运行完整性扫描</button>
+        <div class="mb-3 mt-2 flex flex-wrap gap-2">
+          <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" data-testid="link-refresh" @click="run(readLinks)">刷新关联分录</UButton>
+          <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" data-testid="link-scan" @click="scanLinks">运行完整性扫描</UButton>
         </div>
         <p v-if="!links.length" data-testid="link-empty">尚未建立关联分录。</p>
         <ul v-else data-testid="link-list">
           <li v-for="link in links" :key="link.id">
             {{ link.fromOn }} · {{ link.fromSourceNumber }} → {{ link.toOn }} · {{ link.toSourceNumber }} · {{ linkKinds[link.kind] || link.kind }}
             <span v-if="link.memo"> · {{ link.memo }}</span>
-            <button v-if="home.canDraft" type="button" class="quiet" :disabled="busy" data-testid="link-delete" @click="deleteLink(link)">解除关联</button>
+            <UButton v-if="home.canDraft" type="button" variant="outline" color="neutral" size="xs" :disabled="busy" data-testid="link-delete" @click="deleteLink(link)">解除关联</UButton>
           </li>
         </ul>
         <template v-if="linkScan">
@@ -373,7 +373,7 @@ v-if="home.canPost && !detail.isMaker && detail.journal.state === 'submitted' &&
           <UFormField label="试算截止日期" name="trialCutoff">
             <UInput :model-value="cutoff" type="date" :min="home.startsOn" required @update:model-value="value => cutoff = String(value)" />
           </UFormField>
-          <button class="quiet">查询试算平衡</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit">查询试算平衡</UButton>
           <template v-if="trial">
             <p>借方合计 {{ money(trial.debit) }} · 贷方合计 {{ money(trial.credit) }}</p>
             <ul><li v-for="row in trial.accounts" :key="row.accountId">
@@ -389,6 +389,6 @@ v-if="home.canPost && !detail.isMaker && detail.journal.state === 'submitted' &&
 <style scoped>
 .ledger { margin-top: 24px }
 fieldset { display: grid; gap: 10px; min-width: 0; margin: 12px 0; border: 1px solid #d1d9e6; border-radius: 8px }
-.actions, .journal-line { display: flex; align-items: end; flex-wrap: wrap; gap: 8px }
+.journal-line { display: flex; align-items: end; flex-wrap: wrap; gap: 8px }
 li { margin: 6px 0; overflow-wrap: anywhere }
 </style>

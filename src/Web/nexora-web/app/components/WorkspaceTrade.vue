@@ -151,7 +151,7 @@ function kindChanged() {
 <template>
   <section class="trade" aria-labelledby="trade-heading">
     <h3 id="trade-heading">采购应付、银行与捐赠</h3>
-    <button type="button" class="quiet" :disabled="busy" @click="run(load)">{{ home ? '刷新资金工作台' : '打开资金工作台' }}</button>
+    <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(load)">{{ home ? '刷新资金工作台' : '打开资金工作台' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="home">
       <form v-if="home.canConfigure && !home.setup" @submit.prevent="save('trade-setup', '/setup', { accounts: mappings }, '过账映射已保存。')">
@@ -160,7 +160,7 @@ function kindChanged() {
           <UFormField v-for="field in sourceFields" :key="field.key" :label="field.label" :name="field.key">
             <USelect :model-value="mappings[field.key]" :items="accountItems(field.category, field.purpose)" placeholder="选择科目" required @update:model-value="value => mappings[field.key] = String(value)" />
           </UFormField>
-          <button class="primary">保存采购过账映射</button>
+          <UButton type="submit" color="primary">保存采购过账映射</UButton>
         </fieldset>
       </form>
       <form v-if="home.canConfigure" @submit.prevent="save('open-bank', '/banks', bank, '资金账户已建立。')">
@@ -178,22 +178,22 @@ function kindChanged() {
           <UFormField label="资金统驭科目" name="bankAccountId">
             <USelect :model-value="bank.accountId" :items="unusedControlAccounts" placeholder="选择科目" required @update:model-value="value => bank.accountId = String(value)" />
           </UFormField>
-          <button class="primary">保存资金账户</button>
+          <UButton type="submit" color="primary">保存资金账户</UButton>
         </fieldset>
       </form>
       <ul><li v-for="entry in home.banks" :key="entry.id">
         {{ entry.code }} · {{ entry.name }} · {{ money(entry.balance) }} {{ home.currency }}{{ entry.isDefault ? ' · 默认账户' : '' }}
-        <button
-v-if="home.canConfigure && !entry.isDefault" type="button" class="quiet" :disabled="busy"
-          @click="save('default-bank', `/banks/${entry.id}/default`, { expectedVersion: entry.version }, '默认账户已更新。')">设为默认</button>
+        <UButton
+v-if="home.canConfigure && !entry.isDefault" type="button" variant="outline" color="neutral" size="xs" :disabled="busy"
+          @click="save('default-bank', `/banks/${entry.id}/default`, { expectedVersion: entry.version }, '默认账户已更新。')">设为默认</UButton>
       </li></ul>
       <h4>收货暂估与成本事实</h4>
       <ul><li v-for="entry in receipts" :key="entry.fact.id">
         {{ entry.fact.on }} · {{ entry.fact.id }} · 数量 {{ entry.fact.quantity }} · 成本 {{ money(entry.fact.cost) }}
         · {{ entry.posted ? '已过账' : entry.pendingReason }}
-        <button
-v-if="!entry.posted && home.canApprove" type="button" class="quiet" :disabled="busy"
-          @click="save('post-receipt', `/receipts/${entry.fact.id}/accrue`, {}, '收货事实已处理。')">重试收货过账</button>
+        <UButton
+v-if="!entry.posted && home.canApprove" type="button" variant="outline" color="neutral" size="xs" :disabled="busy"
+          @click="save('post-receipt', `/receipts/${entry.fact.id}/accrue`, {}, '收货事实已处理。')">重试收货过账</UButton>
       </li></ul>
 
       <form v-if="home.canSubmit" @submit.prevent="saveDraft">
@@ -242,9 +242,9 @@ v-if="!entry.posted && home.canApprove" type="button" class="quiet" :disabled="b
                 <UFormField label="本行税额快照（可选）" name="billTaxAssessmentId">
                   <UInput :model-value="line.taxAssessmentId" maxlength="36" @update:model-value="value => line.taxAssessmentId = String(value).trim()" />
                 </UFormField>
-                <button class="quiet" type="button" :disabled="billLines.length <= 2" @click="billLines.splice(index, 1)">移除此行</button>
+                <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="billLines.length <= 2" @click="billLines.splice(index, 1)">移除此行</UButton>
               </div>
-              <button class="quiet" type="button" :disabled="billLines.length >= 50" @click="billLines.push(blankBillLine())">增加收货匹配行</button>
+              <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="billLines.length >= 50" @click="billLines.push(blankBillLine())">增加收货匹配行</UButton>
             </template>
             <template v-else>
               <UFormField label="账单对应收货" name="sourceId">
@@ -269,7 +269,7 @@ v-if="!entry.posted && home.canApprove" type="button" class="quiet" :disabled="b
             <UFormField label="捐赠人" name="partnerId">
               <USelect :model-value="draft.partnerId" :items="donorItems" placeholder="选择捐赠人" required @update:model-value="value => draft.partnerId = String(value)" />
             </UFormField>
-            <button v-if="moreDonors" class="quiet" type="button" @click="run(loadDonors)">加载更多捐赠人</button>
+            <UButton v-if="moreDonors" variant="outline" color="neutral" size="sm" type="button" @click="run(loadDonors)">加载更多捐赠人</UButton>
             <UFormField label="捐赠方式" name="method">
               <USelect :model-value="draft.method" :items="methodOptions" placeholder="选择方式" required @update:model-value="value => draft.method = String(value)" />
             </UFormField>
@@ -277,7 +277,7 @@ v-if="!entry.posted && home.canApprove" type="button" class="quiet" :disabled="b
           <UFormField v-if="draft.statementLineId" label="关联对账单行" name="statementLineId">
             <UInput :model-value="draft.statementLineId" readonly />
           </UFormField>
-          <button class="primary">提交财务复核</button>
+          <UButton type="submit" color="primary">提交财务复核</UButton>
         </fieldset>
       </form>
       <h4>财务单据与未结项</h4>
@@ -286,15 +286,15 @@ v-if="!entry.posted && home.canApprove" type="button" class="quiet" :disabled="b
         · 合计 {{ money(doc.total) }}<span v-if="doc.terms.kind === 1"> · 未结 {{ money(doc.outstanding) }}</span>
         <span v-if="doc.terms.kind === 9"> · 待退款 {{ money(doc.recoverable) }}</span>
         <a
-v-if="doc.terms.kind === 6 && doc.state === 'posted'" class="quiet"
+v-if="doc.terms.kind === 6 && doc.state === 'posted'" class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-nx border border-nx-border bg-nx-surface px-2.5 py-1.5 text-xs font-semibold text-nx-ink-2 hover:text-nx-primary"
           :href="path + '/documents/' + doc.id + '/donation-receipt/pdf'">下载捐赠收款确认单</a>
         <span v-if="doc.reversedById"> · 已关联作废</span><span v-if="doc.journalId"> · 凭证 {{ doc.journalId }}</span>
-        <button
-v-if="home.canApprove && !doc.isMaker && doc.state === 'submitted'" type="button" class="primary" :disabled="busy"
-          @click="save('approve-trade', `/documents/${doc.id}/decision`, { expectedVersion: doc.version, decision: 'approve' }, '单据已复核过账。')">复核财务单据</button>
-        <button
-v-if="home.canSubmit && doc.isMaker && doc.state === 'submitted'" type="button" class="quiet" :disabled="busy"
-          @click="save('cancel-trade', `/documents/${doc.id}/decision`, { expectedVersion: doc.version, decision: 'cancel' }, '单据已撤销。')">撤销财务单据</button>
+        <UButton
+v-if="home.canApprove && !doc.isMaker && doc.state === 'submitted'" type="button" color="primary" :disabled="busy"
+          @click="save('approve-trade', `/documents/${doc.id}/decision`, { expectedVersion: doc.version, decision: 'approve' }, '单据已复核过账。')">复核财务单据</UButton>
+        <UButton
+v-if="home.canSubmit && doc.isMaker && doc.state === 'submitted'" type="button" variant="outline" color="neutral" size="xs" :disabled="busy"
+          @click="save('cancel-trade', `/documents/${doc.id}/decision`, { expectedVersion: doc.version, decision: 'cancel' }, '单据已撤销。')">撤销财务单据</UButton>
       </li></ul>
       <BankReconciliationPanel
 v-if="home.banks.length" :trade-path="path" :banks="home.banks" :can-prepare="home.canSubmit"

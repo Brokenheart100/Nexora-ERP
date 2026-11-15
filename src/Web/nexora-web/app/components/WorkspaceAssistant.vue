@@ -304,16 +304,16 @@ onMounted(load)
   <section class="card assistant">
     <header class="assistant-head">
       <div>
-        <h2><UIcon class="heading-icon" name="i-lucide-sparkles" aria-hidden="true" />AI 助手</h2>
-        <p class="hint">
+        <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-sparkles" aria-hidden="true" />AI 助手</h2>
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
           会话按工作区与用户隔离，工具调用使用你当前的权限。当前模型：
           <strong>{{ capabilities ? capabilities.provider : '加载中' }}</strong>
           <span v-if="capabilities"> · {{ capabilities.model }}<span v-if="!capabilities.configured">（未配置外部模型，使用本地确定性测试模型）</span></span>
         </p>
       </div>
-      <div class="actions">
-        <UButton class="quiet" type="button" :disabled="busy" @click="load">刷新</UButton>
-        <UButton class="quiet" type="button" :disabled="busy" @click="newSession">新会话</UButton>
+      <div class="mb-3 mt-2 flex flex-wrap gap-2">
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="load">刷新</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="newSession">新会话</UButton>
       </div>
     </header>
 
@@ -323,7 +323,7 @@ onMounted(load)
     <div class="assistant-body">
       <aside class="assistant-sessions" data-testid="assistant-sessions" aria-label="会话历史">
         <h3>会话历史</h3>
-        <p v-if="!sessions.length" class="hint">暂无历史会话。</p>
+        <p v-if="!sessions.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">暂无历史会话。</p>
         <ul>
           <li v-for="session in sessions" :key="session.id">
             <button type="button" :class="{ current: session.id === sessionId }" :disabled="busy"
@@ -349,15 +349,15 @@ onMounted(load)
                 <strong>工具 {{ message.tool.name }}</strong>
                 · {{ message.tool.status === 'pending' ? '等待审批' : message.tool.status }}
               </p>
-              <p class="hint">参数：{{ message.tool.arguments }}</p>
-              <div v-if="message.tool.status === 'pending'" class="actions">
+              <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">参数：{{ message.tool.arguments }}</p>
+              <div v-if="message.tool.status === 'pending'" class="mb-3 mt-2 flex flex-wrap gap-2">
                 <UButton type="button" :disabled="busy" @click="approve">批准执行</UButton>
-                <UButton class="quiet" type="button" :disabled="busy" @click="reject">拒绝</UButton>
+                <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="reject">拒绝</UButton>
               </div>
             </div>
           </li>
           <li v-if="!messages.length" class="empty">
-            <p class="hint">
+            <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
               输入消息开始对话。示例：
               <button type="button" class="link" @click="input = '请读取本期试算平衡'">请读取本期试算平衡</button>
               或
@@ -371,10 +371,10 @@ onMounted(load)
           <UTextarea id="assistant-message" :model-value="input" :rows="3" maxlength="4000" :disabled="busy"
             placeholder="向助手提问；工具调用将使用你当前的权限。"
             @update:model-value="value => input = String(value)" />
-          <div class="actions">
+          <div class="mb-3 mt-2 flex flex-wrap gap-2">
             <UButton type="submit" :disabled="busy || !input.trim()">发送</UButton>
-            <UButton v-if="busy" class="quiet" type="button" :disabled="!executionId" @click="cancel">取消</UButton>
-            <UButton v-if="resumable && !busy" class="quiet" type="button" @click="resume">恢复生成</UButton>
+            <UButton v-if="busy" variant="outline" color="neutral" size="sm" type="button" :disabled="!executionId" @click="cancel">取消</UButton>
+            <UButton v-if="resumable && !busy" variant="outline" color="neutral" size="sm" type="button" @click="resume">恢复生成</UButton>
           </div>
         </form>
       </div>

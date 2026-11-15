@@ -138,8 +138,8 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section class="card settings" aria-labelledby="settings-heading">
-    <h2 id="settings-heading"><UIcon class="heading-icon" name="i-lucide-building" aria-hidden="true" />公司设置</h2>
-    <button class="quiet" :disabled="busy" @click="show">{{ settings ? '刷新公司设置' : '打开公司设置' }}</button>
+    <h2 id="settings-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-building" aria-hidden="true" />公司设置</h2>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="show">{{ settings ? '刷新公司设置' : '打开公司设置' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="settings && draft">
       <form @submit.prevent="save">
@@ -161,36 +161,36 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
           <label>自动登出（闲置分钟）
             <input v-model.number="idleMinutes" type="number" min="1" max="480" required>
           </label>
-          <p class="hint">成员可访问多个工作区时，登录会话按所有工作区的最短闲置时间自动登出，并在到期提示中显示来源。</p>
+          <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">成员可访问多个工作区时，登录会话按所有工作区的最短闲置时间自动登出，并在到期提示中显示来源。</p>
           <UFormField label="自定义角色授权审批" name="roleGrantApprovals">
             <USelect v-model="grantApprovals" :items="approvalOptions" />
           </UFormField>
-          <p class="hint">设为 2 时，角色授权需两位不同的所有者批准后生效；提交人不能批准自己的申请。</p>
+          <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">设为 2 时，角色授权需两位不同的所有者批准后生效；提交人不能批准自己的申请。</p>
           <label v-if="settings.canManage">公司标志<input type="file" accept="image/png" @change="chooseLogo"></label>
           <p class="preview" :style="{ borderColor: draft.accentColor }">
             <img v-if="draft.logoDataUrl" :src="draft.logoDataUrl" alt="公司标志预览">
             <strong>{{ draft.brandName }}</strong><span>{{ datePreview }} · {{ settings.baseCurrency }}</span>
           </p>
-          <div v-if="settings.canManage" class="actions">
-            <button class="primary">保存公司设置</button>
-            <button v-if="draft.logoDataUrl" class="quiet" type="button" @click="draft.logoDataUrl = null">移除标志</button>
+          <div v-if="settings.canManage" class="mb-3 mt-2 flex flex-wrap items-end gap-2.5">
+            <UButton type="submit" color="primary">保存公司设置</UButton>
+            <UButton v-if="draft.logoDataUrl" variant="outline" color="neutral" size="sm" type="button" @click="draft.logoDataUrl = null">移除标志</UButton>
           </div>
         </fieldset>
       </form>
       <h3>个人工作区快捷入口</h3>
       <p v-if="!personalWorkspaces.length">先创建个人工作区，再建立快捷入口。</p>
-      <div v-else-if="settings.canManage" class="actions">
+      <div v-else-if="settings.canManage" class="flex flex-wrap items-end gap-2.5">
         <UFormField label="个人工作区">
           <USelect v-model="personalId" :items="personalOptions" :disabled="busy" />
         </UFormField>
-        <button class="quiet" :disabled="busy" @click="setLink(true)">建立关联</button>
-        <button class="quiet" :disabled="busy" @click="setLink(false)">解除关联</button>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="setLink(true)">建立关联</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="setLink(false)">解除关联</UButton>
       </div>
       <ul v-if="links.length">
         <li v-for="link in links" :key="link.personalWorkspaceId">
-          <button class="quiet" @click="emit('navigate', link.personalWorkspaceId)">
+          <UButton variant="outline" color="neutral" size="sm" type="button" @click="emit('navigate', link.personalWorkspaceId)">
             前往 {{ personalWorkspaces.find(workspace => workspace.id === link.personalWorkspaceId)?.name ?? '个人工作区' }}
-          </button>
+          </UButton>
         </li>
       </ul>
     </template>
@@ -203,7 +203,6 @@ fieldset { margin: 16px 0; border: 1px solid #d1d9e6; border-radius: 8px; paddin
 label { display: grid; gap: 4px }
 select { font: inherit; padding: 8px; border: 1px solid #d1d9e6; border-radius: 6px; background: white }
 input[type="color"] { width: 60px; height: 38px; padding: 4px }
-.actions { display: flex; flex-wrap: wrap; align-items: end; gap: 10px }
 .preview { margin: 0; border-left: 4px solid; padding: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
 .preview img { width: 40px; height: 40px; object-fit: contain }
 </style>

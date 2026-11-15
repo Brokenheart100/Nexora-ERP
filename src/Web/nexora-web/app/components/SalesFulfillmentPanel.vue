@@ -48,15 +48,15 @@ const labels: Record<string, string> = { dispatching: '等待库存确认', rese
 
 <template>
   <section aria-label="销售履约">
-    <button type="button" class="quiet" :disabled="busy" @click="run(async () => {})">刷新销售履约</button>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(async () => {})">刷新销售履约</UButton>
     <UAlert v-if="message" role="status" :description="message" />
     <template v-if="state">
       <ul><li v-for="permit in state.permits" :key="permit.id">
         {{ lines.find(x => x.id === permit.lineId)?.itemName }} · {{ permit.executed }} / {{ permit.quantity }} · {{ labels[permit.state] }}
         · 到期 {{ new Date(permit.expiresAtUtc).toLocaleString('zh-CN') }}
-        <button
-v-if="state.canManage && ['reserved', 'dispatching'].includes(permit.state)" type="button" class="quiet"
-          :disabled="busy || !reason" @click="finish('/' + permit.id + '/cancel')">释放该行余量</button>
+        <UButton
+v-if="state.canManage && ['reserved', 'dispatching'].includes(permit.state)" type="button" variant="outline" color="neutral" size="sm"
+          :disabled="busy || !reason" @click="finish('/' + permit.id + '/cancel')">释放该行余量</UButton>
       </li></ul>
       <form v-if="state.canManage && ['approved', 'fulfilling'].includes(orderState)" @submit.prevent="reserve">
         <fieldset :disabled="busy">
@@ -67,7 +67,7 @@ v-if="state.canManage && ['reserved', 'dispatching'].includes(permit.state)" typ
           <UFormField v-for="line in lines" :key="line.id" :label="`${line.itemName} 履约数量`" name="quantity">
             <UInput :model-value="quantities[line.id]" inputmode="decimal" maxlength="26" @update:model-value="value => quantities[line.id] = String(value).trim()" />
           </UFormField>
-          <button class="primary">预留所选商品</button>
+          <UButton color="primary" type="submit">预留所选商品</UButton>
         </fieldset>
       </form>
       <fieldset v-if="state.canManage && orderState !== 'closed'" :disabled="busy">
@@ -75,7 +75,7 @@ v-if="state.canManage && ['reserved', 'dispatching'].includes(permit.state)" typ
         <UFormField label="释放或关单原因" name="reason">
           <UInput :model-value="reason" maxlength="300" @update:model-value="value => reason = String(value).trim()" />
         </UFormField>
-        <button type="button" class="quiet" :disabled="!reason" @click="finish('/close')">关闭销售履约</button>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="!reason" @click="finish('/close')">关闭销售履约</UButton>
       </fieldset>
     </template>
   </section>

@@ -83,13 +83,13 @@ function selectGroup(value: TaxGroup) {
 <template>
   <section class="tax" aria-labelledby="tax-heading">
     <h3 id="tax-heading">税项、税组与计算快照</h3>
-    <button type="button" class="quiet" :disabled="busy" @click="run(refresh)">{{ setup ? '刷新税务配置' : '打开税务配置' }}</button>
+    <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(refresh)">{{ setup ? '刷新税务配置' : '打开税务配置' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="setup">
       <ul><li v-for="entry in setup.rates" :key="entry.id">{{ entry.code }} · {{ entry.name }} · {{ entry.effectiveOn }} · {{ entry.rate }}</li></ul>
       <ul><li v-for="entry in setup.groups" :key="entry.code">
         {{ entry.code }} · {{ entry.name }} · {{ entry.rateCodes.join('、') }} · v{{ entry.version }}
-        <button v-if="setup.canManage" type="button" class="quiet" @click="selectGroup(entry)">编辑税组 {{ entry.code }}</button>
+        <UButton v-if="setup.canManage" type="button" variant="outline" color="neutral" size="xs" @click="selectGroup(entry)">编辑税组 {{ entry.code }}</UButton>
       </li></ul>
       <template v-if="setup.canManage">
         <form @submit.prevent="save('rates', rate)">
@@ -107,7 +107,7 @@ function selectGroup(value: TaxGroup) {
             <UFormField label="税率（13% 填 0.13）" name="rate" required>
               <UInput :model-value="rate.rate" inputmode="decimal" maxlength="16" required @update:model-value="value => setText(rate, 'rate', value)" />
             </UFormField>
-            <button class="primary">保存税率版本</button>
+            <UButton type="submit" color="primary">保存税率版本</UButton>
           </fieldset>
         </form>
         <form @submit.prevent="saveGroup">
@@ -122,7 +122,7 @@ function selectGroup(value: TaxGroup) {
             <UFormField label="税项" name="rateCodes">
               <USelect v-model="group.rateCodes" :items="rateCodeOptions" multiple />
             </UFormField>
-            <button class="primary">保存税组</button>
+            <UButton type="submit" color="primary">保存税组</UButton>
           </fieldset>
         </form>
         <form @submit.prevent="saveClassification">
@@ -137,7 +137,7 @@ function selectGroup(value: TaxGroup) {
             <UFormField label="默认税组" name="groupCode" required>
               <USelect v-model="classification.groupCode" :items="groupOptions" />
             </UFormField>
-            <button class="primary">保存税分类</button>
+            <UButton type="submit" color="primary">保存税分类</UButton>
             <ul><li v-for="entry in setup.classifications" :key="entry.id">{{ entry.kind }} · {{ entry.resourceId }} · {{ entry.groupCode }} · v{{ entry.version }}</li></ul>
           </fieldset>
         </form>
@@ -166,7 +166,7 @@ function selectGroup(value: TaxGroup) {
               <UInput :model-value="calculation.discount" inputmode="decimal" maxlength="16" required @update:model-value="value => setText(calculation, 'discount', value)" />
             </UFormField>
             <UCheckbox v-model="calculation.includesTax" label="单价含税" />
-            <button class="primary">计算并保存税额</button>
+            <UButton type="submit" color="primary">计算并保存税额</UButton>
           </fieldset>
         </form>
       </template>
@@ -176,7 +176,7 @@ function selectGroup(value: TaxGroup) {
           <UFormField label="税额快照 ID" name="snapshotId" required>
             <UInput :model-value="snapshotId" required maxlength="36" @update:model-value="value => snapshotId = String(value).trim()" />
           </UFormField>
-          <button class="quiet">查询税额快照</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit">查询税额快照</UButton>
         </fieldset>
       </form>
       <template v-if="snapshot">

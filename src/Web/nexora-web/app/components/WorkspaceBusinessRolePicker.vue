@@ -35,7 +35,7 @@ function toggle(role: WorkspaceRole, checked: boolean) {
       <USelect :model-value="presetValue" :items="presetOptions" placeholder="手动选择"
         @update:model-value="value => choosePreset(Number(value))" />
     </UFormField>
-    <p class="hint">可以跨业务模块多选，每个模块可选一个角色。</p>
+    <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">可以跨业务模块多选，每个模块可选一个角色。</p>
     <div class="role-options">
       <UCheckbox v-for="role in roles" :key="role.code" :model-value="model.includes(role.code)"
         :value="role.code" :label="workspaceRoleName(role.code)"

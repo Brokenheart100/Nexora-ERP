@@ -162,11 +162,11 @@ onMounted(() => { void read().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section ref="card" class="card receivables" aria-labelledby="receivable-heading">
-    <h2 id="receivable-heading"><UIcon class="heading-icon" name="i-lucide-receipt-text" aria-hidden="true" />客户开票与应收</h2>
-    <button type="button" class="quiet" :disabled="busy" @click="run(read)">{{ home ? '刷新应收工作台' : '打开应收工作台' }}</button>
-    <div class="actions">
-      <button class="quiet" type="button" :disabled="busy || exporting" @click="run(exportDocuments)">导出客户单据 CSV</button>
-      <button class="quiet" type="button" @click="printView">打印当前视图</button>
+    <h2 id="receivable-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-receipt-text" aria-hidden="true" />客户开票与应收</h2>
+    <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(read)">{{ home ? '刷新应收工作台' : '打开应收工作台' }}</UButton>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || exporting" @click="run(exportDocuments)">导出客户单据 CSV</UButton>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="printView">打印当前视图</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <UAlert v-if="exportNotice" role="status" :description="exportNotice" />
@@ -177,7 +177,7 @@ onMounted(() => { void read().catch(() => { /* 首屏加载失败时保留空状
           <UFormField v-for="field in accountFormFields" :key="field.key" :label="field.label" :name="field.key">
             <USelect :model-value="accounts[field.key]" :items="field.items" placeholder="选择科目" required @update:model-value="value => setAccount(field.key, value)" />
           </UFormField>
-          <button class="primary">保存应收科目</button>
+          <UButton type="submit" color="primary">保存应收科目</UButton>
         </fieldset>
       </form>
       <h3>已计价发货与退货</h3>
@@ -207,9 +207,9 @@ onMounted(() => { void read().catch(() => { /* 首屏加载失败时保留空状
               <UFormField :label="'开票数量 ' + (index + 1)" name="lineQuantity">
                 <UInput :model-value="line.quantity" inputmode="decimal" required @update:model-value="value => line.quantity = String(value).trim()" />
               </UFormField>
-              <button type="button" class="quiet" :disabled="form.lines.length <= 1" @click="form.lines.splice(index, 1)">移除开票行</button>
+              <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="form.lines.length <= 1" @click="form.lines.splice(index, 1)">移除开票行</UButton>
             </div>
-            <button type="button" class="quiet" :disabled="form.lines.length >= 50" @click="form.lines.push({ shipmentId: '', quantity: '1' })">新增开票行</button>
+            <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="form.lines.length >= 50" @click="form.lines.push({ shipmentId: '', quantity: '1' })">新增开票行</UButton>
           </template>
           <UFormField v-if="form.kind === 'receipt'" label="收款客户" name="customerId">
             <USelect :model-value="form.customerId" :items="customerOptions" placeholder="选择客户" required @update:model-value="value => form.customerId = String(value)" />
@@ -234,20 +234,19 @@ onMounted(() => { void read().catch(() => { /* 首屏加载失败时保留空状
           <UFormField v-if="['receipt', 'allocation', 'refund'].includes(form.kind)" label="客户单据金额" name="amount">
             <UInput :model-value="form.amount" inputmode="decimal" required @update:model-value="value => form.amount = String(value).trim()" />
           </UFormField>
-          <div class="row"><button class="primary">提交客户单据</button>
-            <button v-if="editing" class="quiet" type="button" @click="reset">退出发票编辑</button></div>
+          <div class="row"><UButton type="submit" color="primary">提交客户单据</UButton>
+            <UButton v-if="editing" variant="outline" color="neutral" size="sm" type="button" @click="reset">退出发票编辑</UButton></div>
         </fieldset>
       </form>
       <h3>客户单据</h3>
-      <ul><li v-for="doc in docs" :key="doc.id"><button class="quiet" type="button" @click="active = doc.id">
+      <ul><li v-for="doc in docs" :key="doc.id"><UButton variant="outline" color="neutral" size="xs" type="button" @click="active = doc.id">
         {{ doc.terms.number }} · {{ kindLabels[doc.terms.kind] }} · {{ stateLabels[doc.state] }}
         · {{ doc.terms.total }} {{ doc.terms.currency }} · 余额 {{ doc.openBalance }}
-      </button></li></ul>
+      </UButton></li></ul>
       <div class="row">
-        <button class="quiet" type="button" :disabled="busy || page === 1" @click="run(async () => { page--; await read() })">上一页客户单据</button>
-        <button
-class="quiet" type="button" :disabled="busy || (docs.length < 50 && shipments.length < 50)"
-          @click="run(async () => { page++; await read() })">下一页客户单据</button>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || page === 1" @click="run(async () => { page--; await read() })">上一页客户单据</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || (docs.length < 50 && shipments.length < 50)"
+          @click="run(async () => { page++; await read() })">下一页客户单据</UButton>
       </div>
       <section v-if="selected" aria-label="客户单据详情">
         <h3>{{ selected.terms.number }} · {{ selected.terms.customerName }}</h3>
@@ -257,15 +256,15 @@ class="quiet" type="button" :disabled="busy || (docs.length < 50 && shipments.le
           {{ line.name }} · {{ line.quantity }} · 未税 {{ line.net }} · 税 {{ line.tax }}
         </li></ul>
         <div class="row">
-          <button
-v-if="selected.state === 'submitted' && home.canPost && !selected.isMaker" class="primary" type="button"
-            :disabled="busy" @click="decide(selected, true)">批准客户单据</button>
-          <button
-v-if="selected.state === 'submitted' && home.canDraft && selected.isMaker" class="quiet" type="button"
-            :disabled="busy" @click="decide(selected, false)">撤销客户单据</button>
-          <button
+          <UButton
+v-if="selected.state === 'submitted' && home.canPost && !selected.isMaker" color="primary" type="button"
+            :disabled="busy" @click="decide(selected, true)">批准客户单据</UButton>
+          <UButton
+v-if="selected.state === 'submitted' && home.canDraft && selected.isMaker" variant="outline" color="neutral" size="sm" type="button"
+            :disabled="busy" @click="decide(selected, false)">撤销客户单据</UButton>
+          <UButton
 v-if="selected.terms.kind === 1 && selected.state === 'submitted' && home.canDraft && selected.isMaker
-              && selected.terms.lines?.every(x => x.shipmentId)" class="quiet" type="button" @click="edit(selected)">编辑待审批发票</button>
+              && selected.terms.lines?.every(x => x.shipmentId)" variant="outline" color="neutral" size="sm" type="button" @click="edit(selected)">编辑待审批发票</UButton>
         </div>
         <InvoiceCommunication
 v-if="selected.terms.kind === 1 && selected.state !== 'cancelled'" :key="selected.id"

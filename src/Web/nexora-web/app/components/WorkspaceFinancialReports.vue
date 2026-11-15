@@ -145,8 +145,8 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section class="card financial-reports" data-testid="financial-reports" aria-labelledby="financial-reports-heading">
-    <h2 id="financial-reports-heading" class="report-screen"><UIcon class="heading-icon" name="i-lucide-file-spreadsheet" aria-hidden="true" />财务报表</h2>
-    <button v-if="!startedOn" class="quiet report-screen" type="button" :disabled="busy" @click="run(open)">打开财务报表</button>
+    <h2 id="financial-reports-heading" class="report-screen"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-file-spreadsheet" aria-hidden="true" />财务报表</h2>
+    <UButton v-if="!startedOn" class="report-screen" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(open)">打开财务报表</UButton>
     <form v-else class="report-screen" @submit.prevent="run(query)">
       <fieldset :disabled="busy">
         <legend>财务报表查询</legend>
@@ -157,7 +157,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
         <label>报表开始日期<input v-model="input.from" type="date" :min="startedOn" required></label>
         <label>报表截止日期<input v-model="input.through" type="date" :min="input.from || startedOn" required></label>
         <label class="comparison"><input v-model="input.compare" type="checkbox"> 对比上一等长期间</label>
-        <button class="primary">查询财务报表</button>
+        <UButton type="submit" color="primary">查询财务报表</UButton>
       </fieldset>
     </form>
     <UAlert v-if="notice" role="status" class="report-screen" :description="notice" />
@@ -165,11 +165,11 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
       <h3>{{ kinds[result.kind] }}</h3>
       <p>{{ workspaceName }} · {{ basisLabel(result) }} · {{ result.currency }} · 过账水位 {{ result.watermark }}</p>
       <p>本期 {{ dates(result.period) }}<template v-if="result.previousPeriod"> · 上期 {{ dates(result.previousPeriod) }}</template></p>
-      <div class="report-screen actions">
-        <button class="quiet" type="button" @click="exportCsv">导出报表 CSV</button>
-        <button class="quiet" type="button" :disabled="busy" @click="run(queueExport)">创建导出任务</button>
-        <button class="quiet" type="button" :disabled="busy" @click="run(listExports)">刷新导出任务</button>
-        <button class="quiet" type="button" @click="printReport">打印财务报表</button>
+      <div class="mb-3 mt-2 flex flex-wrap gap-2 report-screen">
+        <UButton variant="outline" color="neutral" size="sm" type="button" @click="exportCsv">导出报表 CSV</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(queueExport)">创建导出任务</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(listExports)">刷新导出任务</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" @click="printReport">打印财务报表</UButton>
       </div>
       <section v-if="jobs" class="report-screen" aria-label="报表导出任务">
         <p v-if="!jobs.length">当前没有导出任务。</p>
@@ -177,7 +177,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
         <ul><li v-for="job in jobs" :key="job.id">
           {{ kinds[job.kind] }} · 过账水位 {{ job.watermark }} · {{ job.completedAtUtc ? '已完成' : '排队中' }}
           <a v-if="job.completedAtUtc" :href="exportPath + '/' + job.id + '/file'">下载 CSV</a>
-          <button class="quiet" type="button" :disabled="busy" @click="run(() => rebuildExport(job.id))">{{ job.completedAtUtc ? '重建文件' : '重新生成' }}</button>
+          <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="run(() => rebuildExport(job.id))">{{ job.completedAtUtc ? '重建文件' : '重新生成' }}</UButton>
         </li></ul>
       </section>
       <dl class="totals">
@@ -205,12 +205,11 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
             <td>{{ amount(line.row.amount) }}</td>
             <template v-if="result.previousPeriod"><td>{{ amount(line.previous) }}</td><td>{{ amount(line.difference) }}</td></template>
             <td class="report-screen">
-              <button
-class="quiet" type="button" :disabled="busy" :aria-label="'钻取本期 ' + line.row.name"
-                @click="run(() => readDrill(line.row.key, line.row.name, result!.period))">本期</button>
-              <button
-v-if="result.previousPeriod" class="quiet" type="button" :disabled="busy" :aria-label="'钻取上期 ' + line.row.name"
-                @click="run(() => readDrill(line.row.key, line.row.name, result!.previousPeriod!))">上期</button>
+              <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" :aria-label="'钻取本期 ' + line.row.name"
+                @click="run(() => readDrill(line.row.key, line.row.name, result!.period))">本期</UButton>
+              <UButton
+v-if="result.previousPeriod" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" :aria-label="'钻取上期 ' + line.row.name"
+                @click="run(() => readDrill(line.row.key, line.row.name, result!.previousPeriod!))">上期</UButton>
             </td>
           </tr></tbody>
         </table>
@@ -224,15 +223,15 @@ v-if="result.previousPeriod" class="quiet" type="button" :disabled="busy" :aria-
         {{ entry.on }} · {{ entry.code }} {{ entry.name }}
         <template v-if="entry.reportAmount != null"> · 计入报表 {{ amount(entry.reportAmount) }}</template>
         <template v-else> · 借 {{ amount(entry.debit) }} · 贷 {{ amount(entry.credit) }}</template>
-        <button class="quiet" type="button" :disabled="busy" @click="run(() => readJournal(entry.journalId))">查看凭证 {{ entry.sourceNumber }}</button>
+        <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="run(() => readJournal(entry.journalId))">查看凭证 {{ entry.sourceNumber }}</UButton>
       </li></ul>
       <p v-if="!drill.detail.postings.length">该期间无对应凭证。</p>
-      <button
-v-if="drill.page > 1" class="quiet" type="button" :disabled="busy"
-        @click="run(() => readDrill(drill!.key, drill!.label, drill!.period, drill!.page - 1))">上一页明细</button>
-      <button
-v-if="drill.detail.hasMore" class="quiet" type="button" :disabled="busy"
-        @click="run(() => readDrill(drill!.key, drill!.label, drill!.period, drill!.page + 1))">下一页明细</button>
+      <UButton
+v-if="drill.page > 1" variant="outline" color="neutral" size="sm" type="button" :disabled="busy"
+        @click="run(() => readDrill(drill!.key, drill!.label, drill!.period, drill!.page - 1))">上一页明细</UButton>
+      <UButton
+v-if="drill.detail.hasMore" variant="outline" color="neutral" size="sm" type="button" :disabled="busy"
+        @click="run(() => readDrill(drill!.key, drill!.label, drill!.period, drill!.page + 1))">下一页明细</UButton>
     </section>
     <section v-if="journal" class="report-screen" aria-label="报表来源凭证">
       <h3>{{ journal.journal.sourceNumber }} · {{ journal.journal.on }}</h3>
@@ -244,7 +243,7 @@ v-if="drill.detail.hasMore" class="quiet" type="button" :disabled="busy"
 
 <style scoped>
 .financial-reports { margin-top: 24px }
-fieldset, .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-width: 0 }
+fieldset { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; min-width: 0 }
 fieldset { margin: 12px 0; border: 1px solid #d1d9e6; border-radius: 8px }
 label { display: grid; gap: 4px }
 .comparison { display: flex; align-items: center }

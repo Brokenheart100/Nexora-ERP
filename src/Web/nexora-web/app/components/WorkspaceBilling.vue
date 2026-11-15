@@ -186,8 +186,8 @@ onMounted(load)
 
 <template>
   <section class="card billing" aria-labelledby="billing-title">
-    <h2 id="billing-title"><UIcon class="heading-icon" name="i-lucide-credit-card" aria-hidden="true" />计费与套餐</h2>
-    <p class="hint">
+    <h2 id="billing-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-credit-card" aria-hidden="true" />计费与套餐</h2>
+    <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
       自托管手工计费：选择套餐并登记线下付款参考号后订阅立即生效；免费版可直接切换。取消订阅会立即降级到免费版。计费按工作区独立结算。
     </p>
     <div v-if="signupPlanCodeValue" data-testid="billing-signup-plan">
@@ -211,7 +211,7 @@ onMounted(load)
         <div><span>订阅状态</span><strong data-testid="billing-status">{{ billingStatusLabel(subscription.status) }}</strong></div>
         <div><span>生效套餐</span><strong data-testid="billing-effective">{{ planLabel(subscription.effectivePlanCode) }}</strong></div>
         <div><span>本周期结束</span><strong>{{ moment(subscription.periodEndUtc) }}</strong></div>
-        <button class="quiet" type="button" :disabled="acting !== ''" @click="load">刷新计费信息</button>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="acting !== ''" @click="load">刷新计费信息</UButton>
       </div>
       <UAlert v-for="warning in warnings" :key="warning" role="status" color="warning" icon="i-lucide-triangle-alert"
         :description="warning" />
@@ -226,7 +226,7 @@ onMounted(load)
           </div>
           <strong>{{ row.used }} / {{ row.limit }}</strong>
         </div>
-        <p class="hint">
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
           统计周期 {{ entitlements?.usage.period }}；单据配额按月重置，工作区与成员配额为硬上限。
           配额不足或需要更高限额？<a
             href="mailto:support@nexora.example?subject=套餐与限额咨询"
@@ -258,14 +258,14 @@ onMounted(load)
           </ul>
           <p class="modules">模块：{{ plan.modules.map(moduleName).join('、') }}</p>
           <template v-if="selectable(plan)">
-            <button
-              class="primary"
+            <UButton
+              color="primary"
               type="button"
               :disabled="acting !== '' || quoting !== ''"
               @click="requestPlan(plan)"
             >
               {{ plan.code === 'free' ? '切换到免费版' : quoting === plan.code ? '正在计算费用…' : '查看费用并变更' }}
-            </button>
+            </UButton>
           </template>
           <p v-else-if="current(plan)" class="current-label">当前套餐</p>
         </article>
@@ -285,7 +285,7 @@ onMounted(load)
           <div><dt>生效日期</dt><dd data-testid="quote-effective">{{ moment(pendingQuote.quote.effectiveAtUtc) }}</dd></div>
           <div><dt>本周期结束</dt><dd data-testid="quote-period-end">{{ moment(pendingQuote.quote.periodEndUtc) }}</dd></div>
         </dl>
-        <p class="hint">
+        <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
           {{ pendingQuote.quote.prorated
             ? `按当前周期剩余 ${pendingQuote.quote.remainingDays} 天折算新套餐费用，并抵扣原套餐未使用部分。`
             : '当前没有可抵扣的付费周期，将按整月计费。' }}
@@ -300,22 +300,22 @@ onMounted(load)
             @update:model-value="value => paymentReference[quotePlanCode] = String(value)"
           />
         </UFormField>
-        <div class="actions">
-          <button class="primary" type="button" :disabled="acting !== ''" @click="confirmQuote">
+        <div class="mb-3 mt-2 flex flex-wrap gap-2">
+          <UButton color="primary" type="button" :disabled="acting !== ''" @click="confirmQuote">
             {{ quoteIsZeroDue(pendingQuote.quote) ? '确认变更' : '确认变更并登记付款' }}
-          </button>
-          <button class="quiet" type="button" :disabled="acting !== ''" @click="dismissQuote">取消</button>
+          </UButton>
+          <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="acting !== ''" @click="dismissQuote">取消</UButton>
         </div>
       </section>
-      <p v-if="!canManage" class="hint">只有工作区所有者可以切换套餐、登记付款或取消订阅。</p>
-      <div class="actions">
-        <button class="quiet" type="button" :disabled="!canCancel || acting !== ''" @click="cancel">
+      <p v-if="!canManage" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">只有工作区所有者可以切换套餐、登记付款或取消订阅。</p>
+      <div class="mb-3 mt-2 flex flex-wrap gap-2">
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="!canCancel || acting !== ''" @click="cancel">
           取消订阅并降级到免费版
-        </button>
+        </UButton>
       </div>
 
       <h3>账单与收据</h3>
-      <p v-if="!invoices.length" class="hint">暂无账单。</p>
+      <p v-if="!invoices.length" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">暂无账单。</p>
       <UTable
         v-else
         data-testid="billing-invoices"
@@ -330,7 +330,7 @@ onMounted(load)
             <UInput :model-value="paymentReference[row.original.id]" type="text" maxlength="120" placeholder="付款参考号"
               class="w-[150px] mr-1.5"
               @update:model-value="value => paymentReference[row.original.id] = String(value)" />
-            <button class="quiet" type="button" :disabled="acting !== ''" @click="pay(row.original)">登记付款</button>
+            <UButton variant="outline" color="neutral" size="xs" type="button" :disabled="acting !== ''" @click="pay(row.original)">登记付款</UButton>
           </template>
           <span v-else>{{ row.original.paidAtUtc ? moment(row.original.paidAtUtc) : '—' }}</span>
         </template>
@@ -369,5 +369,4 @@ onMounted(load)
 .plan ul { margin: 0; padding-left: 18px }
 .plan .modules { font-size: 0.85em; opacity: 0.8; margin: 0 }
 .current-label { font-weight: 600; color: var(--nx-primary); margin: 0 }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 }
 </style>

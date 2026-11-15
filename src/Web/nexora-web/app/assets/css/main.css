@@ -50,6 +50,29 @@
   --color-brand-950: #0a172c;
 
   --font-sans: var(--nx-font);
+
+  /* nx token bridge (Phase 2): semantic colors / radii / shadows as utilities. */
+  --color-nx-bg: var(--nx-bg);
+  --color-nx-surface: var(--nx-surface);
+  --color-nx-surface-muted: var(--nx-surface-muted);
+  --color-nx-border: var(--nx-border);
+  --color-nx-border-strong: var(--nx-border-strong);
+  --color-nx-ink: var(--nx-ink);
+  --color-nx-ink-2: var(--nx-ink-2);
+  --color-nx-ink-3: var(--nx-ink-3);
+  --color-nx-ink-4: var(--nx-ink-4);
+  --color-nx-primary: var(--nx-primary);
+  --color-nx-primary-strong: var(--nx-primary-strong);
+  --color-nx-primary-soft: var(--nx-primary-soft);
+  --color-nx-success: var(--nx-success);
+  --color-nx-success-soft: var(--nx-success-soft);
+  --color-nx-warning: var(--nx-warning);
+  --color-nx-warning-soft: var(--nx-warning-soft);
+  --color-nx-danger: var(--nx-danger);
+  --radius-nx: var(--nx-radius);
+  --radius-nx-sm: var(--nx-radius-sm);
+  --shadow-nx-sm: var(--nx-shadow-sm);
+  --shadow-nx-md: var(--nx-shadow-md);
 }
 
 html {
@@ -104,15 +127,6 @@ h2 {
   font-weight: 700;
   letter-spacing: -0.012em;
   margin: 0 0 18px;
-}
-
-.heading-icon {
-  display: inline-block;
-  width: 1.08em;
-  height: 1.08em;
-  margin-right: 8px;
-  vertical-align: -0.16em;
-  color: var(--nx-primary);
 }
 
 h3 {
@@ -391,12 +405,6 @@ main > header {
   color: var(--nx-ink-2);
 }
 
-.user .quiet {
-  padding: 7px 11px;
-  margin-left: 4px;
-  font-size: 12px;
-}
-
 .nav-toggle {
   display: none;
   place-items: center;
@@ -599,12 +607,6 @@ main > section.card > h2 {
   margin: 0;
 }
 
-main > section.card > button.quiet {
-  grid-column: 2;
-  justify-self: end;
-  margin-left: 0;
-}
-
 main > section.card > h2::before {
   display: inline-block;
   width: 3px;
@@ -684,10 +686,6 @@ main > section.card > h2::before {
   max-width: none;
 }
 
-.join-card .formrow .primary {
-  width: 100%;
-}
-
 .personal-option {
   display: inline-flex;
   gap: 10px;
@@ -751,10 +749,6 @@ main > section.card > h2::before {
 }
 
 .card-head h2 {
-  margin: 0;
-}
-
-.card-head .hint {
   margin: 0;
 }
 
@@ -916,10 +910,6 @@ main > section.card > h2::before {
   color: var(--nx-ink-2);
 }
 
-.overview-card .quiet {
-  margin-top: 10px;
-}
-
 .status-pill {
   display: inline-flex;
   gap: 6px;
@@ -970,17 +960,6 @@ main > section.card > h2::before {
   background: #f1f5fc;
   border: 1px solid #e4ebf6;
   border-radius: 12px;
-}
-
-.empty-state .hint {
-  margin: 0;
-}
-
-.hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.62;
-  color: var(--nx-ink-3);
 }
 
 /* Forms ------------------------------------------------------------------ */
@@ -1153,73 +1132,6 @@ label.comparison input {
 }
 
 /* Buttons ---------------------------------------------------------------- */
-.primary {
-  display: inline-flex;
-  gap: 7px;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 17px;
-  font-size: 13px;
-  font-weight: 650;
-  color: #fff;
-  white-space: nowrap;
-  background: linear-gradient(180deg, #3b6bd0 0%, #2f5fbf 100%);
-  border: 1px solid #2a55ad;
-  border-radius: 10px;
-  box-shadow:
-    0 7px 16px -8px rgba(47, 95, 191, 0.72),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    filter 0.15s ease;
-}
-
-.primary:hover:not(:disabled) {
-  filter: brightness(1.04);
-  box-shadow:
-    0 10px 22px -10px rgba(47, 95, 191, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-.primary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.quiet {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  justify-content: center;
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #2c4f8f;
-  white-space: nowrap;
-  background: #fff;
-  border: 1px solid #dbe3ef;
-  border-radius: 9px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
-}
-
-.quiet:hover:not(:disabled) {
-  color: var(--nx-primary-strong);
-  background: #f5f8ff;
-  border-color: #c8d7ee;
-}
-
-td .quiet,
-th .quiet {
-  padding: 5px 9px;
-  font-size: 11.5px;
-  border-radius: 7px;
-}
-
 p[role="status"] {
   min-height: 0;
   font-size: 13px;
@@ -1461,12 +1373,6 @@ fieldset > button {
   align-self: start;
 }
 
-/* A fieldset is a grid container; keep its action button content-sized
-   instead of letting the implicit row stretch it to the field width. */
-fieldset > .primary {
-  justify-self: start;
-}
-
 .partner-detail,
 .partner-actions {
   min-width: 0;
@@ -1678,7 +1584,6 @@ html.dark .eyebrow {
   color: #8fb0ef;
 }
 
-html.dark .hint,
 html.dark .card-sub,
 html.dark .card-hint,
 html.dark .side-meta {
@@ -1701,7 +1606,6 @@ html.dark textarea:focus {
   box-shadow: 0 0 0 3px rgba(111, 147, 224, 0.18);
 }
 
-html.dark .quiet,
 html.dark .theme-toggle,
 html.dark .nav-toggle {
   color: #c7d6ef;
@@ -1709,7 +1613,6 @@ html.dark .nav-toggle {
   border-color: var(--nx-border-strong);
 }
 
-html.dark .quiet:hover:not(:disabled),
 html.dark .theme-toggle:hover,
 html.dark .nav-toggle:hover {
   color: #e8eef9;
@@ -1841,10 +1744,6 @@ html.dark ::selection {
     display: none;
   }
 
-  .user .quiet {
-    margin-left: 0;
-  }
-
   .formrow {
     flex-wrap: wrap;
   }
@@ -1853,7 +1752,7 @@ html.dark ::selection {
     flex-basis: 100%;
   }
 
-  .formrow > .primary {
+  .formrow > button {
     width: 100%;
   }
 
@@ -1900,10 +1799,6 @@ html.dark ::selection {
 
   .heading h1 {
     font-size: 24px;
-  }
-
-  .user .quiet {
-    padding: 6px 9px;
   }
 
   main > section.card > h2 {

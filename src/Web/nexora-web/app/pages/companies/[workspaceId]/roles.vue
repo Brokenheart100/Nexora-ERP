@@ -7,7 +7,7 @@ useHead({ title: () => t('app.rolesPermissions') })
 <template>
   <section class="heading">
     <div>
-      <h1><UIcon class="heading-icon" name="i-lucide-shield-check" aria-hidden="true" />{{ t('app.rolesPermissions') }}</h1>
+      <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-shield-check" aria-hidden="true" />{{ t('app.rolesPermissions') }}</h1>
       <p v-if="workspace">{{ workspace.name }}</p>
     </div>
   </section>

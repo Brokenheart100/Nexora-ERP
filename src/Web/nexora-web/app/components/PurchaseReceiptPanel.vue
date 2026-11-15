@@ -55,7 +55,7 @@ function closeOrder() {
 <template>
   <section aria-label="采购收货许可">
     <h4>收货许可</h4>
-    <button type="button" class="quiet" :disabled="busy" @click="run(async () => {})">{{ list ? '刷新收货进度' : '打开收货许可' }}</button>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(async () => {})">{{ list ? '刷新收货进度' : '打开收货许可' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="list">
       <form v-if="list.canManage && !['received', 'closed'].includes(orderState)" @submit.prevent="issue">
@@ -70,7 +70,7 @@ function closeOrder() {
           <UFormField label="许可数量" name="quantity">
             <UInput :model-value="form.quantity" inputmode="decimal" maxlength="24" required @update:model-value="value => form.quantity = String(value).trim()" />
           </UFormField>
-          <button class="primary">签发收货许可</button>
+          <UButton color="primary" type="submit">签发收货许可</UButton>
         </fieldset>
       </form>
       <UFormField v-if="list.canManage && orderState !== 'closed'" label="取消许可或关单原因" name="reason">
@@ -78,14 +78,14 @@ function closeOrder() {
       </UFormField>
       <ul><li v-for="permit in list.permits" :key="permit.id">
         {{ lines.find(x => x.id === permit.lineId)?.itemCode }} · {{ labels[permit.state] }} · 已收 {{ permit.executed }} / {{ permit.quantity }}
-        <button
-v-if="list.canManage && ['issued', 'dispatching'].includes(permit.state)" class="quiet" type="button"
-          :disabled="busy || !form.reason" @click="cancel(permit)">取消未收货额度</button>
+        <UButton
+v-if="list.canManage && ['issued', 'dispatching'].includes(permit.state)" variant="outline" color="neutral" size="sm" type="button"
+          :disabled="busy || !form.reason" @click="cancel(permit)">取消未收货额度</UButton>
       </li></ul>
-      <button
-v-if="list.canManage && orderState !== 'closed'" type="button" class="quiet"
+      <UButton
+v-if="list.canManage && orderState !== 'closed'" type="button" variant="outline" color="neutral" size="sm"
         :disabled="busy || !form.reason || list.permits.some(x => !['completed', 'cancelled'].includes(x.state))"
-        @click="closeOrder">关闭采购收货</button>
+        @click="closeOrder">关闭采购收货</UButton>
     </template>
   </section>
 </template>

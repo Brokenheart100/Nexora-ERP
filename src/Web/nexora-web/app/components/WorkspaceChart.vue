@@ -161,15 +161,15 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
 <template>
   <section class="chart" aria-labelledby="chart-heading">
     <h3 id="chart-heading">科目管理</h3>
-    <button class="quiet" :disabled="busy" @click="run(load)">{{ chart ? '刷新科目' : '打开科目管理' }}</button>
+    <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(load)">{{ chart ? '刷新科目' : '打开科目管理' }}</UButton>
     <UAlert v-if="message" role="status" :description="message" />
     <template v-if="chart">
-      <div class="actions">
-        <button v-if="chart.canManage" class="primary" :disabled="busy" @click="edit()">新增科目</button>
+      <div class="mb-3 mt-2 flex flex-wrap gap-2">
+        <UButton v-if="chart.canManage" color="primary" :disabled="busy" @click="edit()">新增科目</UButton>
         <template v-if="chart.canExport">
-          <button class="quiet" :disabled="busy" @click="download('template')">导出模板</button>
-          <button class="quiet" :disabled="busy" @click="download('structure')">导出科目结构</button>
-          <button class="quiet" :disabled="busy" @click="download('snapshot')">导出科目快照</button>
+          <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="download('template')">导出模板</UButton>
+          <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="download('structure')">导出科目结构</UButton>
+          <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="download('snapshot')">导出科目快照</UButton>
         </template>
       </div>
       <UTable
@@ -181,7 +181,7 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
         :ui="{ td: 'align-top whitespace-normal', th: 'whitespace-nowrap' }"
       >
         <template #actions-cell="{ row }">
-          <button v-if="chart?.canManage" class="quiet" :disabled="busy" @click="edit(row.original)">编辑科目 {{ row.original.code }}</button>
+          <UButton v-if="chart?.canManage" variant="outline" color="neutral" size="xs" :disabled="busy" @click="edit(row.original)">编辑科目 {{ row.original.code }}</UButton>
         </template>
       </UTable>
       <form v-if="chart.canManage && draft" @submit.prevent="save">
@@ -203,7 +203,7 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
             <USelect :model-value="draft.account.purpose" :items="purposeOptions" @update:model-value="value => updateDraft('purpose', value)" />
           </UFormField>
           <UCheckbox v-model="draft.account.isArchived" label="归档科目" />
-          <div class="actions"><button class="primary">保存科目</button><button type="button" class="quiet" @click="draft = undefined">取消</button></div>
+          <div class="mb-3 mt-2 flex flex-wrap gap-2"><UButton type="submit" color="primary">保存科目</UButton><UButton type="button" variant="outline" color="neutral" size="sm" @click="draft = undefined">取消</UButton></div>
         </fieldset>
       </form>
       <form v-if="chart.canImport" @submit.prevent="previewImport">
@@ -219,7 +219,7 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
           <UFormField label="科目文件内容" name="chartFileContent">
             <UTextarea :model-value="file" :rows="4" maxlength="262144" required @update:model-value="value => file = String(value)" />
           </UFormField>
-          <button class="primary">预览导入</button>
+          <UButton type="submit" color="primary">预览导入</UButton>
         </fieldset>
       </form>
       <section v-if="preview" aria-label="导入预览">
@@ -233,7 +233,7 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
           </li>
         </ul>
         <UCheckbox v-if="preview.previewId && mode === 'replace'" v-model="confirmReplace" label="确认归档本次未包含的科目" />
-        <button v-if="preview.previewId" class="primary" :disabled="busy || (mode === 'replace' && !confirmReplace)" @click="commit">提交导入</button>
+        <UButton v-if="preview.previewId" color="primary" :disabled="busy || (mode === 'replace' && !confirmReplace)" @click="commit">提交导入</UButton>
       </section>
     </template>
   </section>
@@ -241,7 +241,6 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
 
 <style scoped>
 .chart { margin-top: 20px; min-width: 0 }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 }
 fieldset { min-width: 0; display: grid; gap: 10px; border: 1px solid #d1d9e6; border-radius: 8px; margin: 12px 0; padding: 12px }
 label { display: grid; gap: 4px }
 </style>

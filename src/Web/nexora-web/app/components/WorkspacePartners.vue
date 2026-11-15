@@ -144,10 +144,10 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section class="card partners" aria-labelledby="partners-heading">
-    <h2 id="partners-heading"><UIcon class="heading-icon" name="i-lucide-contact" aria-hidden="true" />往来单位</h2>
+    <h2 id="partners-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-contact" aria-hidden="true" />往来单位</h2>
     <div class="partner-actions">
-      <button class="quiet" :disabled="busy" @click="show()">{{ open ? '刷新往来单位' : '打开往来单位' }}</button>
-      <button v-if="list?.canManage" class="primary" :disabled="busy" @click="create">新增往来单位</button>
+      <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="show()">{{ open ? '刷新往来单位' : '打开往来单位' }}</UButton>
+      <UButton v-if="list?.canManage" color="primary" :disabled="busy" @click="create">新增往来单位</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
 
@@ -163,13 +163,13 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
         :ui="{ td: 'align-top whitespace-normal', th: 'whitespace-nowrap' }"
       >
         <template #detail-cell="{ row }">
-          <button class="quiet" :disabled="busy" @click="view(row.original.id)">查看 {{ row.original.code }}</button>
+          <UButton variant="outline" color="neutral" size="xs" :disabled="busy" @click="view(row.original.id)">查看 {{ row.original.code }}</UButton>
         </template>
       </UTable>
       <div v-if="page > 1 || list.hasMore" class="partner-actions">
-        <button class="quiet" :disabled="busy || page === 1" @click="show(page - 1)">上一页</button>
+        <UButton variant="outline" color="neutral" size="sm" :disabled="busy || page === 1" @click="show(page - 1)">上一页</UButton>
         <span>第 {{ page }} 页</span>
-        <button class="quiet" :disabled="busy || !list.hasMore" @click="show(page + 1)">下一页</button>
+        <UButton variant="outline" color="neutral" size="sm" :disabled="busy || !list.hasMore" @click="show(page + 1)">下一页</UButton>
       </div>
 
       <section v-if="selected && !draft" class="partner-detail">
@@ -185,7 +185,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
             {{ [contact.name, contact.email, contact.phone].filter(Boolean).join(' · ') }}
           </li>
         </ul>
-        <button v-if="list.canManage" class="quiet" :disabled="busy" @click="edit(selected)">编辑往来单位</button>
+        <UButton v-if="list.canManage" variant="outline" color="neutral" size="sm" :disabled="busy" @click="edit(selected)">编辑往来单位</UButton>
       </section>
 
       <form v-if="list.canManage && draft" @submit.prevent="save">
@@ -220,12 +220,12 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
             <UFormField label="联系人电话" name="contactPhone">
               <UInput :model-value="contact.phone ?? ''" type="tel" maxlength="40" @update:model-value="value => setText(contact, 'phone', value)" />
             </UFormField>
-            <button type="button" class="quiet" @click="draft.contacts.splice(index, 1)">移除联系人 {{ index + 1 }}</button>
+            <UButton type="button" variant="outline" color="neutral" size="sm" @click="draft.contacts.splice(index, 1)">移除联系人 {{ index + 1 }}</UButton>
           </fieldset>
           <div class="partner-actions">
-            <button type="button" class="quiet" :disabled="draft.contacts.length >= 20" @click="addContact">添加联系人</button>
-            <button class="primary">保存往来单位</button>
-            <button type="button" class="quiet" @click="draft = undefined">取消</button>
+            <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="draft.contacts.length >= 20" @click="addContact">添加联系人</UButton>
+            <UButton type="submit" color="primary">保存往来单位</UButton>
+            <UButton type="button" variant="outline" color="neutral" size="sm" @click="draft = undefined">取消</UButton>
           </div>
         </fieldset>
       </form>

@@ -112,7 +112,7 @@ async function pickFile(event: Event) {
 
 <template>
   <section aria-label="对账单导入与审核">
-    <button type="button" class="quiet" :disabled="busy" @click="run(reload)">读取银行流水与待审核行</button>
+    <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(reload)">读取银行流水与待审核行</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <form v-if="canSubmit" @submit.prevent="importPreview">
       <fieldset :disabled="busy">
@@ -134,7 +134,7 @@ async function pickFile(event: Event) {
         <UFormField label="摘要列" name="descriptionColumn" required>
           <UInput :model-value="mapping.description" required @update:model-value="value => setText(mapping, 'description', value)" />
         </UFormField>
-        <button class="quiet">预览银行导入</button>
+        <UButton variant="outline" color="neutral" size="sm" type="submit">预览银行导入</UButton>
         <template v-if="preview">
           <ul>
             <li v-for="issue in preview.errors" :key="issue.row + issue.message">第 {{ issue.row }} 行 · {{ issue.message
@@ -145,7 +145,7 @@ async function pickFile(event: Event) {
               {{ row.entry.externalId }} · {{ row.entry.amount }} · {{ row.duplicate ? '已存在' : '待导入' }}
             </li>
           </ul>
-          <button v-if="preview.previewId" class="primary" type="button" @click="importCommit">提交银行导入</button>
+          <UButton v-if="preview.previewId" color="primary" type="button" @click="importCommit">提交银行导入</UButton>
         </template>
       </fieldset>
     </form>
@@ -161,9 +161,9 @@ async function pickFile(event: Event) {
     </UFormField>
     <template v-if="selected">
       <p>{{ selected.excluded ? '已排除' : '待审核' }} · 已匹配 {{ selected.matched }} · 账单金额 {{ selected.amount }}</p>
-      <button
-v-if="canSubmit && !selected.excluded && selected.matched === '0'" type="button" class="quiet"
-        @click="emit('useLine', selected)">用该行创建收付单据</button>
+      <UButton
+v-if="canSubmit && !selected.excluded && selected.matched === '0'" type="button" variant="outline" color="neutral" size="sm"
+        @click="emit('useLine', selected)">用该行创建收付单据</UButton>
       <form v-if="canApprove && !selected.excluded" @submit.prevent="attach">
         <fieldset :disabled="busy">
           <legend>匹配已过账流水</legend>
@@ -173,21 +173,21 @@ v-if="canSubmit && !selected.excluded && selected.matched === '0'" type="button"
           <UFormField label="分配金额" name="allocateAmount" required>
             <UInput :model-value="amount" required inputmode="decimal" @update:model-value="value => amount = String(value).trim()" />
           </UFormField>
-          <button class="primary">确认分配</button>
+          <UButton type="submit" color="primary">确认分配</UButton>
         </fieldset>
       </form>
       <UFormField v-if="canApprove" label="撤销或排除原因" name="reason">
         <UInput :model-value="reason" maxlength="300" @update:model-value="value => reason = String(value).trim()" />
       </UFormField>
-      <button
-v-if="canApprove && selected.matched === '0'" class="quiet" type="button" :disabled="busy || !reason"
-        @click="toggleExcluded">{{ selected.excluded ? '恢复审核' : '排除对账行' }}</button>
+      <UButton
+v-if="canApprove && selected.matched === '0'" variant="outline" color="neutral" size="sm" type="button" :disabled="busy || !reason"
+        @click="toggleExcluded">{{ selected.excluded ? '恢复审核' : '排除对账行' }}</UButton>
       <ul>
         <li v-for="match in matches" :key="match.id">
           {{ match.amount }} · {{ match.reversed ? '已撤销' : '有效匹配' }}
-          <button
-v-if="canApprove && !match.reversed" class="quiet" type="button" :disabled="busy || !reason"
-            @click="release(match)">撤销匹配</button>
+          <UButton
+v-if="canApprove && !match.reversed" variant="outline" color="neutral" size="xs" type="button" :disabled="busy || !reason"
+            @click="release(match)">撤销匹配</UButton>
         </li>
       </ul>
     </template>

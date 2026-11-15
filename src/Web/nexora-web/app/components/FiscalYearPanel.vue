@@ -55,7 +55,7 @@ function decide(decision: string) {
 <template>
   <section aria-label="会计年度关账">
     <h3>会计年度关账</h3>
-    <button v-if="!opened" class="quiet" type="button" :disabled="busy" @click="run(read)">打开年结工作台</button>
+    <UButton v-if="!opened" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(read)">打开年结工作台</UButton>
     <template v-else>
       <form @submit.prevent="loadPreview">
         <fieldset :disabled="busy"><legend>年结预览</legend>
@@ -65,12 +65,12 @@ function decide(decision: string) {
           <UFormField label="未分配利润科目" name="equityAccountId">
             <USelect :model-value="equityId" :items="equityOptions" placeholder="选择权益科目" @update:model-value="value => equityId = String(value)" />
           </UFormField>
-          <button class="quiet">预览年结分录</button>
-          <button v-if="canPrepare && equityId && year" class="primary" type="button" @click="prepare">提交年结复核</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit">预览年结分录</UButton>
+          <UButton v-if="canPrepare && equityId && year" color="primary" type="button" @click="prepare">提交年结复核</UButton>
         </fieldset>
       </form>
       <ul><li v-for="row in history" :key="row.id">
-        <button type="button" class="quiet" @click="selected = row">{{ row.report.period.from }} 至 {{ row.report.period.through }} · {{ labels[row.state] }}</button>
+        <UButton type="button" variant="outline" color="neutral" size="xs" @click="selected = row">{{ row.report.period.from }} 至 {{ row.report.period.through }} · {{ labels[row.state] }}</UButton>
       </li></ul>
       <template v-if="report">
         <p>{{ report.period.from }} 至 {{ report.period.through }} · 结转净利润 {{ money(report.netProfit) }}</p>
@@ -81,13 +81,13 @@ function decide(decision: string) {
       <template v-if="selected">
         <p v-if="selected.closingJournals.length">结转凭证 {{ selected.closingJournals.join('、') }}</p>
         <p v-if="selected.reopeningJournals.length">重开冲销凭证 {{ selected.reopeningJournals.join('、') }}</p>
-        <button v-if="selected.state === 'pending' && canReview" class="primary" type="button" :disabled="busy" @click="decide('close')">批准年结</button>
-        <button v-if="selected.state === 'pending' && canPrepare" class="quiet" type="button" :disabled="busy" @click="decide('cancel')">取消待审年结</button>
+        <UButton v-if="selected.state === 'pending' && canReview" color="primary" type="button" :disabled="busy" @click="decide('close')">批准年结</UButton>
+        <UButton v-if="selected.state === 'pending' && canPrepare" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="decide('cancel')">取消待审年结</UButton>
         <form v-if="selected.state === 'closed' && canReview" @submit.prevent="decide('reopen')">
           <UFormField label="重开年度原因" name="reopenReason">
             <UInput :model-value="reason" maxlength="300" required @update:model-value="value => reason = String(value).trim()" />
           </UFormField>
-          <button class="quiet" :disabled="busy">重开会计年度</button>
+          <UButton variant="outline" color="neutral" size="sm" type="submit" :disabled="busy">重开会计年度</UButton>
         </form>
       </template>
     </template>

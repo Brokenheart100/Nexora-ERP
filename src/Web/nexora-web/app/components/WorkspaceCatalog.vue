@@ -123,8 +123,8 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section class="card catalog" aria-labelledby="catalog-heading">
-    <h2 id="catalog-heading"><UIcon class="heading-icon" name="i-lucide-package" aria-hidden="true" />商品目录</h2>
-    <button class="quiet" :disabled="busy" @click="show()">{{ open ? '刷新目录' : '打开商品目录' }}</button>
+    <h2 id="catalog-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-package" aria-hidden="true" />商品目录</h2>
+    <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="show()">{{ open ? '刷新目录' : '打开商品目录' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />
     <template v-if="catalog">
       <div v-if="catalog.canManage" class="catalog-forms">
@@ -140,7 +140,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
             <UFormField label="定义名称" name="definitionName" required>
               <UInput :model-value="definition.name" required maxlength="160" @update:model-value="value => setText(definition, 'name', value)" />
             </UFormField>
-            <button class="primary">保存定义</button>
+            <UButton type="submit" color="primary">保存定义</UButton>
           </fieldset>
         </form>
         <form @submit.prevent="createItem">
@@ -162,7 +162,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
               <USelect v-model="item.unitId" :items="unitOptions" placeholder="选择单位" />
             </UFormField>
             <UCheckbox v-if="item.kind === 'product'" v-model="item.tracksInventory" label="跟踪库存" />
-            <button class="primary">创建项目</button>
+            <UButton type="submit" color="primary">创建项目</UButton>
           </fieldset>
           <p v-if="!categories.length || !units.length">先新增分类和计量单位。</p>
         </form>
@@ -172,7 +172,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
         <ul>
           <li v-for="row in catalog.definitions" :key="row.id">
             <span>{{ row.kind === 'category' ? '分类' : '计量单位' }} · {{ row.code }} · {{ row.name }} · {{ row.isActive ? '启用' : '已停用' }}</span>
-            <button v-if="catalog.canManage" class="quiet" :disabled="busy" @click="editingDefinition = { ...row }">编辑定义 {{ row.code }}</button>
+            <UButton v-if="catalog.canManage" variant="outline" color="neutral" size="xs" :disabled="busy" @click="editingDefinition = { ...row }">编辑定义 {{ row.code }}</UButton>
           </li>
         </ul>
         <form v-if="catalog.canManage && editingDefinition" @submit.prevent="updateDefinition">
@@ -182,7 +182,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
               <UInput :model-value="editingDefinition.name" required maxlength="160" @update:model-value="value => setText(editingDefinition, 'name', value)" />
             </UFormField>
             <UCheckbox v-model="editingDefinition.isActive" label="定义启用" />
-            <div><button class="primary">保存定义修改</button> <button type="button" class="quiet" @click="editingDefinition = undefined">取消</button></div>
+            <div><UButton type="submit" color="primary">保存定义修改</UButton> <UButton type="button" variant="outline" color="neutral" size="sm" @click="editingDefinition = undefined">取消</UButton></div>
           </fieldset>
         </form>
       </details>
@@ -197,13 +197,13 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
         :ui="{ td: 'align-top whitespace-normal', th: 'whitespace-nowrap' }"
       >
         <template #actions-cell="{ row }">
-          <button v-if="catalog?.canManage" class="quiet" :disabled="busy" @click="editing = { ...row.original }">编辑 {{ row.original.code }}</button>
+          <UButton v-if="catalog?.canManage" variant="outline" color="neutral" size="xs" :disabled="busy" @click="editing = { ...row.original }">编辑 {{ row.original.code }}</UButton>
         </template>
       </UTable>
       <div v-if="page > 1 || catalog.page.hasMore" class="catalog-pages">
-        <button class="quiet" :disabled="busy || page === 1" @click="show(page - 1)">上一页</button>
+        <UButton variant="outline" color="neutral" size="sm" :disabled="busy || page === 1" @click="show(page - 1)">上一页</UButton>
         <span>第 {{ page }} 页</span>
-        <button class="quiet" :disabled="busy || !catalog.page.hasMore" @click="show(page + 1)">下一页</button>
+        <UButton variant="outline" color="neutral" size="sm" :disabled="busy || !catalog.page.hasMore" @click="show(page + 1)">下一页</UButton>
       </div>
       <form v-if="catalog.canManage && editing" @submit.prevent="updateItem">
         <fieldset :disabled="busy">
@@ -215,7 +215,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
             <USelect v-model="editing.categoryId" :items="editCategoryOptions" />
           </UFormField>
           <UCheckbox v-model="editing.isActive" label="项目启用" />
-          <div><button class="primary">保存项目</button> <button type="button" class="quiet" @click="editing = undefined">取消</button></div>
+          <div><UButton type="submit" color="primary">保存项目</UButton> <UButton type="button" variant="outline" color="neutral" size="sm" @click="editing = undefined">取消</UButton></div>
         </fieldset>
       </form>
     </template>

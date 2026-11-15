@@ -188,11 +188,11 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 
 <template>
   <section ref="card" class="card sales" aria-labelledby="sales-heading">
-    <h2 id="sales-heading"><UIcon class="heading-icon" name="i-lucide-truck" aria-hidden="true" />销售报价与订单</h2>
-    <button class="quiet" type="button" :disabled="busy" @click="open">{{ state ? '刷新销售订单' : '打开销售订单' }}</button>
-    <div class="actions">
-      <button class="quiet" type="button" :disabled="busy || exporting" @click="run(exportOrders)">导出销售订单 CSV</button>
-      <button class="quiet" type="button" @click="printView">打印当前视图</button>
+    <h2 id="sales-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-truck" aria-hidden="true" />销售报价与订单</h2>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="open">{{ state ? '刷新销售订单' : '打开销售订单' }}</UButton>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || exporting" @click="run(exportOrders)">导出销售订单 CSV</UButton>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="printView">打印当前视图</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <UAlert v-if="exportNotice" role="status" :description="exportNotice" />
@@ -216,7 +216,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
           <UFormField label="销售客户" name="customerId">
             <USelect :model-value="draft.customerId" :items="customerOptions" placeholder="选择客户" required @update:model-value="value => draft.customerId = String(value)" />
           </UFormField>
-          <button v-if="moreCustomers" type="button" class="quiet" @click="run(loadCustomers)">加载更多客户</button>
+          <UButton v-if="moreCustomers" variant="outline" color="neutral" size="sm" type="button" @click="run(loadCustomers)">加载更多客户</UButton>
           <UFormField label="销售备注" name="note">
             <UInput :model-value="draft.note" maxlength="300" @update:model-value="value => setText(draft, 'note', value)" />
           </UFormField>
@@ -230,26 +230,26 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
             <UFormField :label="`未税单价 ${index + 1}`" name="unitPrice">
               <UInput :model-value="line.unitPrice" inputmode="decimal" maxlength="24" required @update:model-value="value => setText(line, 'unitPrice', value)" />
             </UFormField>
-            <button class="quiet" type="button" :disabled="draft.lines.length <= 1" @click="draft.lines.splice(index, 1)">移除销售行</button>
+            <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="draft.lines.length <= 1" @click="draft.lines.splice(index, 1)">移除销售行</UButton>
           </div>
-          <div class="actions">
-            <button v-if="moreItems" class="quiet" type="button" @click="run(loadItems)">加载更多库存商品</button>
-            <button class="quiet" type="button" :disabled="draft.lines.length >= 50" @click="draft.lines.push(blankLine())">增加销售行</button>
-            <button v-if="draft.id" class="quiet" type="button" @click="resetDraft">放弃编辑</button>
-            <button class="primary">保存销售草稿</button>
+          <div class="mb-3 mt-2 flex flex-wrap gap-2">
+            <UButton v-if="moreItems" variant="outline" color="neutral" size="sm" type="button" @click="run(loadItems)">加载更多库存商品</UButton>
+            <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="draft.lines.length >= 50" @click="draft.lines.push(blankLine())">增加销售行</UButton>
+            <UButton v-if="draft.id" variant="outline" color="neutral" size="sm" type="button" @click="resetDraft">放弃编辑</UButton>
+            <UButton color="primary" type="submit">保存销售草稿</UButton>
           </div>
         </fieldset>
       </form>
 
       <p v-if="!state.orders.length">当前范围内暂无销售订单。</p>
       <ul><li v-for="order in state.orders" :key="order.id">
-        <button type="button" class="quiet" :disabled="busy" @click="run(() => readOrder(order.id))">
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(() => readOrder(order.id))">
           {{ order.number }} · {{ order.customerName }} · {{ order.on }} · {{ labels[order.state] }}
-        </button>
+        </UButton>
       </li></ul>
-      <div v-if="page > 1 || state.hasMore" class="actions">
-        <button type="button" class="quiet" :disabled="busy || page === 1" @click="run(() => readList(page - 1))">上一页销售单</button>
-        <button type="button" class="quiet" :disabled="busy || !state.hasMore" @click="run(() => readList(page + 1))">下一页销售单</button>
+      <div v-if="page > 1 || state.hasMore" class="mb-3 mt-2 flex flex-wrap gap-2">
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || page === 1" @click="run(() => readList(page - 1))">上一页销售单</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || !state.hasMore" @click="run(() => readList(page + 1))">下一页销售单</UButton>
       </div>
       <template v-if="detail">
         <h3>{{ detail.order.number }} · {{ labels[detail.order.state] }}</h3>
@@ -270,7 +270,7 @@ v-if="['approved', 'fulfilling', 'fulfilled', 'closed'].includes(detail.order.st
             <UFormField label="新订单编号" name="orderNumber">
               <UInput :model-value="orderNumber" maxlength="60" required @update:model-value="value => orderNumber = String(value).trim()" />
             </UFormField>
-            <button class="primary">转为销售订单</button>
+            <UButton color="primary" type="submit">转为销售订单</UButton>
           </fieldset>
         </form>
         <fieldset v-if="['draft', 'submitted'].includes(detail.order.state)" :disabled="busy">
@@ -278,20 +278,20 @@ v-if="['approved', 'fulfilling', 'fulfilled', 'closed'].includes(detail.order.st
           <UFormField v-if="detail.isMaker || orderDepartments.permits('approve', detail.order.departmentId)" label="销售操作原因" name="reason">
             <UInput :model-value="reason" maxlength="300" @update:model-value="value => reason = String(value).trim()" />
           </UFormField>
-          <div class="actions">
+          <div class="mb-3 mt-2 flex flex-wrap gap-2">
             <template v-if="detail.isMaker && detail.order.state === 'draft'">
-              <button v-if="orderDepartments.permits('create', detail.order.departmentId)" class="quiet" type="button" @click="edit">编辑销售草稿</button>
+              <UButton v-if="orderDepartments.permits('create', detail.order.departmentId)" variant="outline" color="neutral" size="sm" type="button" @click="edit">编辑销售草稿</UButton>
               <template v-if="orderDepartments.permits('submit', detail.order.departmentId)">
-              <button v-if="detail.order.isQuote" class="primary" type="button" @click="decide('issue-quote')">确认报价</button>
-              <button v-else class="primary" type="button" @click="decide('submit')">提交销售审批</button>
-              <button class="quiet" type="button" :disabled="!reason" @click="decide('cancel')">撤销销售草稿</button>
+              <UButton v-if="detail.order.isQuote" color="primary" type="button" @click="decide('issue-quote')">确认报价</UButton>
+              <UButton v-else color="primary" type="button" @click="decide('submit')">提交销售审批</UButton>
+              <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="!reason" @click="decide('cancel')">撤销销售草稿</UButton>
               </template>
             </template>
             <template v-if="detail.order.state === 'submitted'">
-              <button v-if="detail.isMaker && orderDepartments.permits('submit', detail.order.departmentId)" class="quiet" type="button" @click="decide('withdraw')">撤回销售申请</button>
+              <UButton v-if="detail.isMaker && orderDepartments.permits('submit', detail.order.departmentId)" variant="outline" color="neutral" size="sm" type="button" @click="decide('withdraw')">撤回销售申请</UButton>
               <template v-if="!detail.isMaker && orderDepartments.permits('approve', detail.order.departmentId)">
-                <button class="primary" type="button" @click="decide('approve')">批准销售订单</button>
-                <button class="quiet" type="button" :disabled="!reason" @click="decide('return')">退回销售草稿</button>
+                <UButton color="primary" type="button" @click="decide('approve')">批准销售订单</UButton>
+                <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="!reason" @click="decide('return')">退回销售草稿</UButton>
               </template>
             </template>
           </div>
@@ -304,7 +304,7 @@ v-if="['approved', 'fulfilling', 'fulfilled', 'closed'].includes(detail.order.st
 <style scoped>
 .sales { margin-top: 24px }
 fieldset { display: grid; gap: 10px; min-width: 0; margin: 12px 0; border: 1px solid #d1d9e6; border-radius: 8px }
-.line, .actions { display: flex; flex-wrap: wrap; align-items: end; gap: 8px }
+.line { display: flex; flex-wrap: wrap; align-items: end; gap: 8px }
 .line > div { flex: 1 1 140px }
 li { margin: 6px 0; overflow-wrap: anywhere }
 </style>

@@ -238,11 +238,11 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
 
 <template>
   <section ref="card" class="card inventory" aria-labelledby="inventory-heading">
-    <h2 id="inventory-heading"><UIcon class="heading-icon" name="i-lucide-warehouse" aria-hidden="true" />仓库、收货与库存</h2>
-    <button class="quiet" type="button" :disabled="busy" @click="run(readHome)">{{ home ? '刷新库存工作台' : '打开库存工作台' }}</button>
-    <div class="actions">
-      <button class="quiet" type="button" :disabled="busy || exporting" @click="run(exportPositions)">导出库存 CSV</button>
-      <button class="quiet" type="button" @click="printView">打印当前视图</button>
+    <h2 id="inventory-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-warehouse" aria-hidden="true" />仓库、收货与库存</h2>
+    <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(readHome)">{{ home ? '刷新库存工作台' : '打开库存工作台' }}</UButton>
+    <div class="mb-3 mt-2 flex flex-wrap gap-2">
+      <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy || exporting" @click="run(exportPositions)">导出库存 CSV</UButton>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="printView">打印当前视图</UButton>
     </div>
     <UAlert v-if="notice" role="status" :description="notice" />
     <UAlert v-if="exportNotice" role="status" :description="exportNotice" />
@@ -257,7 +257,7 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
           <UFormField label="仓库名称" name="warehouseName">
             <UInput :model-value="newWarehouse.name" maxlength="160" required @update:model-value="value => newWarehouse.name = String(value).trim()" />
           </UFormField>
-          <button class="primary">保存仓库</button>
+          <UButton type="submit" color="primary">保存仓库</UButton>
         </fieldset>
       </form>
       <UFormField label="库存仓库" name="warehouseId">
@@ -270,7 +270,7 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
             <UFormField label="收货成员" name="receiverId">
               <USelect :model-value="receiver || '__none__'" :items="memberOptions" @update:model-value="value => { receiver = String(value) === '__none__' ? '' : String(value) }" />
             </UFormField>
-            <button class="quiet">保存仓库范围</button>
+            <UButton variant="outline" color="neutral" size="sm" type="submit">保存仓库范围</UButton>
           </fieldset>
         </form>
         <ul><li v-for="permit in permits" :key="permit.ticket.permitId">
@@ -288,7 +288,7 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
             <UFormField label="实收数量" name="receiptQuantity">
               <UInput :model-value="receipt.quantity" inputmode="decimal" required @update:model-value="value => receipt.quantity = String(value).trim()" />
             </UFormField>
-            <button class="primary">确认收货</button>
+            <UButton type="submit" color="primary">确认收货</UButton>
           </fieldset>
         </form>
         <template v-if="shipments.length">
@@ -307,7 +307,7 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
               <UFormField label="发货数量" name="shipmentQuantity">
                 <UInput :model-value="shipment.quantity" inputmode="decimal" required @update:model-value="value => shipment.quantity = String(value).trim()" />
               </UFormField>
-              <button class="primary">确认发货</button>
+              <UButton type="submit" color="primary">确认发货</UButton>
             </fieldset>
           </form>
         </template>
@@ -325,17 +325,17 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
             <UFormField label="销售退货原因" name="salesReturnReason">
               <UInput :model-value="saleReturn.reason" maxlength="300" required @update:model-value="value => saleReturn.reason = String(value).trim()" />
             </UFormField>
-            <button class="primary">签发销售退货许可</button>
+            <UButton type="submit" color="primary">签发销售退货许可</UButton>
           </fieldset>
         </form>
         <ul><li v-for="entry in salesReturns" :key="entry.id">
           销售退货 {{ entry.on }} · {{ entry.quantity }} · {{ entry.reason }} · {{ entry.cancelled ? '已撤销' : entry.movementId ? '已入库' : '待确认' }}
-          <button
-v-if="!entry.movementId && !entry.cancelled && entry.canConfirm" class="quiet" type="button"
-            :disabled="busy" @click="decideSalesReturn(entry, true)">确认销售退货</button>
-          <button
-v-if="!entry.movementId && !entry.cancelled && selected.canApproveSalesReturns" class="quiet" type="button"
-            :disabled="busy" @click="decideSalesReturn(entry, false)">撤销销售退货许可</button>
+          <UButton
+v-if="!entry.movementId && !entry.cancelled && entry.canConfirm" variant="outline" color="neutral" size="xs" type="button"
+            :disabled="busy" @click="decideSalesReturn(entry, true)">确认销售退货</UButton>
+          <UButton
+v-if="!entry.movementId && !entry.cancelled && selected.canApproveSalesReturns" variant="outline" color="neutral" size="xs" type="button"
+            :disabled="busy" @click="decideSalesReturn(entry, false)">撤销销售退货许可</UButton>
         </li></ul>
         <h3>库存与移动加权成本</h3>
         <ul><li v-for="pool in positions" :key="pool.itemId">
@@ -359,7 +359,7 @@ v-if="!entry.movementId && !entry.cancelled && selected.canApproveSalesReturns" 
             <UFormField label="库存操作原因" name="correctionReason">
               <UInput :model-value="correction.reason" maxlength="300" required @update:model-value="value => correction.reason = String(value).trim()" />
             </UFormField>
-            <button class="primary">提交库存复核</button>
+            <UButton type="submit" color="primary">提交库存复核</UButton>
           </fieldset>
         </form>
         <ul><li v-for="entry in operations" :key="entry.id">
@@ -368,16 +368,16 @@ v-if="!entry.movementId && !entry.cancelled && selected.canApproveSalesReturns" 
           · {{ entry.state === 'confirmed' ? '已确认' : entry.state === 'in-transit' ? '在途' : entry.state === 'cancelled' ? '已取消' : '待复核' }}
           <span v-if="entry.transitCost !== null"> · 调拨成本 {{ entry.transitCost }}</span>
           <span v-if="entry.receivedOn"> · 签收 {{ entry.receivedOn }}</span>
-          <button v-if="entry.canConfirm" class="quiet" type="button" :disabled="busy" @click="decideOperation(entry, true)">
+          <UButton v-if="entry.canConfirm" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="decideOperation(entry, true)">
             {{ entry.destinationId ? '复核并出库' : '确认库存复核' }}
-          </button>
+          </UButton>
           <form v-if="entry.canReceive" @submit.prevent="receiveTransfer(entry)">
             <UFormField label="调拨到仓日期" name="arrivalOn">
               <UInput :model-value="arrivalOn" :min="entry.on" type="date" required :disabled="busy" @update:model-value="value => arrivalOn = String(value)" />
             </UFormField>
-            <button class="quiet" :disabled="busy">签收调拨</button>
+            <UButton variant="outline" color="neutral" size="xs" type="submit" :disabled="busy">签收调拨</UButton>
           </form>
-          <button v-if="entry.canCancel" class="quiet" type="button" :disabled="busy" @click="decideOperation(entry, false)">取消库存复核</button>
+          <UButton v-if="entry.canCancel" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="decideOperation(entry, false)">取消库存复核</UButton>
         </li></ul>
         <h3>变动流水</h3>
         <ul><li v-for="movement in movements" :key="movement.id">{{ movement.on }} · {{ movement.itemId }} · 数量 {{ movement.quantity }} · 成本 {{ movement.cost }}</li></ul>
@@ -396,14 +396,14 @@ v-if="!entry.movementId && !entry.cancelled && selected.canApproveSalesReturns" 
             <UFormField label="退货原因" name="returnReason">
               <UInput :model-value="returned.reason" maxlength="300" required @update:model-value="value => returned.reason = String(value).trim()" />
             </UFormField>
-            <button class="primary">授权退货</button>
+            <UButton type="submit" color="primary">授权退货</UButton>
           </fieldset>
         </form>
         <ul><li v-for="entry in returns" :key="entry.id">
           {{ entry.on }} · {{ entry.reason }} · {{ entry.quantity }} · {{ entry.cancelled ? '已取消' : entry.movementId ? '已确认' : '待确认' }}
           <template v-if="!entry.cancelled && !entry.movementId">
-            <button v-if="entry.canConfirm" class="primary" type="button" :disabled="busy" @click="decideReturn(entry, true)">确认退货出库</button>
-            <button v-if="selected.canApproveReturns" class="quiet" type="button" :disabled="busy" @click="decideReturn(entry, false)">取消退货授权</button>
+            <UButton v-if="entry.canConfirm" color="primary" type="button" :disabled="busy" @click="decideReturn(entry, true)">确认退货出库</UButton>
+            <UButton v-if="selected.canApproveReturns" variant="outline" color="neutral" size="xs" type="button" :disabled="busy" @click="decideReturn(entry, false)">取消退货授权</UButton>
           </template>
         </li></ul>
       </template>

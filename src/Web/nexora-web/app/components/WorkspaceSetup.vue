@@ -231,7 +231,7 @@ onMounted(() => { void load() })
   <section class="setup card" aria-labelledby="setup-heading">
     <header class="setup-head">
       <div>
-        <h2 id="setup-heading"><UIcon class="heading-icon" name="i-lucide-list-checks" aria-hidden="true" />工作区初始化</h2>
+        <h2 id="setup-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-list-checks" aria-hidden="true" />工作区初始化</h2>
         <p class="setup-sub" data-testid="setup-sub">
           {{ workspace ? workspace.name : '新工作区' }} · 本位币 {{ baseCurrency }} · 国家/地区 {{ countryCode }}
         </p>
@@ -256,7 +256,7 @@ onMounted(() => { void load() })
       <USkeleton class="h-4 w-full" />
     </div>
     <div v-else-if="!settings" class="setup-empty">
-      <button type="button" class="quiet" @click="load">重试读取</button>
+      <UButton variant="outline" color="neutral" size="sm" type="button" @click="load">重试读取</UButton>
     </div>
     <template v-else-if="draft">
       <section v-if="stepIndex === 0" class="setup-step" aria-labelledby="setup-company">
@@ -277,7 +277,7 @@ onMounted(() => { void load() })
             <UFormField label="日期格式" name="dateFormat">
               <USelect v-model="draft.dateFormat" :items="dateFormatOptions" />
             </UFormField>
-            <button class="primary" :disabled="busy">保存公司资料</button>
+            <UButton color="primary" type="submit" :disabled="busy">保存公司资料</UButton>
           </fieldset>
         </form>
       </section>
@@ -297,7 +297,7 @@ onMounted(() => { void load() })
             <UFormField label="会计年度起始月" name="fiscalYearStartMonth">
               <USelect v-model="bookDraft.fiscalYearStartMonth" :items="monthOptions" />
             </UFormField>
-            <button class="primary" :disabled="busy">初始化账簿</button>
+            <UButton color="primary" type="submit" :disabled="busy">初始化账簿</UButton>
           </fieldset>
         </form>
         <p v-else-if="book?.settings" class="setup-summary">
@@ -330,19 +330,19 @@ onMounted(() => { void load() })
         <ul v-if="tax?.rates.length" class="setup-accounts">
           <li v-for="entry in tax.rates" :key="entry.id">{{ entry.code }} · {{ entry.name }} · {{ entry.rate }}</li>
         </ul>
-        <button type="button" class="quiet" :disabled="taxBusy || !(tax?.canManage ?? false)" @click="addStandardTaxes">
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="taxBusy || !(tax?.canManage ?? false)" @click="addStandardTaxes">
           {{ hasStandardRates ? '补齐标准税率与税组' : '添加标准税率与税组' }}
-        </button>
+        </UButton>
       </section>
 
       <div class="setup-actions">
-        <button v-if="stepIndex > 0" type="button" class="quiet" :disabled="busy" @click="back">上一步</button>
-        <button type="button" class="quiet" :disabled="busy" @click="later">稍后继续</button>
-        <button v-if="stepIndex < steps.length - 1" type="button" class="primary" :disabled="busy || !canAdvance"
+        <UButton v-if="stepIndex > 0" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="back">上一步</UButton>
+        <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="later">稍后继续</UButton>
+        <UButton v-if="stepIndex < steps.length - 1" color="primary" type="button" :disabled="busy || !canAdvance"
           @click="next">
           下一步
-        </button>
-        <button v-else type="button" class="primary" :disabled="busy || !complete" @click="finish">完成初始化</button>
+        </UButton>
+        <UButton v-else color="primary" type="button" :disabled="busy || !complete" @click="finish">完成初始化</UButton>
       </div>
       <p class="setup-hint">稍后继续会保留已完成步骤；再次打开向导会从第一个未完成步骤继续。</p>
     </template>

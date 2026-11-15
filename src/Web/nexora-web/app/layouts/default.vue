@@ -90,7 +90,7 @@ v-if="navOpen" class="nav-scrim" type="button" :aria-label="t('header.closeNav')
             :aria-label="t('header.language')" size="sm" variant="outline" color="neutral" />
           <span class="avatar" aria-hidden="true">{{ (displayName || t('header.userFallback')).slice(0, 1) }}</span>
           <span class="user-name">{{ displayName || t('header.userFallback') }}</span>
-          <UButton class="quiet" type="button" :disabled="loggingOut" @click="store.logout">
+          <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="loggingOut" @click="store.logout">
             {{ loggingOut ? t('header.loggingOut') : t('header.logout') }}
           </UButton>
         </div>
