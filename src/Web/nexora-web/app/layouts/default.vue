@@ -100,3 +100,51 @@ v-if="navOpen" class="nav-scrim" type="button" :aria-label="t('header.closeNav')
     </main>
   </div>
 </template>
+
+<style scoped>
+:global(:root) {
+  --nx-safe-top: env(safe-area-inset-top, 0px);
+  --nx-safe-right: env(safe-area-inset-right, 0px);
+  --nx-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nx-safe-left: env(safe-area-inset-left, 0px);
+}
+
+.shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+  .shell > aside {
+    height: 100vh;
+    height: 100dvh;
+    padding-top: calc(26px + var(--nx-safe-top));
+    padding-bottom: calc(24px + var(--nx-safe-bottom));
+    padding-left: calc(20px + var(--nx-safe-left));
+  }
+
+  .shell > main {
+    padding-right: calc(40px + var(--nx-safe-right));
+    padding-bottom: calc(76px + var(--nx-safe-bottom));
+    padding-left: calc(40px + var(--nx-safe-left));
+  }
+
+  .shell > main > header {
+    height: calc(70px + var(--nx-safe-top));
+    padding: var(--nx-safe-top) calc(40px + var(--nx-safe-right)) 0 calc(40px + var(--nx-safe-left));
+    margin: 0 calc(-40px - var(--nx-safe-right)) 0 calc(-40px - var(--nx-safe-left));
+  }
+
+  @media (max-width: 700px) {
+    .shell > main {
+      padding: 0 calc(16px + var(--nx-safe-right)) calc(48px + var(--nx-safe-bottom)) calc(16px + var(--nx-safe-left));
+    }
+
+    .shell > main > header {
+      height: calc(62px + var(--nx-safe-top));
+      padding: var(--nx-safe-top) calc(16px + var(--nx-safe-right)) 0 calc(16px + var(--nx-safe-left));
+      margin: 0 calc(-16px - var(--nx-safe-right)) 0 calc(-16px - var(--nx-safe-left));
+    }
+  }
+}
+</style>

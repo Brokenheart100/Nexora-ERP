@@ -240,6 +240,7 @@ onMounted(load)
         <article
           v-for="plan in plans"
           :key="plan.code"
+          :data-testid="'plan-' + plan.code"
           class="plan"
           :class="{ current: current(plan), signup: signupPlanCodeValue === plan.code }"
         >

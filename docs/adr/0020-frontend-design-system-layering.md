@@ -1,7 +1,7 @@
 # ADR 0020 — 前端样式分层与 Nuxt UI 交互底座
 
 - 日期：2026-11-14
-- 状态：已采纳；Phase 0 基线已记录、Phase 1–7 已实施并通过本地静态检查、聚焦与全量 e2e。
+- 状态：已采纳；Phase 0 基线已记录、Phase 1–7 已实施并通过本地静态检查、聚焦与全量 e2e；Phase 8（完全迁移到 Tailwind）已完成 Phase 0–1（基线 / 护栏、新增样式搬 scoped），Phase 2–8 执行中。
 - 关联：[架构](../架构.md)、[计划](../计划.md)、[依赖](../依赖.md)、[Nuxt CSR 与类型化接入](0010-nuxt-client.md)、[Phase 1–2 验证记录](../verification/web-ui-design-system-phase1-2.md)。
 
 ## 背景
@@ -38,6 +38,16 @@
 
 操作护栏：Nuxt dev 不热更新 `app/` 源码，改前端后需 `aspire stop` → `aspire start`；每 Phase 结束跑聚焦 e2e 与全量 `workspace.spec.ts`；迁移保持可访问名称与 `data-testid` 稳定，避免 e2e 回归。
 
+## Phase 8 — 完全迁移到 Tailwind（2026-11-15 追加）
+
+Phase 1–7 已把交互底座、表格、表单、页签、壳层与死 CSS 收敛，但 main.css 仍有约 2200 行全局设计系统。Phase 8 的目标是把全局样式迁移到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import "tailwindcss"`、`@import "@nuxt/ui"`、`@import "./tokens.css"`。
+
+- 终态：`tokens.css` 保留 `--nx-*` 变量与 `@theme inline` 桥接（light / dark 两套），暗色靠 token 自动切换；复杂规则留在组件 scoped（财务报表打印隔离、固定列 / 高密度表格、PWA 安全区 `env()`、壳层 sticky / 滚动锁）。
+- 映射规则：`.quiet` → `UButton variant="ghost" color="neutral"`；`.primary` → `UButton color="primary"`；`.card` → `UCard` 或 `rounded-nx border border-nx-border bg-nx-surface shadow-nx-sm`；`.hint` → `text-sm text-nx-ink-3`；`.heading-icon` → `size-5 shrink-0 text-nx-primary`；`.actions` → `flex flex-wrap items-center gap-2`；`.status-pill` → `UBadge`；原生 `input/select/textarea` → `UFormField` / `UInput` / `USelect` / `UInputDate` / `UFileUpload`；打印规则 → 组件 scoped `@media print`；PWA 安全区 → `default.vue` scoped；暗色 → token utility 自动切换。
+- 批次：Phase 0 基线 + 护栏 → Phase 1 搬出 version-notice / status-overlay / PWA 安全区 → Phase 2 域级语义类（quiet / primary / card / hint / heading-icon / actions，4 批）→ Phase 3 壳层与页面布局 → Phase 4 表单基础 → Phase 5 表格 / 详情 → Phase 6 拆分 tokens.css → Phase 7 删除死 CSS → Phase 8 收尾（main.css 只剩 @import）。当前进度：Phase 0–1 已完成（main.css 2208 → 2000 行），Phase 2 起待执行。
+- 护栏：不再向 main.css 新增业务选择器（只减不增）；e2e 只使用 data-testid / role / label；每批 typecheck / lint / unit / build + 聚焦 e2e + light / dark 截图对照，Phase 末全量 e2e；不改 label 文本、`name` / `id`、`data-testid`、错误文案、API payload 与业务逻辑。
+- 验证记录：[前端 Tailwind 迁移验证](../verification/web-ui-tailwind-migration.md)。
+
 ## 比较与取舍
 
 - 一次性删除 main.css 或全量 utility 重写：回归面覆盖 26 个 workspace e2e 与大量视觉细节，风险不可控，放弃。
@@ -60,4 +70,5 @@
 - Phase 5 验证：[Phase 5 验证记录](../verification/web-ui-design-system-phase5.md)（审计页签 UTabs 试验与回退、控制台页签保留自定义）。
 - Phase 6 验证：[Phase 6 验证记录](../verification/web-ui-design-system-phase6.md)（USkeleton 加载态与 UTable :loading）。
 - Phase 7 验证：[Phase 7 验证记录](../verification/web-ui-design-system-phase7.md)（死 CSS 清理、main.css 收敛与全量验证）。
+- Phase 8 验证：[前端 Tailwind 迁移验证](../verification/web-ui-tailwind-migration.md)（Phase 0 基线、护栏与后续批次结果）。
 - 未决：远端 CI 与生产验收未执行；本地验证依赖 Aspire 与 Keycloak 开发身份。

@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：计划草案（2026-11-15），未开始执行。基线数据来自当前工作区实测。
+> 状态：执行中（2026-11-15）。Phase 0–1 已完成；Phase 2–8 待执行。基线数据来自当前工作区实测。
 
 ---
 
@@ -121,21 +121,21 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 ## 4. 批次清单
 
 ### Phase 0 — 基线与护栏（约 0.5 天）
-- [ ] 建立 git 基线提交（当前工作区无提交，全部未跟踪；先提交再迁移，保证每批可回滚）
-- [ ] 截图基线：工作区入口 / 财务 / 销售 / 采购 / 库存 / 审计 / 账户 / 定价 8 类页面 × light/dark × desktop/mobile，存 `artifacts/ui-tailwind-baseline/`
-- [ ] 打印基线：财务报表 print 截图（复用 `artifacts/ui-baseline-p0/08-reports-print.png`）
-- [ ] 新建 `docs/verification/web-ui-tailwind-migration.md`（批次表 + 结果占位）
-- [ ] 更新 ADR 0020：新增 Phase 8（Tailwind 完全迁移）目标、映射规则、终态定义
-- [ ] 冻结：后续新代码不得在 main.css 新增选择器（PR 检查项）
-- [ ] 记录基线：typecheck/lint/unit/build、全量 e2e（26+ 用例）结果
+- [x] 建立 git 基线提交（`37fa507` "chore: baseline snapshot before Tailwind migration (Phase 0)"）
+- [x] 截图基线：工作区入口 / 财务 / 销售 / 采购 / 库存 / 审计 / 账户 / 定价 8 类页面 × light/dark × desktop/mobile，存 `artifacts/ui-tailwind-baseline/`（35 张：light 13、dark 12、mobile 10）
+- [x] 打印基线：财务报表 print 截图（复用 `artifacts/ui-baseline-p0/08-reports-print.png`）
+- [x] 新建 `docs/verification/web-ui-tailwind-migration.md`（批次表 + 结果占位）
+- [x] 更新 ADR 0020：新增 Phase 8（Tailwind 完全迁移）目标、映射规则、终态定义
+- [x] 冻结：后续新代码不得在 main.css 新增选择器（PR 检查项）
+- [x] 记录基线：typecheck exit 0 / lint 0 error 61 warning / unit 16 文件 89 / build 25.5s / 全量 e2e 47 passed（18.4m，含 2 临时截图用例）
 
 ### Phase 1 — 冻结并搬出新增样式（约 0.5 天）
-- [ ] `.version-notice/.version-text/.version-actions` → `AppVersionNotice.vue` scoped
-- [ ] `.status-overlay/.status-card/.status-orbit/.status-eyebrow/.status-body/.status-since/.status-checked/.status-hint` → `AppStatusOverlay.vue` scoped
-- [ ] `body.nx-scroll-lock` → AppStatusOverlay 的 Vue 状态绑定，或保留 1 行 base
-- [ ] PWA 安全区 47 行 → `default.vue` scoped（保留 `env(safe-area-inset-*)`）
-- [ ] main.css 2208 → 约 1950 行
-- [ ] 验证：pwa / 版本提示 / 状态遮罩相关 e2e + 截图
+- [x] `.version-notice/.version-text/.version-actions` → `AppVersionNotice.vue` scoped
+- [x] `.status-overlay/.status-card/.status-orbit/.status-eyebrow/.status-body/.status-since/.status-checked/.status-hint` → `AppStatusOverlay.vue` scoped
+- [x] `body.nx-scroll-lock` → AppStatusOverlay scoped 内的 `:global(body.nx-scroll-lock)`
+- [x] PWA 安全区 47 行 → `default.vue` scoped（保留 `env(safe-area-inset-*)`）
+- [x] main.css 2208 → 2000 行（删除 1997–2207 共 211 行）
+- [x] 验证：pwa / 版本提示 / 状态遮罩相关 e2e + 截图
 
 ### Phase 2 — 域级语义类迁移（4 批，约 4–6 天）
 

@@ -80,12 +80,12 @@ test('book tab shows readiness and backfills pending costs', async ({ page }) =>
   await page.getByTestId('module-book').click()
   await readinessResponse
   await expect(page.getByRole('heading', { name: '开账就绪检查' })).toBeVisible({ timeout: 30_000 })
-  await expect(page.locator('.readiness .summary')).toContainText('库存成本未入账 1 项')
-  await expect(page.locator('.readiness tbody')).toContainText('采购入库')
-  await expect(page.locator('.readiness tbody')).toContainText('128.50')
+  await expect(page.getByTestId('readiness-summary')).toContainText('库存成本未入账 1 项')
+  await expect(page.getByTestId('readiness-costs')).toContainText('采购入库')
+  await expect(page.getByTestId('readiness-costs')).toContainText('128.50')
 
   await page.getByRole('button', { name: '按业务日期补记' }).click()
-  await expect(page.locator('.readiness .summary')).toContainText('就绪', { timeout: 15_000 })
+  await expect(page.getByTestId('readiness-summary')).toContainText('就绪', { timeout: 15_000 })
   await expect(page.getByRole('status').filter({ hasText: '已按业务日期补记 1 项' })).toBeVisible()
   expect(body?.operationId).toMatch(/^[0-9a-f-]{36}$/)
 })

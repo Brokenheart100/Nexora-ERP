@@ -79,9 +79,9 @@ test('signup plan is highlighted and a prorated change waits for confirmation', 
 
   await page.goto('/companies/' + workspaceId + '/billing')
   await expect(page.getByTestId('billing-signup-plan')).toContainText('专业版')
-  await expect(page.locator('.plan.signup')).toContainText('注册时选择')
+  await expect(page.getByTestId('plan-pro')).toContainText('注册时选择')
 
-  const proCard = page.locator('.plan').filter({ hasText: '专业版' })
+  const proCard = page.getByTestId('plan-pro')
   await proCard.getByRole('button', { name: '查看费用并变更' }).click()
   await expect(page.getByTestId('billing-quote')).toBeVisible()
   await expect(page.getByTestId('quote-current')).toHaveText('标准版')
@@ -129,7 +129,7 @@ test('a fully credited change needs no reference and still shows the confirmatio
   })
 
   await page.goto('/companies/' + workspaceId + '/billing')
-  const standardCard = page.locator('.plan').filter({ hasText: '标准版' })
+  const standardCard = page.getByTestId('plan-standard')
   await standardCard.getByRole('button', { name: '查看费用并变更' }).click()
   await expect(page.getByTestId('quote-due')).toHaveText('¥0.00')
   await expect(page.getByRole('button', { name: '确认变更', exact: true })).toBeVisible()

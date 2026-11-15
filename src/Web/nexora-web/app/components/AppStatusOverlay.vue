@@ -124,3 +124,119 @@ onBeforeUnmount(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.status-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(13, 24, 41, 0.6);
+  backdrop-filter: blur(6px);
+}
+
+.status-card {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  width: min(500px, 100%);
+  padding: 30px 30px 24px;
+  text-align: center;
+  background: var(--nx-surface);
+  border-radius: var(--nx-radius);
+  box-shadow: 0 30px 70px -30px rgba(9, 18, 33, 0.6);
+  animation: nx-rise 0.2s ease-out;
+}
+
+.status-orbit {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 4px;
+  border: 3px solid #dbe6f8;
+  border-top-color: var(--nx-primary);
+  border-radius: 50%;
+  animation: nx-spin 1.1s linear infinite;
+}
+
+.status-overlay[data-state="updating"] .status-orbit {
+  border-top-color: var(--nx-primary-strong);
+}
+
+.status-overlay[data-state="maintenance"] .status-orbit {
+  border-top-color: var(--nx-warning);
+  animation-duration: 2.6s;
+}
+
+.status-eyebrow {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--nx-ink-4);
+  text-transform: uppercase;
+}
+
+.status-card h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.015em;
+  color: var(--nx-ink);
+}
+
+.status-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--nx-ink-2);
+}
+
+.status-since,
+.status-checked {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--nx-ink-4);
+}
+
+.status-hint {
+  margin: 2px 0 8px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--nx-ink-3);
+}
+
+:global(body.nx-scroll-lock) {
+  overflow: hidden;
+}
+
+@keyframes nx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-orbit {
+    animation: none;
+  }
+
+  .status-card {
+    animation: none;
+  }
+}
+</style>

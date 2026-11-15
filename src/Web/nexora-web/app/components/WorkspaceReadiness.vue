@@ -61,7 +61,7 @@ onMounted(check)
     <p class="hint">启用财务过账前，确认已过账发票与账单都有总账分录，并补记尚未入账的库存成本。</p>
     <p v-if="notice" class="notice" role="status">{{ notice }}</p>
     <template v-if="view">
-      <p class="summary" :data-ready="view.ready">{{ summary }}</p>
+      <p class="summary" data-testid="readiness-summary" :data-ready="view.ready">{{ summary }}</p>
       <dl class="facts">
         <div><dt>币种</dt><dd>{{ view.book.exists ? view.book.currency : '—' }}</dd></div>
         <div><dt>核算起点</dt><dd>{{ view.book.startsOn ?? '—' }}</dd></div>
@@ -78,7 +78,7 @@ onMounted(check)
       <div v-if="view.pendingCostCount > 0" class="table-block">
         <h4>未入账库存成本（{{ view.pendingCostCount }}）</h4>
         <button type="button" class="primary" :disabled="busy" @click="backfill">按业务日期补记</button>
-        <table>
+        <table data-testid="readiness-costs">
           <thead><tr><th>业务日期</th><th>类型</th><th class="num">金额</th><th>原因</th></tr></thead>
           <tbody>
             <tr v-for="cost in view.pendingCosts" :key="cost.id">
