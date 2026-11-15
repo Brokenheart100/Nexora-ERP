@@ -18,6 +18,7 @@ const chart = shallowRef<Chart>()
 const preview = shallowRef<Preview>()
 const draft = ref<{ revision: number; version: number | null; account: AccountInput }>()
 const file = ref('')
+const uploadFile = ref<File | null>()
 const format = ref('nexora-json')
 const mode = ref('append')
 const confirmReplace = ref(false)
@@ -111,13 +112,11 @@ function save() {
   })
 }
 
-async function pickFile(event: Event) {
-  const input = event.target as HTMLInputElement
-  const selected = input.files?.[0]
-  if (!selected) return
+async function pickFile(selected: unknown) {
+  if (!(selected instanceof File)) return
   if (selected.size > 256 * 1024) {
     message.value = '请选择不超过 256 KiB 的文件。'
-    input.value = ''
+    uploadFile.value = null
     return
   }
   await run(async () => { file.value = await selected.text() })
@@ -215,7 +214,9 @@ function download(kind: 'template' | 'structure' | 'snapshot') {
           <UFormField label="导入模式" name="importMode">
             <USelect :model-value="mode" :items="modeOptions" @update:model-value="value => mode = String(value)" />
           </UFormField>
-          <label>科目文件<input type="file" accept=".json,.csv" @change="pickFile"></label>
+          <UFormField label="科目文件">
+            <UFileUpload v-model="uploadFile" accept=".json,.csv" :preview="false" :disabled="busy" @update:model-value="pickFile" />
+          </UFormField>
           <UFormField label="科目文件内容" name="chartFileContent">
             <UTextarea :model-value="file" :rows="4" maxlength="262144" required @update:model-value="value => file = String(value)" />
           </UFormField>

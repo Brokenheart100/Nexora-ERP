@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：执行中（2026-11-15）。Phase 0–3 已完成（Phase 3 暗色区段删除并入 Phase 5）；Phase 4–8 待执行。基线数据来自当前工作区实测。
+> 状态：执行中（2026-11-15）。Phase 0–4 已完成（Phase 3 暗色区段删除并入 Phase 5；Phase 4 日期控件保留 `UInput type=date`）；Phase 5–8 待执行。基线数据来自当前工作区实测。
 
 ---
 
@@ -216,12 +216,11 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 - [x] 截图矩阵 + 聚焦 e2e：Dashboard / Setup / Pricing / Join / CLI authorize / Reports（聚焦 8 passed，全量 45 passed）
 
 ### Phase 4 — 表单基础元素与原生控件（2–3 天）
-- [ ] 原生日期/时间 32 处 / 16 组件 → `UInputDate`（e2e `fill` 改 click + option；label 文本不变）
-  - BankReconciliationPanel、InvoiceSchedules、WorkspaceAging、WorkspaceAudit、WorkspaceBook、WorkspaceFinancialReports、WorkspaceInventory(6)、WorkspaceLedger(3)、WorkspacePurchasing、WorkspaceReceivables、WorkspaceRecordChanges、WorkspaceSales、WorkspaceScopedRoleGrants、WorkspaceSetup、WorkspaceTaxes、WorkspaceTrade
-- [ ] 原生文件上传 3 处 → `UFileUpload`（WorkspaceBankImport / WorkspaceChart / WorkspaceCompanySettings；e2e `setInputFiles` 对照）
-- [ ] 删除 main.css Forms 区段（169 行）；清理残留裸 `input/select/textarea`（pages/index.vue 搜索框等）
-- [ ] 可选：新表单试点 `UForm` + zod（不纳入本次必做）
-- [ ] 验收：聚焦 e2e：Catalog / Taxes / Bank import / Chart / Company settings / Setup / Ledger / Audit / Receivables
+- [x] 原生日期/时间 32 处 / 16 组件核查：更早的设计系统 Phase 4 已全部迁为 `UInput type="date"`；本阶段保留原生日期选择器，`UInputDate` 日历弹层属后续 UX 升级（会改变交互与 e2e `fill` 语义，不是删除 Forms 区段的前提）
+- [x] 原生文件上传 3 处 → `UFileUpload`（WorkspaceBankImport / WorkspaceChart / WorkspaceCompanySettings；`:preview="false"`、大小校验保留，隐藏 `input[type=file]` 仍可 `setInputFiles`）
+- [x] 删除 main.css Forms 区段（实际 197 行，含暗色与媒体查询规则）；裸 `input/select/textarea` 在 `app/` 全量归零
+- [x] 可选：新表单试点 `UForm` + zod（未做，不纳入本次必做）
+- [x] 验收：聚焦 e2e 批次 1（Company presentation / session policy / Custom roles）与批次 2（Custom roles / Chart hierarchy / Effective tax rates / Opening journal reports / Setup wizard）共 7 passed；全量 45 passed（16.5m）
 
 ### Phase 5 — 表格 / 详情 / 列表残余（约 1 天）
 - [ ] WorkspaceFinancialReports 自定义表格保留（ADR 记录），仅迁周边类

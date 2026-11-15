@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css 验证记录
 
 - 日期：2026-11-15
-- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4–8 待执行。
+- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5–8 待执行。
 - 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
 
 ## 终态定义
@@ -27,7 +27,7 @@
 | Phase 1 搬出新增样式 | version-notice / status-overlay / PWA 安全区 → 组件 / layout scoped | 完成 | 本文「Phase 1」 |
 | Phase 2 域级语义类 | quiet / primary / hint / heading-icon / actions，4 批（card / heading / eyebrow / status-pill / empty-state 留 Phase 3–5） | 完成 | 本文「Phase 2」 |
 | Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive → layout 与页面 scoped / utility（暗色区段删除并入 Phase 5） | 完成 | 本文「Phase 3」 |
-| Phase 4 表单基础 | 原生 input/select/textarea 基础样式 → UFormField / UInput / USelect / UInputDate / UFileUpload | 待执行 | |
+| Phase 4 表单基础 | 原生 input / file 控件 → UFormField / UInput / USelect / UCheckbox / UFileUpload；日期控件保留 UInput type=date | 完成 | 本文「Phase 4」 |
 | Phase 5 表格 / 详情 | Tables / Details / lists / dl / Module internals | 待执行 | |
 | Phase 6 拆分 tokens.css | tokens 与 `@theme inline` 拆到独立文件 | 待执行 | |
 | Phase 7 删除死 CSS | 删除未使用选择器、暗色残余与重复 reset | 待执行 | |
@@ -130,6 +130,20 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 - 全量 e2e：45 passed（16.4m）。
 - 计划偏差（已记录）：暗色区段整体删除推迟到 Phase 5 末（Forms / Tables / Cards 仍依赖 `html.dark`）；`pages/companies/*` 的 `heading` 保留 class + scoped（打印钩子）；`.table-scroll` 仍为全局规则（Phase 5）。
 - 提交：`feat(web): Tailwind migration Phase 3 (shell and page semantics)`（前端 app/ 17 文件 +1168/−1215 + 本文档 + ADR 0020 + todolist；并发会话改动不纳入）。
+
+## Phase 4 表单基础元素与原生控件（2026-11-15）
+
+- 控件迁移（7 文件）：`pages/index.vue` 个人工作区复选框 → `UCheckbox`（保留 `personal-option` class 与 label 文案），名称 / 邀请码由手写 `label` + `div.formrow` 改 `UFormField` + `UInput`（保留 `id="name"` / `id="invitation-code"`，`getByLabel` 成立）；`WorkspaceBankImport` / `WorkspaceChart` 原生 `<input type="file">` → `UFileUpload`（`:preview="false"`、`accept`、大小校验与 `text()` 读取保留，隐藏 `input[type=file]` 仍在 DOM，`setInputFiles` 可用）；`WorkspaceCompanySettings` 公司标志 → `UFileUpload`（PNG / ≤128 KiB 校验、FileReader 预览保留）、品牌颜色 → `UInput type="color"`、自动登出 → `UInput type="number"`；`WorkspaceSetup` 品牌颜色 → `UInput type="color"`；`WorkspaceFinancialReports` 报表类型 / 报表口径 → `USelect`（`kindOptions` / `basisOptions` / `setKind`），开始 / 截止日期 → `UInput type="date"`，对比期间 → `UCheckbox`；`WorkspaceScopedRoleGrants` 授权起止日期 → `UInput type="date"`（保留 `data-testid="grant-starts-on"` / `"grant-ends-on"`）。
+- 日期控件核查：全量 32 处日期 / 时间控件在更早的设计系统 Phase 4 已是 `UInput type="date"`（Nuxt UI 表单控件 + 原生日期选择器），本阶段未改 `UInputDate`：日历弹层会改变交互与 e2e `fill` 语义，属后续 UX 升级，不是删除 Forms 区段的前提。裸 `<input>` / `<select>` / `<textarea>` 在 `app/` 全量归零。
+- main.css 清理：删除 Forms 区段控制类（`form` / `label` / `.formrow` 全套、`input:not(...)` / `select` / `textarea` 基础样式、`select` 自定义箭头、focus / placeholder、checkbox / radio 自定义、`input[type=color]`、`label.comparison`）、Details 区段的 `input[type=file]` / `::file-selector-button`、Dark theme 中 input / select / textarea 与 focus 规则、`@media (max-width: 700px)` 中 `.formrow` 3 条。保留 `fieldset` / `legend` 结构样式（30+ 组件依赖原生分组，注释「Kept until componentization」）、`fieldset > button`、Tables / Details 其余规则与 Cards 暗色（Phase 5 / 6）。main.css 732 → 535 行。
+- 交互与外观偏差（已记录）：`USelect` 渲染 `button` + listbox（e2e 报表类型由 `selectOption` 改 `click` + `getByRole('option', { name: '利润表' })`）；`UCheckbox` 渲染 `button[role=checkbox]`（label 文案经 label 关联）；`UFileUpload` 为整列宽 dropzone 区域（`:preview="false"` 不显示已选文件）；品牌颜色宽度随全局 `input[type=color]` 删除变为控件默认（scoped 样式无法穿透 UInput 内层 input）；个人工作区名称 / 邀请码的换行与按钮 100% 媒体查询行为随 `.formrow` 删除消失。
+- e2e 修改：`workspace.spec.ts:1169` 报表类型 `selectOption('profit-and-loss')` → `getByLabel('报表类型').click()` + `getByRole('option', { name: '利润表', exact: true }).click()`。
+- 静态验证：typecheck exit 0；lint 0 error / 63 warning（全部 `vue/first-attribute-linebreak`）；单测 16 文件 / 89 通过（53.2s）；build 25.8s 通过。
+- 截图：`artifacts/ui-tailwind-phase4/` 6 张（公司设置 light / dark、财务报表查询表单 light、账簿设置 light / dark、初始化向导 light）。目视确认 `UInput` / `USelect` / `UCheckbox` / `UFileUpload` 外观、主色按钮与暗色主题正常；初始化向导截图截取于骨架加载期，未用于表单外观对照。
+- 聚焦 e2e：批次 1（Company presentation / Effective session policy / Custom roles）2 passed + 1 冷启动 flake（`邮箱注册` 链接 15s 超时，AppHost 冷启动 Nuxt 首次编译）；批次 2（Custom roles / Chart hierarchy / Effective tax rates / Opening journal reports / Setup wizard）5 passed（2.4m）。
+- 全量 e2e：45 passed（16.5m）。
+- 计划偏差：日期控件保留 `UInput type="date"` 而非 `UInputDate`（理由见上）；`fieldset` / `legend` 全局样式保留到组件化。
+- 提交：`feat(web): Tailwind migration Phase 4 (form controls)`。
 
 ## 复现命令
 

@@ -17,6 +17,7 @@ const emit = defineEmits<{ navigate: [id: string] }>()
 const path = computed(() => `/bff/api/workspaces/${props.workspaceId}`)
 const settings = shallowRef<Settings>()
 const draft = ref<Presentation>()
+const logoFile = ref<File | null>(null)
 const idleMinutes = ref(30)
 const grantApprovals = ref('1')
 const approvalOptions = [{ label: '1 位所有者批准', value: '1' }, { label: '2 位所有者批准', value: '2' }]
@@ -97,15 +98,14 @@ async function save() {
   } finally { busy.value = false }
 }
 
-async function chooseLogo(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
+async function chooseLogo(file: File | null | undefined) {
   if (!file || !draft.value) return
   if (file.type !== 'image/png' || file.size > 128 * 1024) {
-    input.value = ''
+    logoFile.value = null
     notice.value = '请选择不超过 128 KiB 的 PNG。'
     return
   }
+  logoFile.value = file
   busy.value = true
   try {
     const logo = await new Promise<string>((resolve, reject) => {
@@ -151,22 +151,26 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
           <UFormField label="品牌名称" name="brandName" required>
             <UInput :model-value="draft.brandName" required maxlength="160" @update:model-value="value => setTrimmed('brandName', value)" />
           </UFormField>
-          <label>品牌颜色<input v-model="draft.accentColor" type="color"></label>
+          <UFormField label="品牌颜色" name="accentColor">
+            <UInput v-model="draft.accentColor" type="color" />
+          </UFormField>
           <UFormField label="公司时区" name="timeZone" required>
             <UInput :model-value="draft.timeZone" required maxlength="80" placeholder="Asia/Shanghai" @update:model-value="value => setTrimmed('timeZone', value)" />
           </UFormField>
           <UFormField label="日期格式" name="dateFormat">
             <USelect v-model="draft.dateFormat" :items="dateFormatOptions" />
           </UFormField>
-          <label>自动登出（闲置分钟）
-            <input v-model.number="idleMinutes" type="number" min="1" max="480" required>
-          </label>
+          <UFormField label="自动登出（闲置分钟）" name="sessionIdleMinutes">
+            <UInput v-model.number="idleMinutes" type="number" min="1" max="480" required />
+          </UFormField>
           <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">成员可访问多个工作区时，登录会话按所有工作区的最短闲置时间自动登出，并在到期提示中显示来源。</p>
           <UFormField label="自定义角色授权审批" name="roleGrantApprovals">
             <USelect v-model="grantApprovals" :items="approvalOptions" />
           </UFormField>
           <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">设为 2 时，角色授权需两位不同的所有者批准后生效；提交人不能批准自己的申请。</p>
-          <label v-if="settings.canManage">公司标志<input type="file" accept="image/png" @change="chooseLogo"></label>
+          <UFormField v-if="settings.canManage" label="公司标志" name="logo">
+            <UFileUpload :model-value="logoFile" accept="image/png" :preview="false" :disabled="busy || !settings.canManage" reset @update:model-value="chooseLogo" />
+          </UFormField>
           <p class="preview" :style="{ borderColor: draft.accentColor }">
             <img v-if="draft.logoDataUrl" :src="draft.logoDataUrl" alt="公司标志预览">
             <strong>{{ draft.brandName }}</strong><span>{{ datePreview }} · {{ settings.baseCurrency }}</span>

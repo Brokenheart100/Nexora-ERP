@@ -11,6 +11,7 @@ const busy = ref(false)
 const notice = ref('')
 const mapping = reactive({ externalId: 'Reference', date: 'Date', amount: 'Amount', description: 'Description' })
 const file = ref('')
+const uploadFile = ref<File | null>()
 const preview = shallowRef<Preview>()
 const lines = shallowRef<Line[]>([])
 const movements = shallowRef<Movement[]>([])
@@ -102,11 +103,10 @@ function toggleExcluded() {
     await reload()
   })
 }
-async function pickFile(event: Event) {
-  const upload = (event.target as HTMLInputElement).files?.[0]
-  if (!upload) return
-  if (upload.size > 262144) { notice.value = '文件超过 256 KiB。'; return }
-  file.value = await upload.text()
+async function pickFile(selected: unknown) {
+  if (!(selected instanceof File)) return
+  if (selected.size > 262144) { notice.value = '文件超过 256 KiB。'; return }
+  file.value = await selected.text()
 }
 </script>
 
@@ -118,7 +118,9 @@ async function pickFile(event: Event) {
       <fieldset :disabled="busy">
         <legend>银行 CSV 预览</legend>
         <p>使用 UTF-8，日期为 YYYY-MM-DD。收入填正数，支出填负数。</p>
-        <label>对账单文件<input type="file" accept=".csv,text/csv" @change="pickFile"></label>
+        <UFormField label="对账单文件">
+          <UFileUpload v-model="uploadFile" accept=".csv,text/csv" :preview="false" :disabled="busy" @update:model-value="pickFile" />
+        </UFormField>
         <UFormField label="CSV 内容" name="csvContent" required>
           <UTextarea v-model="file" :rows="5" required class="w-full" />
         </UFormField>

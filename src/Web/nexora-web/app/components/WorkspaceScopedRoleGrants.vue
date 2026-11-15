@@ -148,10 +148,10 @@ onMounted(() => run())
       </UFormField>
       <template v-if="periodScoped">
         <UFormField label="期间开始" name="grantStartsOn">
-          <input v-model="startsOn" data-testid="grant-starts-on" type="date" required :disabled="isBusy">
+          <UInput :model-value="startsOn" data-testid="grant-starts-on" type="date" required :disabled="isBusy" @update:model-value="value => startsOn = String(value)" />
         </UFormField>
         <UFormField label="期间结束" name="grantEndsOn">
-          <input v-model="endsOn" data-testid="grant-ends-on" type="date" required :disabled="isBusy">
+          <UInput :model-value="endsOn" data-testid="grant-ends-on" type="date" required :disabled="isBusy" @update:model-value="value => endsOn = String(value)" />
         </UFormField>
       </template>
       <p v-if="periodScoped" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">财务期间授权最长 60 个月；期间外的凭证与报表不可读取或过账。</p>

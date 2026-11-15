@@ -30,6 +30,12 @@ const props = defineProps<{ workspaceId: string; workspaceName: string }>()
 const base = computed(() => '/bff/api/finance/workspaces/' + props.workspaceId)
 const startedOn = ref('')
 const input = reactive({ kind: 'trial-balance' as Kind, basis: 'accrual', from: '', through: '', compare: true })
+const kindOptions = (Object.keys(kinds) as Kind[]).map(value => ({ label: kinds[value], value }))
+const basisOptions = [
+  { label: '权责发生制', value: 'accrual' },
+  { label: '收付实现制', value: 'cash' },
+]
+function setKind(value: string) { input.kind = value as Kind }
 const result = shallowRef<Report>()
 const drill = shallowRef<{ label: string; key: string; period: Period; page: number; detail: Drill }>()
 const journal = shallowRef<JournalDetail>()
@@ -150,13 +156,19 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
     <form v-else class="report-screen" @submit.prevent="run(query)">
       <fieldset :disabled="busy">
         <legend>财务报表查询</legend>
-        <label>报表类型<select v-model="input.kind"><option v-for="(label, key) in kinds" :key="key" :value="key">{{ label }}</option></select></label>
-        <label v-if="input.kind === 'profit-and-loss'">报表口径<select v-model="input.basis">
-          <option value="accrual">权责发生制</option><option value="cash">收付实现制</option>
-        </select></label>
-        <label>报表开始日期<input v-model="input.from" type="date" :min="startedOn" required></label>
-        <label>报表截止日期<input v-model="input.through" type="date" :min="input.from || startedOn" required></label>
-        <label class="comparison"><input v-model="input.compare" type="checkbox"> 对比上一等长期间</label>
+        <UFormField label="报表类型" name="reportKind">
+          <USelect :model-value="input.kind" :items="kindOptions" @update:model-value="value => setKind(String(value))" />
+        </UFormField>
+        <UFormField v-if="input.kind === 'profit-and-loss'" label="报表口径" name="reportBasis">
+          <USelect v-model="input.basis" :items="basisOptions" />
+        </UFormField>
+        <UFormField label="报表开始日期" name="reportFrom">
+          <UInput :model-value="input.from" type="date" :min="startedOn" required @update:model-value="value => input.from = String(value)" />
+        </UFormField>
+        <UFormField label="报表截止日期" name="reportThrough">
+          <UInput :model-value="input.through" type="date" :min="input.from || startedOn" required @update:model-value="value => input.through = String(value)" />
+        </UFormField>
+        <UCheckbox v-model="input.compare" label="对比上一等长期间" />
         <UButton type="submit" color="primary">查询财务报表</UButton>
       </fieldset>
     </form>

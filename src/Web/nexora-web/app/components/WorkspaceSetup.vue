@@ -270,7 +270,9 @@ onMounted(() => { void load() })
             <UFormField label="品牌名称" name="brandName" required>
               <UInput :model-value="draft.brandName" required maxlength="160" @update:model-value="value => setTrimmed('brandName', value)" />
             </UFormField>
-            <label>品牌颜色<input v-model="draft.accentColor" type="color"></label>
+            <UFormField label="品牌颜色" name="accentColor">
+              <UInput v-model="draft.accentColor" type="color" />
+            </UFormField>
             <UFormField label="公司时区" name="timeZone" required>
               <UInput :model-value="draft.timeZone" required maxlength="80" placeholder="Asia/Shanghai" @update:model-value="value => setTrimmed('timeZone', value)" />
             </UFormField>

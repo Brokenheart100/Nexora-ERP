@@ -197,20 +197,17 @@ async function acceptInvitation() {
             <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-square-plus" aria-hidden="true" />{{ t('workspaces.create.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.create.subtitle') }}</p>
             <form @submit.prevent="create">
-              <label class="personal-option">
-                <input v-model="personal" type="checkbox" :disabled="busy">
-                {{ t('workspaces.create.personal') }}
-              </label>
+              <UCheckbox v-model="personal" :disabled="busy" :label="t('workspaces.create.personal')" class="personal-option" />
               <p class="personal-hint">{{ t('workspaces.create.personalHint') }}</p>
-              <label for="name">{{ personal ? t('workspaces.create.personalName') : t('workspaces.create.companyName')
-                }}</label>
-              <div class="formrow">
-                <UInput id="name" v-model="name" required maxlength="160" size="lg"
-                  :placeholder="t('workspaces.create.namePlaceholder')" />
-                <UButton type="submit" color="primary" icon="i-lucide-plus" :loading="busy" :disabled="busy">
-                  {{ busy ? t('workspaces.create.busy') : t('workspaces.create.submit') }}
-                </UButton>
-              </div>
+              <UFormField :label="personal ? t('workspaces.create.personalName') : t('workspaces.create.companyName')">
+                <div class="flex items-stretch gap-2.5">
+                  <UInput id="name" v-model="name" required maxlength="160" size="lg" class="flex-1 min-w-0"
+                    :placeholder="t('workspaces.create.namePlaceholder')" />
+                  <UButton type="submit" color="primary" icon="i-lucide-plus" :loading="busy" :disabled="busy">
+                    {{ busy ? t('workspaces.create.busy') : t('workspaces.create.submit') }}
+                  </UButton>
+                </div>
+              </UFormField>
               <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.create.hint') }}</p>
             </form>
           </section>
@@ -219,14 +216,15 @@ async function acceptInvitation() {
             <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-ticket" aria-hidden="true" />{{ t('workspaces.join.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.join.subtitle') }}</p>
             <form @submit.prevent="acceptInvitation">
-              <label for="invitation-code">{{ t('workspaces.join.code') }}</label>
-              <div class="formrow">
-                <UInput id="invitation-code" v-model="invitationCode" required autocomplete="off" size="lg"
-                  :placeholder="t('workspaces.join.placeholder')" />
-                <UButton type="submit" color="primary" icon="i-lucide-ticket-check" :loading="accepting" :disabled="accepting">
-                  {{ t('workspaces.join.submit') }}
-                </UButton>
-              </div>
+              <UFormField :label="t('workspaces.join.code')">
+                <div class="flex flex-col items-stretch gap-2.5">
+                  <UInput id="invitation-code" v-model="invitationCode" required autocomplete="off" size="lg"
+                    :placeholder="t('workspaces.join.placeholder')" />
+                  <UButton type="submit" color="primary" icon="i-lucide-ticket-check" :loading="accepting" :disabled="accepting">
+                    {{ t('workspaces.join.submit') }}
+                  </UButton>
+                </div>
+              </UFormField>
             </form>
           </section>
           <UAlert v-if="message" role="status" aria-live="polite" class="deck-wide" :description="message" />

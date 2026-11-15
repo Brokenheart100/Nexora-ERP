@@ -1133,7 +1133,8 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
     expect(beforeBook.previousPeriod).toBeNull()
 
     await page.getByTestId('module-reports').click()
-    await page.getByLabel('报表类型').selectOption('profit-and-loss')
+    await page.getByLabel('报表类型').click()
+    await page.getByRole('option', { name: '利润表', exact: true }).click()
     await page.getByLabel('报表开始日期').fill('2026-01-16')
     await page.getByLabel('报表截止日期').fill('2026-01-25')
     await page.getByRole('button', { name: '查询财务报表', exact: true }).click()
