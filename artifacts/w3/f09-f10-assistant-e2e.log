@@ -1,0 +1,30 @@
+alice OIDC and TOTP login passed
+
+  1) e2e\workspace.spec.ts:2670:1 › AI assistant streams, cancels, resumes, gates tools and isolates workspaces 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('工具调用已拒绝，未执行任何操作。')
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText('工具调用已拒绝，未执行任何操作。') with timeout 30000ms
+      - waiting for getByText('工具调用已拒绝，未执行任何操作。')
+
+
+      2709 |   await expect(page.getByRole('button', { name: '批准执行' })).toBeVisible()
+      2710 |   await page.getByRole('button', { name: '拒绝' }).click()
+    > 2711 |   await expect(page.getByText('工具调用已拒绝，未执行任何操作。')).toBeVisible()
+           |                                                    ^
+      2712 |
+      2713 |   await input.fill('记录一条会话备注：下周复核应付')
+      2714 |   await page.getByRole('button', { name: '发送' }).click()
+        at D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\e2e\workspace.spec.ts:2711:52
+
+    Error Context: ..\..\..\artifacts\p1\runtime\browser\workspace-AI-assistant-str-5e2ea-ols-and-isolates-workspaces\error-context.md
+
+
+  1 failed
+    e2e\workspace.spec.ts:2670:1 › AI assistant streams, cancels, resumes, gates tools and isolates workspaces 

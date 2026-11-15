@@ -1,0 +1,14 @@
+
+Running 1 test using 1 worker
+
+(node:28408) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\workspace.spec.ts:2153:1 › Business dashboard summarizes finance, aging, inventory and projection state
+e2e\workspace.spec.ts:2153:1 › Business dashboard summarizes finance, aging, inventory and projection state
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  1 passed (9.2s)

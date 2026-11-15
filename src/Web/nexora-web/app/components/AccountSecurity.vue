@@ -1,0 +1,45 @@
+<script setup lang="ts">
+interface SecurityCapabilities {
+  available: boolean
+  required: boolean
+  enrolled: boolean
+  methods: string[]
+  stepUpSeconds: number
+  lastVerifiedAt: string | null
+  reauthPath: string
+}
+const capabilities = shallowRef<SecurityCapabilities>()
+const busy = ref(false)
+const error = ref('')
+const methodLabels: Record<string, string> = { otp: '一次性验证码（TOTP）', mfa: '多因素认证' }
+function when(value: string | null) {
+  return value ? new Date(value).toLocaleString('zh-CN') : '—'
+}
+async function load() {
+  busy.value = true; error.value = ''
+  try {
+    capabilities.value = await $fetch<SecurityCapabilities>('/bff/security/capabilities', { retry: 0 })
+  } catch { error.value = '暂时无法读取账户安全状态。' }
+  finally { busy.value = false }
+}
+onMounted(load)
+</script>
+
+<template>
+  <section class="card" aria-label="账户安全">
+    <h2><UIcon class="heading-icon" name="i-lucide-shield-check" aria-hidden="true" />账户安全</h2>
+    <p class="hint">敏感操作（公司资料、成员角色、银行账户、账簿决策）需要最近完成多因素验证。</p>
+    <dl v-if="capabilities">
+      <dt>多因素认证</dt><dd>{{ capabilities.available ? '已启用' : '未启用' }}</dd>
+      <dt>敏感操作策略</dt><dd>{{ capabilities.required ? '需要最近验证' : '不强制重新验证' }}</dd>
+      <dt>本账户已绑定</dt><dd>{{ capabilities.enrolled ? '是' : '否' }}</dd>
+      <dt>验证方式</dt><dd>{{ capabilities.methods.length ? capabilities.methods.map(method => methodLabels[method] ?? method).join('、') : '未绑定' }}</dd>
+      <dt>最近验证</dt><dd>{{ when(capabilities.lastVerifiedAt) }}</dd>
+      <dt>有效期</dt><dd>{{ capabilities.stepUpSeconds }} 秒</dd>
+    </dl>
+    <p v-if="capabilities?.enrolled"><a class="quiet" :href="capabilities.reauthPath">重新验证身份</a></p>
+    <p v-else-if="capabilities" class="hint">当前账号尚未绑定多因素认证，请在身份提供方完成绑定后再执行敏感操作。</p>
+    <button class="quiet" type="button" :disabled="busy" @click="load">刷新安全状态</button>
+    <UAlert v-if="error" role="alert" color="error" icon="i-lucide-circle-alert" :description="error" />
+  </section>
+</template>

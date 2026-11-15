@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-13",
+  "faults": false,
+  "images": [
+    {
+      "resource": "postgres",
+      "image": "docker.io/library/postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db",
+      "matches": true
+    },
+    {
+      "resource": "rabbitmq",
+      "image": "docker.io/library/rabbitmq@sha256:6e51f8f18e055d6dc3d94316db0073da64d811c2e19744661fae06b03c1d6fa8",
+      "matches": true
+    },
+    {
+      "resource": "cache",
+      "image": "docker.io/library/redis@sha256:372207266325710e75866163a505d18ac0362372c8bf02ad5a0cf0b3c8bbc23e",
+      "matches": true
+    },
+    {
+      "resource": "identity",
+      "image": "identity:dba73b8a1f4958995c0ef459724fbcc624221243",
+      "matches": true
+    }
+  ],
+  "connectionReferences": [
+    {
+      "service": "organization",
+      "keys": [
+        "ConnectionStrings__organizationdb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "reporting",
+      "keys": [
+        "ConnectionStrings__reportingdb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "masterdata",
+      "keys": [
+        "ConnectionStrings__masterdatadb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "finance",
+      "keys": [
+        "ConnectionStrings__financedb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "inventory",
+      "keys": [
+        "ConnectionStrings__inventorydb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "sales",
+      "keys": [
+        "ConnectionStrings__salesdb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    },
+    {
+      "service": "purchasing",
+      "keys": [
+        "ConnectionStrings__purchasingdb",
+        "ConnectionStrings__rabbitmq"
+      ],
+      "rawPropertiesPresent": false
+    }
+  ],
+  "checks": [
+    {
+      "case": "baseline",
+      "service": "organization",
+      "path": "/health",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "organization",
+      "path": "/alive",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "reporting",
+      "path": "/health",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "reporting",
+      "path": "/alive",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "web",
+      "path": "/health",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "web",
+      "path": "/alive",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "gateway",
+      "path": "/health",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "baseline",
+      "service": "gateway",
+      "path": "/alive",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": "anonymous",
+      "service": "gateway",
+      "path": "/api/workspaces",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": "anonymous",
+      "service": "gateway",
+      "path": "/bff/api/workspaces",
+      "expected": 401,
+      "actual": 401
+    }
+  ]
+}

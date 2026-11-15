@@ -1,0 +1,20 @@
+
+Running 2 tests using 1 worker
+
+(node:24020) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] e2e\workspace.spec.ts:2155:1 › Business dashboard summarizes finance, aging, inventory and projection state
+e2e\workspace.spec.ts:2155:1 › Business dashboard summarizes finance, aging, inventory and projection state
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+[2/2] e2e\workspace.spec.ts:2448:1 › Unified audit trail lists security and business events, filters, exports and isolates workspaces
+e2e\workspace.spec.ts:2448:1 › Unified audit trail lists security and business events, filters, exports and isolates workspaces
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  2 passed (50.2s)

@@ -1,0 +1,14 @@
+
+Running 1 test using 1 worker
+
+(node:11252) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\workspace.spec.ts:2502:1 › Finance MCP lists read-only tools, answers scoped calls and rejects other audiences
+e2e\workspace.spec.ts:2502:1 › Finance MCP lists read-only tools, answers scoped calls and rejects other audiences
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  1 passed (11.1s)

@@ -1,0 +1,103 @@
+
+Running 9 tests using 1 worker
+
+(node:35012) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/9] e2e\workspace.spec.ts:303:1 › Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF
+e2e\workspace.spec.ts:303:1 › Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+  1) e2e\workspace.spec.ts:303:1 › Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF 
+
+    TimeoutError: locator.click: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: '刷新权限与成员', exact: true })
+
+
+      338 |     })).status).toBe(403)
+      339 |
+    > 340 |     await page.getByRole('button', { name: '刷新权限与成员', exact: true }).click()
+          |                                                                      ^
+      341 |     const row = page.locator(`[data-subject="${identity.subject}"]`)
+      342 |     await expect(row).toBeVisible()
+      343 |     await row.getByRole('button', { name: '编辑权限', exact: true }).click()
+        at D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\e2e\workspace.spec.ts:340:70
+
+    Error Context: ..\..\..\artifacts\p1\runtime\browser\workspace-Workspace-invita-1bfbf-vation-through-the-real-BFF\error-context.md
+
+
+(node:19736) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[2/9] e2e\workspace.spec.ts:804:1 › Effective tax rates and scoped classifications preserve calculation snapshots
+e2e\workspace.spec.ts:804:1 › Effective tax rates and scoped classifications preserve calculation snapshots
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+[3/9] e2e\workspace.spec.ts:882:1 › Opening, journal approval, period races, reversal and P5 accrual reports preserve the scoped ledger
+e2e\workspace.spec.ts:882:1 › Opening, journal approval, period races, reversal and P5 accrual reports preserve the scoped ledger
+Starting alice browser login
+
+Starting bob browser login
+
+alice OIDC and TOTP login passed
+
+bob OIDC and TOTP login passed
+
+[4/9] e2e\workspace.spec.ts:1199:1 › Purchase orders require current scoped references and independent approval
+e2e\workspace.spec.ts:1199:1 › Purchase orders require current scoped references and independent approval
+Starting alice browser login
+
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+alice OIDC and TOTP login passed
+
+[5/9] e2e\workspace.spec.ts:1683:1 › P4 sales, inventory, invoicing, settlement and communication reconcile
+e2e\workspace.spec.ts:1683:1 › P4 sales, inventory, invoicing, settlement and communication reconcile
+Starting alice browser login
+
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+alice OIDC and TOTP login passed
+
+[6/9] e2e\workspace.spec.ts:2105:1 › Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping
+e2e\workspace.spec.ts:2105:1 › Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+[7/9] e2e\workspace.spec.ts:2153:1 › Business dashboard summarizes finance, aging, inventory and projection state
+e2e\workspace.spec.ts:2153:1 › Business dashboard summarizes finance, aging, inventory and projection state
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+[8/9] e2e\workspace.spec.ts:2446:1 › Unified audit trail lists security and business events, filters, exports and isolates workspaces
+e2e\workspace.spec.ts:2446:1 › Unified audit trail lists security and business events, filters, exports and isolates workspaces
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+[9/9] e2e\workspace.spec.ts:2747:1 › Billing plans enforce quotas, gate modules, record manual payments and downgrade on cancel
+e2e\workspace.spec.ts:2747:1 › Billing plans enforce quotas, gate modules, record manual payments and downgrade on cancel
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+  1 failed
+    e2e\workspace.spec.ts:303:1 › Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF 
+  8 passed (5.5m)

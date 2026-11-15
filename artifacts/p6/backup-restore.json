@@ -1,0 +1,169 @@
+{
+  "suite": "p6-04-local-backup-restore",
+  "startedAt": "2026-11-15T07:58:56.541Z",
+  "environment": {
+    "platform": "win32 10.0.26300",
+    "node": "v24.21.0",
+    "cpuCount": 16,
+    "totalMemoryMiB": 16140,
+    "postgresImage": "docker.io/library/postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db",
+    "postgresVersion": "PostgreSQL 18.3 (Debian 18.3-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+  },
+  "notes": [
+    "Local drill only: pg_dump -Fc per database, restore into a scratch database in the same PostgreSQL instance, compare counts and aggregates. Cross-database consistency is not guaranteed because each database is dumped in its own transaction snapshot.",
+    "The application keeps running during the dump. Business tables are read-only for this local environment at the time of the drill; outbox/inbox counts may change if background messages are processed.",
+    "No WAL archiving or point-in-time recovery is configured, so RPO is tied to the last completed dump and is not the 15-minute production target.",
+    "The scratch database is dropped after verification; this drill does not repoint running services or test traffic cutover.",
+    "Local restore time excludes provisioning, service restart, verification of external integrations and application warm-up; it is not an RTO measurement."
+  ],
+  "databases": [
+    {
+      "name": "organizationdb",
+      "dumpFile": "artifacts/p6/backup/organizationdb.dump",
+      "dumpBytes": 756511,
+      "dumpMillis": 264,
+      "restoreMillis": 590,
+      "checks": {
+        "workspaces": "1080",
+        "workspace_members": "1389",
+        "workspace_role_grants": "127",
+        "billing_subscriptions": "18",
+        "billing_invoices": "79|1812199",
+        "workspace_audit": "5141",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "0",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "financedb",
+      "dumpFile": "artifacts/p6/backup/financedb.dump",
+      "dumpBytes": 3037241,
+      "dumpMillis": 455,
+      "restoreMillis": 1202,
+      "checks": {
+        "journals": "1769",
+        "journal_lines": "3949|370068.420000|370068.420000",
+        "fiscal_periods": "597",
+        "record_changes": "13132",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "42",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "inventorydb",
+      "dumpFile": "artifacts/p6/backup/inventorydb.dump",
+      "dumpBytes": 22434867,
+      "dumpMillis": 1997,
+      "restoreMillis": 9765,
+      "checks": {
+        "stock_movements": "1000674|5000226.620000|500383.110000",
+        "warehouses": "204",
+        "cost_pools": "115|229.620000|5383.110000",
+        "record_changes": "1232",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "0",
+        "dead_letters": "1"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "reportingdb",
+      "dumpFile": "artifacts/p6/backup/reportingdb.dump",
+      "dumpBytes": 125448,
+      "dumpMillis": 178,
+      "restoreMillis": 364,
+      "checks": {
+        "workspace_projection": "1257",
+        "workspace_authorization_watermarks": "320|3644",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "14",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "masterdatadb",
+      "dumpFile": "artifacts/p6/backup/masterdatadb.dump",
+      "dumpBytes": 1296994,
+      "dumpMillis": 303,
+      "restoreMillis": 940,
+      "checks": {
+        "items": "100392",
+        "definitions": "373",
+        "partners": "380",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "0",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "purchasingdb",
+      "dumpFile": "artifacts/p6/backup/purchasingdb.dump",
+      "dumpBytes": 271027,
+      "dumpMillis": 197,
+      "restoreMillis": 464,
+      "checks": {
+        "orders": "247",
+        "order_lines": "247|27251.830000",
+        "receipt_permits": "151",
+        "record_changes": "880",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "0",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "salesdb",
+      "dumpFile": "artifacts/p6/backup/salesdb.dump",
+      "dumpBytes": 239346,
+      "dumpMillis": 188,
+      "restoreMillis": 437,
+      "checks": {
+        "orders": "175",
+        "order_lines": "261|130817.520000",
+        "fulfillment_permits": "256",
+        "record_changes": "880",
+        "outgoing_envelopes": "0",
+        "incoming_envelopes": "0",
+        "dead_letters": "0"
+      },
+      "mismatches": [],
+      "verified": true
+    },
+    {
+      "name": "identitydb",
+      "dumpFile": "artifacts/p6/backup/identitydb.dump",
+      "dumpBytes": 295882,
+      "dumpMillis": 221,
+      "restoreMillis": 1855,
+      "checks": {
+        "realm": "2",
+        "client": "16",
+        "user_entity": "231",
+        "credential": "5"
+      },
+      "mismatches": [],
+      "verified": true
+    }
+  ],
+  "totals": {
+    "databases": 8,
+    "dumpBytes": 28457316,
+    "dumpMillis": 3803,
+    "restoreMillis": 15617,
+    "allVerified": true
+  },
+  "completedAt": "2026-11-15T07:59:36.673Z"
+}

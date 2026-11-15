@@ -1,0 +1,43 @@
+JAVA_OPTS_KC_HEAP already set in environment; overriding default settings
+2026-11-06 02:26:42,820 WARN  [org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory] (main) The option `shouldAttachRoute` is deprecated and will be removed in a future release. Disable it by setting `spi-sticky-session-encoder--infinispan--should-attach-route` to `false`
+2026-11-06 02:26:44,466 INFO  [org.infinispan.CONTAINER] (main) ISPN000974: Virtual threads support: disabled
+2026-11-06 02:26:45,507 INFO  [org.hibernate.orm.jdbc.batch] (JPA Startup Thread) HHH100501: Automatic JDBC statement batching enabled (maximum batch size 32)
+2026-11-06 02:26:45,549 WARN  [org.keycloak.common.Profile] (executor-thread-1) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+2026-11-06 02:26:45,625 INFO  [io.quarkus] (main) Keycloak 26.8.2 on JVM (powered by Quarkus 3.40.1.1) started in 4.088s. Listening on: http://0.0.0.0:8080. Management interface listening on http://0.0.0.0:9000.
+2026-11-06 02:26:45,658 INFO  [io.quarkus] (main) Profile prod activated. 
+2026-11-06 02:26:45,658 INFO  [io.quarkus] (main) Installed features: [agroal, cdi, hibernate-orm, jdbc-postgresql, keycloak, narayana-jta, opentelemetry, rest, rest-jackson, smallrye-context-propagation, smallrye-health, vertx]
+2026-11-06 02:26:46,097 INFO  [org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator] (db-index-checker) JGroups JDBC_PING discovery enabled.
+2026-11-06 02:26:46,104 INFO  [org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator] (db-index-checker) JGroups Encryption enabled (mTLS).
+2026-11-06 02:26:46,592 WARN  [org.keycloak.quarkus.runtime.services.BootstrapFilter] (vert.x-eventloop-thread-0) Request received during bootstrapping, returning a 503 error. Use the readiness health endpoint to ensure the service is ready before forwarding requests to the service.
+2026-11-06 02:26:46,718 INFO  [org.keycloak.jgroups.certificates.CertificateReloadManager] (db-index-checker) Starting JGroups certificate reload manager
+2026-11-06 02:26:46,920 INFO  [org.infinispan.CONTAINER] (db-index-checker) ISPN000556: Starting user marshaller 'org.infinispan.commons.marshall.ImmutableProtoStreamMarshaller'
+2026-11-06 02:26:47,097 INFO  [org.infinispan.CLUSTER] (db-index-checker) ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`
+2026-11-06 02:26:47,100 INFO  [org.jgroups.JChannel] (db-index-checker) local_addr: 00000000-0000-0000-0000-000000000002(v=16.0.15), name: 675cebd17138-19070
+2026-11-06 02:26:47,121 INFO  [org.jgroups.protocols.FD_SOCK2] (db-index-checker) server listening on *:57800
+2026-11-06 02:26:47,294 ERROR [org.jgroups.protocols.TCP] (Connection.Receiver [172.18.0.5:42863 - 172.18.0.4:7800]-7,675cebd17138-19070(v=16.0.15)) 172.18.0.5:7800: failed sending graceful close to 172.18.0.4:7800: Broken pipe
+2026-11-06 02:26:47,398 INFO  [org.infinispan.CLUSTER] (db-index-checker) ISPN000094: Received new cluster view for channel ISPN: [441d01c2a0e4-1853(v=16.0.15)|1] (2) [441d01c2a0e4-1853(v=16.0.15), 675cebd17138-19070(v=16.0.15)]
+2026-11-06 02:26:47,409 INFO  [org.keycloak.jgroups.certificates.CertificateReloadManager] (blocking-thread--p3-t2) Reloading JGroups Certificate
+2026-11-06 02:26:47,525 INFO  [org.infinispan.CLUSTER] (db-index-checker) ISPN000079: Channel `ISPN` local address is `675cebd17138-19070`, physical addresses are `[172.18.0.5:7800]`
+2026-11-06 02:26:47,785 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:47,818 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t3) [Context=org.infinispan.CONFIG] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:47,844 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) ISPN000973: Task 'state-transfer-org.infinispan.CONFIG' started at 2026-11-06T02:26:47.815925965Z and done 2026-11-06T02:26:47.844451688Z
+2026-11-06 02:26:47,878 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=actionTokens] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:47,888 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t3) [Context=actionTokens] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:47,906 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) ISPN000973: Task 'state-transfer-actionTokens' started at 2026-11-06T02:26:47.887862228Z and done 2026-11-06T02:26:47.906358797Z
+2026-11-06 02:26:47,928 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=authenticationSessions] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:47,932 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=authenticationSessions] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:47,937 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) ISPN000973: Task 'state-transfer-authenticationSessions' started at 2026-11-06T02:26:47.932249014Z and done 2026-11-06T02:26:47.937658271Z
+2026-11-06 02:26:47,979 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=clientSessions] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:47,982 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=clientSessions] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:48,015 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=offlineClientSessions] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:48,020 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=offlineClientSessions] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:48,037 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=offlineSessions] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:48,044 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=offlineSessions] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:48,063 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) [Context=sessions] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:48,066 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=sessions] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:48,085 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,675cebd17138-19070(v=16.0.15)) [Context=work] ISPN100002: Starting rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-06 02:26:48,088 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t3) [Context=work] ISPN100010: Finished rebalance with members [441d01c2a0e4-1853, 675cebd17138-19070], topology id 2
+2026-11-06 02:26:48,102 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,675cebd17138-19070(v=16.0.15)) ISPN000973: Task 'state-transfer-work' started at 2026-11-06T02:26:48.087692373Z and done 2026-11-06T02:26:48.102112319Z
+2026-11-06 02:26:48,155 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (db-index-checker) Node name: 675cebd17138-19070, Site name: null, Cluster name: ISPN
+2026-11-06 02:26:48,170 INFO  [org.keycloak.models.workflow.WorkflowsEventListenerFactory] (executor-thread-1) Workflow runner task scheduled: next execution at 14:26:48, then every PT12H
+2026-11-06 02:26:49,404 INFO  [org.keycloak.services.resources.KeycloakApplication] (executor-thread-1) Bootstrap completed in 3.855000 seconds

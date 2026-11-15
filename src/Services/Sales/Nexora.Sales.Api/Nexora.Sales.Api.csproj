@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Nexora.Sales.Infrastructure/Nexora.Sales.Infrastructure.csproj" />
+    <ProjectReference Include="../../../Hosting/Nexora.ServiceDefaults/Nexora.ServiceDefaults.csproj" />
+    <PackageReference Include="WolverineFx.Http" />
+    <PackageReference Include="WolverineFx.HealthChecks" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Organization/Nexora.Organization.Contracts/Nexora.Organization.Contracts.csproj" />
+    <ProjectReference Include="../../MasterData/Nexora.MasterData.Contracts/Nexora.MasterData.Contracts.csproj" />
+    <ProjectReference Include="../../Finance/Nexora.Finance.Contracts/Nexora.Finance.Contracts.csproj" />
+    <ProjectReference Include="../../Inventory/Nexora.Inventory.Contracts/Nexora.Inventory.Contracts.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/Nexora.BuildingBlocks.Grpc/Nexora.BuildingBlocks.Grpc.csproj" />
+  </ItemGroup>
+</Project>

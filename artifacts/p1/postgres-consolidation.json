@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-06",
+  "scope": "Local development PostgreSQL consolidation",
+  "topology": "One instance, three databases and independent non-superuser logins",
+  "targetVolume": "nexora-postgres-data",
+  "sourceVolumesRetained": true,
+  "backupIgnored": true,
+  "comparedTables": 10,
+  "comparedTableContentsMatch": true,
+  "rowCountsBeforeBrowserTests": {
+    "reportingdb": {
+      "reporting.workspace_projection": 11,
+      "reporting.workspace_authorization_watermarks": 5
+    },
+    "identitydb": {
+      "public.realm": 2,
+      "public.user_entity": 3,
+      "public.credential": 5
+    },
+    "organizationdb": {
+      "organization.workspaces": 11,
+      "organization.user_accounts": 2,
+      "organization.workspace_members": 16,
+      "organization.workspace_invitations": 7,
+      "organization.workspace_audit": 39
+    }
+  },
+  "crossDatabaseConnectDenied": 6,
+  "activeServiceLoginsVerified": true,
+  "normalRestartWithoutRestoreMount": true,
+  "appHostBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "browserTests": {
+    "passed": 2,
+    "failed": 0
+  },
+  "backendTestsRerun": false,
+  "sourceHashes": {
+    "postgresAccess": "6F12718D4FB1538B46B993547F01A09159F881B801E83A856A9966469144D76F",
+    "initialization": "9CD66F99928D40DA8F2F607AB15139ABC5E511AC6304416F1CA49BADB978A814",
+    "appHost": "829D6C09526A63234A3BBA9C19DA652C0A249374E428ED8FF961E532DBFC7C2A"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "checkedAtUtc": "2026-11-06T02:22:57.554422+00:00",
+  "runId": "354a0fe1a3",
+  "status": "failed",
+  "keycloakVersion": "26.8.2",
+  "providerVersion": "0.1.0",
+  "cases": [
+    {
+      "name": "fixed-version-provider-build",
+      "status": "passed",
+      "evidence": "Java 21 / Keycloak 26.8.2 SPI JAR compiled and optimized server image built"
+    },
+    {
+      "name": "two-node-cluster",
+      "status": "passed",
+      "evidence": "Both nodes report a two-member JDBC_PING Infinispan cluster"
+    }
+  ],
+  "images": {
+    "quay.io/keycloak/keycloak:26.8.2": [
+      "quay.io/keycloak/keycloak@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b"
+    ],
+    "maven:3.9.11-eclipse-temurin-21": [
+      "maven@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237"
+    ],
+    "postgres:18.3": [
+      "postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db"
+    ],
+    "python:3.14-slim": [
+      "python@sha256:35caba83af2fe6da9a5d922f9b0156f21d1246a48278c58a08bd253303ba42e8"
+    ]
+  },
+  "limitations": [
+    "Isolated local candidate, not production provider approval or ERP/BFF integration",
+    "No real email delivery, Google callback or independent MFA exercised",
+    "No multi-site partition, cache total-loss recovery or timing side-channel proof"
+  ],
+  "evidenceDirectory": "artifacts\\p0\\email-otp-probe\\354a0fe1a3",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-otp-6c9ffb4dedd64f248cc1110d164907f6",
+  "providerJarSha256": "f5f24ab5ac11db49f972e99ce2765156c465cc46dfb312077a423ece4ae3a7d6",
+  "sourceSha256": {
+    "Dockerfile": "8bb71c09a3ff5c8e725761a9cc608aded029e2c682a380eda1c63af7f4757f29",
+    "pom.xml": "ec6bd4abc151c5d6471c22160a1205013b747085290323d5bf6ee65f79df5838",
+    "smtp_sink.py": "a676ac2e04574cdc53e39a6da52d70be7f869245bf8aea6ff28240ef07f522ea",
+    "theme/nexora-p0/login/email-otp.ftl": "531803b54ec71467adee35092f96354d87e07e48cb8b82694891ea2d03a34e88",
+    "theme/nexora-p0/login/theme.properties": "a39f7cda12cc8a2728734c19d259d3c6ba2d7b05b81573400b23c3ea95ece698",
+    "src/main/resources/META-INF/services/org.keycloak.authentication.AuthenticatorFactory": "ac61cfb3d8924b4f52f419496d30939d3308e884a001244711184313bf0ef996",
+    "src/main/java/com/nexora/p0/EmailOtpAuthenticator.java": "d9b9fbc92a66f8d6b2cbef380e5415323b904d5028f32da6f7e6fbc67c0cb1f9",
+    "src/main/java/com/nexora/p0/EmailOtpFactory.java": "d18690fa9e816058f1a47ad13d8166c9e6fa4a35341956ace3c8623d6c3c397d"
+  },
+  "builtImage": {
+    "tag": "nexora-p0-otp-354a0fe1a3:probe",
+    "id": "sha256:ecbbd0f8c6d5a708457012554090cc4133b1fdbd83e375d00ed8adfd71c8f4f0"
+  },
+  "error": "Generic code form did not load",
+  "cleanup": {
+    "containers": [
+      {
+        "name": "nexora-p0-otp-354a0fe1a3-b",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-otp-354a0fe1a3-a",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-otp-354a0fe1a3-smtp",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-otp-354a0fe1a3-db",
+        "removed": true
+      }
+    ],
+    "networkRemoved": true,
+    "ephemeralSecretFilesRemoved": true
+  },
+  "finishedAtUtc": "2026-11-06T02:23:33.826108+00:00"
+}

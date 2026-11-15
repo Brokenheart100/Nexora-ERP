@@ -1,0 +1,47 @@
+$ eslint .
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\components\InvoiceSchedules.vue
+   95:19  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  101:21  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\components\WorkspaceAssistant.vue
+  329:21  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  371:21  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\components\WorkspaceAudit.vue
+  127:13  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  147:25  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\components\WorkspaceBilling.vue
+  142:15  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  149:16  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  173:22  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\components\WorkspaceSetup.vue
+  236:11  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  322:17  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\app\pages\index.vue
+  178:15  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  182:17  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  205:25  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  221:25  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  236:25  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  244:23  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  306:27  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  308:33  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  311:22  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  313:34  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  315:23  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  317:26  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  319:25  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  321:27  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  323:28  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  325:23  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  327:29  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  329:23  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  331:27  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+✖ 30 problems (0 errors, 30 warnings)
+  0 errors and 30 warnings potentially fixable with the `--fix` option.
+

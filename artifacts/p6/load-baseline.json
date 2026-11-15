@@ -1,0 +1,167 @@
+{
+  "suite": "p6-03-local-load-baseline",
+  "startedAt": "2026-11-15T07:39:55.712Z",
+  "options": {
+    "items": 100000,
+    "movements": 1000000,
+    "concurrency": 50,
+    "rounds": 10,
+    "workspace": "",
+    "postgresContainer": "postgres-frkgfdpc"
+  },
+  "environment": {
+    "capturedAt": "2026-11-15T07:39:55.713Z",
+    "platform": "win32 10.0.26300",
+    "cpuCount": 16,
+    "cpuModel": "12th Gen Intel(R) Core(TM) i5-12600KF",
+    "totalMemoryMiB": 16140,
+    "node": "v24.21.0",
+    "playwright": "1.64.1",
+    "postgresImage": "docker.io/library/postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db",
+    "postgresVersion": "PostgreSQL 18.3 (Debian 18.3-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+  },
+  "workspace": {
+    "id": "01a1d33c-921f-7122-8441-058b1f955fe2",
+    "name": "目录隔离 1794545324554",
+    "tenantId": "01a1d33c-921f-7393-a1ac-f840177bf2b2",
+    "countryCode": "CN",
+    "baseCurrency": "CNY"
+  },
+  "definitions": {
+    "categoryId": "01a1de21-a490-7c0a-b9c5-28c9ae8b43dc",
+    "categoryCreated": false,
+    "unitId": "01a1de21-a5d4-7bfb-8e59-8c1f2a3f517e",
+    "unitCreated": false
+  },
+  "warehouse": {
+    "id": "01a1de21-a711-7a99-aa43-bb848d8d5f05",
+    "code": "P6LOAD",
+    "name": "P6 负载仓"
+  },
+  "seed": {
+    "items": 100000,
+    "movements": 1000000,
+    "itemsBytes": 33734656,
+    "movementsBytes": 338272256,
+    "catalogDatabaseBytes": 46044863,
+    "inventoryDatabaseBytes": 351196863
+  },
+  "apiChecks": {
+    "catalogFirstPageItems": 50,
+    "movementFirstPageItems": 50,
+    "lastCatalogPage": 2000
+  },
+  "measurements": {
+    "catalogPage1": {
+      "path": "/bff/api/masterdata/workspaces/{id}/catalog?page=1",
+      "count": 30,
+      "min": 61.57,
+      "p50": 67.69,
+      "p95": 80.45,
+      "p99": 80.94,
+      "max": 85.29,
+      "mean": 70.84
+    },
+    "catalogPage100": {
+      "path": "/bff/api/masterdata/workspaces/{id}/catalog?page=100",
+      "count": 30,
+      "min": 69.4,
+      "p50": 77.49,
+      "p95": 94.96,
+      "p99": 99.37,
+      "max": 109.56,
+      "mean": 79.74
+    },
+    "catalogPage1000": {
+      "path": "/bff/api/masterdata/workspaces/{id}/catalog?page=1000",
+      "count": 30,
+      "min": 72.98,
+      "p50": 81.7,
+      "p95": 97.49,
+      "p99": 102.98,
+      "max": 103.34,
+      "mean": 84.1
+    },
+    "catalogPage2000": {
+      "path": "/bff/api/masterdata/workspaces/{id}/catalog?page=2000",
+      "count": 30,
+      "min": 76.46,
+      "p50": 86.55,
+      "p95": 106.09,
+      "p99": 109.16,
+      "max": 128.45,
+      "mean": 89.27
+    },
+    "itemDetail": {
+      "path": "/bff/api/masterdata/workspaces/{id}/items/{itemId}",
+      "statuses": [
+        200
+      ],
+      "count": 40,
+      "min": 60.81,
+      "p50": 71.43,
+      "p95": 78.63,
+      "p99": 80.35,
+      "max": 80.64,
+      "mean": 71.37
+    },
+    "movementsPage1": {
+      "path": "/bff/api/inventory/workspaces/{id}/warehouses/{wid}/movements?page=1",
+      "count": 20,
+      "min": 173.99,
+      "p50": 189.22,
+      "p95": 243.47,
+      "p99": 243.47,
+      "max": 261.54,
+      "mean": 198.22
+    },
+    "movementsByItem": {
+      "path": "/bff/api/inventory/workspaces/{id}/warehouses/{wid}/movements?itemId={itemId}&page=1",
+      "count": 20,
+      "min": 68.31,
+      "p50": 73.92,
+      "p95": 85.1,
+      "p99": 85.1,
+      "max": 87.61,
+      "mean": 75.1
+    },
+    "reportRead": {
+      "path": "/bff/api/reports/workspaces/{id}",
+      "statuses": {
+        "200": 20
+      },
+      "count": 20,
+      "min": 71.83,
+      "p50": 80.11,
+      "p95": 91.22,
+      "p99": 91.22,
+      "max": 102.52,
+      "mean": 82.79
+    },
+    "concurrentMixed": {
+      "concurrency": 50,
+      "rounds": 10,
+      "requests": 500,
+      "statuses": {
+        "200": 500
+      },
+      "errorRate": 0,
+      "wallSeconds": 9.22,
+      "requestsPerSecond": 54.22,
+      "count": 500,
+      "min": 194.76,
+      "p50": 520.25,
+      "p95": 928.78,
+      "p99": 965.35,
+      "max": 1057.09,
+      "mean": 559.19
+    }
+  },
+  "notes": [
+    "Single host, single Aspire app host, shared local PostgreSQL container; latency is measured through the real browser-session BFF -> YARP -> service path.",
+    "Synthetic catalog and stock rows are inserted directly into PostgreSQL, not through domain APIs; this is a read-path baseline, not a write-throughput or correctness test.",
+    "50 concurrent users are approximated by 50 concurrent requests on one authenticated BFF session; it is not an independent-user session benchmark.",
+    "Reporting only projects WorkspaceCreated in this build, so projection lag cannot be induced without creating another workspace (alice is at the Pro workspace quota). Only report-read latency is recorded."
+  ],
+  "completedAt": "2026-11-15T07:40:35.710Z"
+}

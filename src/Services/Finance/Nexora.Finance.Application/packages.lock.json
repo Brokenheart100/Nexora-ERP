@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "nexora.buildingblocks.application": {
+        "type": "Project"
+      },
+      "nexora.finance.domain": {
+        "type": "Project"
+      }
+    }
+  }
+}

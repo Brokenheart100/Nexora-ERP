@@ -1,0 +1,28 @@
+== typecheck ==
+    at resolvePlugins (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\node_modules\.pnpm\@vue+language-core@3.3.14\node_modules\@vue\language-core\lib\compilerOptions.js:185:43)
+    at CompilerOptionsResolver.addConfig (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\node_modules\.pnpm\@vue+language-core@3.3.14\node_modules\@vue\language-core\lib\compilerOptions.js:124:40) {
+  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+}
+TYPECHECK=0
+== lint ==
+  309:23  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+  311:29  warning  Expected a linebreak before this attribute  vue/first-attribute-linebreak
+
+✖ 18 problems (0 errors, 18 warnings)
+  0 errors and 18 warnings potentially fixable with the `--fix` option.
+
+LINT=0
+== unit ==
+
+ Test Files  5 passed (5)
+      Tests  27 passed (27)
+   Start at  17:58:13
+   Duration  4.08s (tests 73%, environment 21%, setup 3%, transform 1%, import 1%)
+
+UNIT=0
+== build ==
+Σ Total size: 3.74 MB (1.04 MB gzip)
+[nitro] √ You can preview this build using node .output/server/index.mjs
+config 293ms · modules 771ms · app 927ms · types 722ms · client 4.05s · server 45ms · nitro 6.61s
+* ✨ Build complete in 13.4s!
+BUILD=0

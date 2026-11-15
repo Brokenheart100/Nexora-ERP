@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><IsPackable>false</IsPackable></PropertyGroup><ItemGroup><Using Include="Xunit" /><PackageReference Include="Microsoft.NET.Test.Sdk" /><PackageReference Include="xunit" /><PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" /><PackageReference Include="Alba" /><PackageReference Include="Testcontainers.PostgreSql" /><PackageReference Include="Testcontainers.RabbitMq" /><ProjectReference Include="../../src/Services/Organization/Nexora.Organization.Api/Nexora.Organization.Api.csproj" /><ProjectReference Include="../../src/Services/Reporting/Nexora.Reporting.Api/Nexora.Reporting.Api.csproj" /></ItemGroup><ItemGroup>
+  <ProjectReference Include="..\..\src\Services\MasterData\Nexora.MasterData.Api\Nexora.MasterData.Api.csproj" />
+  <ProjectReference Include="../../src/Services/Purchasing/Nexora.Purchasing.Domain/Nexora.Purchasing.Domain.csproj" />
+  <ProjectReference Include="../../src/Services/Finance/Nexora.Finance.Infrastructure/Nexora.Finance.Infrastructure.csproj" />
+  <ProjectReference Include="../../src/Services/Inventory/Nexora.Inventory.Domain/Nexora.Inventory.Domain.csproj" />
+</ItemGroup></Project>

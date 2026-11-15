@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../Nexora.BuildingBlocks.Application/Nexora.BuildingBlocks.Application.csproj" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="protobuf-net.Grpc" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "verifiedAtUtc": "2026-11-06T05:52:42.9929223+00:00",
+  "status": "workspace-governance-slice-locally-verified",
+  "p1Overall": "in-progress",
+  "scope": "built-in-governance-roles-and-workspace-scope",
+  "inviteDelivery": "manual-copy-code-no-email-sent",
+  "authentication": "Keycloak-OIDC-PKCE-native-TOTP-through-real-BFF",
+  "authorization": "Organization-authoritative-no-cache",
+  "backend": {
+    "lockedRestore": "passed",
+    "debugBuildWarnings": 0,
+    "debugBuildErrors": 0,
+    "releaseBuildWarnings": 0,
+    "releaseBuildErrors": 0,
+    "debugTests": [],
+    "releaseTests": [],
+    "testNames": [
+      "Nexora.Tests.GovernanceDomainTests.Pending_invitation_does_not_preserve_the_inviters_revoked_authority",
+      "Nexora.Tests.WorkspaceSliceTests.Membership_invitation_and_application_authorization_lifecycle",
+      "Nexora.Tests.DomainTests.Identity_includes_issuer_and_owner_does_not_gain_finance_permissions",
+      "Nexora.Tests.GovernanceDomainTests.Invitation_binding_rejects_invalid_recipient_token_and_expiry(failure: \"wrong-email\")",
+      "Nexora.Tests.DomainTests.Repeating_the_same_intent_returns_the_original_result_without_another_fact",
+      "Nexora.Tests.AuthorizationAvailabilityTests.Authority_connection_failure_never_falls_back_to_a_projection",
+      "Nexora.Tests.GovernanceDomainTests.Invitation_binding_rejects_invalid_recipient_token_and_expiry(failure: \"wrong-token\")",
+      "Nexora.Tests.WorkspaceSliceTests.Http_validation_authorization_idempotency_transaction_and_durable_delivery",
+      "Nexora.Tests.GovernanceDomainTests.Invitation_binding_rejects_invalid_recipient_token_and_expiry(failure: \"wrong-issuer\")",
+      "Nexora.Tests.GovernanceDomainTests.Invitation_is_single_use_and_cannot_reactivate_suspended_members",
+      "Nexora.Tests.WorkspaceSliceTests.Stale_concurrent_aggregate_snapshots_cannot_remove_both_owners",
+      "Nexora.Tests.WorkspaceSliceTests.Upgrade_backfills_accounts_and_owner_memberships_without_losing_workspaces",
+      "Nexora.Tests.AuthorizationBoundaryTests.All_business_http_endpoints_declare_authentication_or_resource_authorization",
+      "Nexora.Tests.GovernanceDomainTests.Governance_roles_never_grant_finance_or_unknown_operations",
+      "Nexora.Tests.DomainTests.Inner_layers_remain_framework_free_and_reporting_only_imports_public_contracts",
+      "Nexora.Tests.GovernanceDomainTests.Administrators_cannot_promote_themselves_or_issue_administrative_grants",
+      "Nexora.Tests.AuthorizationBoundaryTests.User_intents_cannot_omit_the_marker_that_applies_listener_rejection",
+      "Nexora.Tests.GovernanceDomainTests.Revocation_duplicate_invites_and_last_owner_are_protected",
+      "Nexora.Tests.DomainTests.Opening_requires_valid_identity_and_name_and_sets_CNY_baseline",
+      "Nexora.Tests.GovernanceDomainTests.Invitation_binding_rejects_invalid_recipient_token_and_expiry(failure: \"expired\")"
+    ]
+  },
+  "frontend": {
+    "frozenInstall": "passed",
+    "strictTypecheck": "passed",
+    "productionBuild": "passed",
+    "browser": {
+      "startTime": "2026-11-06T05:40:11.711Z",
+      "duration": 51388.454,
+      "expected": 2,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "browserTlsErrorsIgnored": false,
+    "viewports": [
+      "1440x1000",
+      "390x844"
+    ]
+  },
+  "verifiedSecurityCases": [
+    "verified-email-issuer-token-expiry-binding",
+    "single-use-and-revoked-invitations",
+    "same-email-different-subject-independent-accounts",
+    "cross-workspace-subresource-and-forged-scope-denial",
+    "no-administrator-self-elevation-or-finance-grant",
+    "last-owner-concurrent-snapshot-protection",
+    "missing-member-state-does-not-silently-suspend",
+    "current-authority-on-in-process-user-command",
+    "real-RabbitMQ-forged-Owner-intent-rejected-to-native-dead-letter-queue",
+    "member-audit-and-outbox-rollback",
+    "authorization-version-watermark-and-immediate-suspension",
+    "authority-network-failure-no-projection-read",
+    "suspended-creator-old-create-intent-replay-denied",
+    "endpoint-auth-and-user-intent-marker-ci-guards",
+    "redemption-rate-policy-429",
+    "real-browser-invite-role-suspension-reactivation-revoke-reissue"
+  ],
+  "remoteCI": "configured-not-executed",
+  "productionDeployment": "not-executed",
+  "appHostAfterVerification": "stopped-persistent-data-retained",
+  "remaining": [
+    "custom-business-roles-and-permission-scope-tuples",
+    "sensitive-business-grants-and-fine-grained-resource-scopes",
+    "entitlements-and-audit-query",
+    "real-invitation-email-registration-OTP-Google",
+    "coordinated-refresh-and-global-session-revocation",
+    "machine-identities-least-privilege-and-controlled-replay",
+    "static-codegen-Saga-delays-process-crash-and-production-acceptance"
+  ],
+  "sourceHashes": [
+    {
+      "path": "src/BuildingBlocks/Nexora.BuildingBlocks.Application/ActorContext.cs",
+      "sha256": "1027157129ae7cd67c853f665e823d79d23f9c377545f7be638a3f53dd09040b"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Domain/Workspace.cs",
+      "sha256": "c787a511f991390f6c39cf8649872204dcc6769cb3b0efcad7c926d2ca399c53"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Domain/Governance.cs",
+      "sha256": "171954da10606cb8f00fad22b2a28c84c310eb801dd30792b4ca5ed5fb442b12"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Application/Workspaces.cs",
+      "sha256": "d013b2810253045cc2d73c383738b24ddcb1cc08763e9083f2a2713dd300dbd1"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Application/Governance.cs",
+      "sha256": "18274baa38146fcef86a1996db544880d148efa9c8b5a3f9aad3b92fd1f8b05e"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Contracts/WorkspaceAuthorizationChangedV1.cs",
+      "sha256": "247c75b4ba8ba25bf825d5bf625e57dbdf7229bcdb8bdaf3a2840b26cf075db6"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/OrganizationDbContext.cs",
+      "sha256": "5a21619148f075190024bd01a93e01dea04968fe3ce78afc71f23a48f0cadd01"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/InvitationTokens.cs",
+      "sha256": "dff1f5208f5a617042dc905bea2cf63ebee1bed76fa7d7d63d4b40094b71f3c7"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/Messaging/GovernanceHandler.cs",
+      "sha256": "d89a3db15cc09a4348b13c731d54586d34cd9b880f024ab1246f65c24f6acca3"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/Messaging/LocalUserCommandGuard.cs",
+      "sha256": "3a3d0d44773f3272b3d6b4ccb7e8cd01163067b4b99f85cf79a988f3db4ce0a4"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/DependencyInjection.cs",
+      "sha256": "2c50560a64e0c263303835e3aaed619bd31179a117ae74f5ae6b60fb32cda732"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Api/Program.cs",
+      "sha256": "3ee6e2a1204455984159ed12743e3bad1a0be10661ba60b65ce8045895bf0515"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Api/WorkspaceEndpoints.cs",
+      "sha256": "1300e6ea9a4b7ddac1d5589fa61d17e73beb8935a1f6921af2ccfa192a8bee4e"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Api/GovernanceEndpoints.cs",
+      "sha256": "ff21f944b5b94a253a71cb1a8bbcebbbf1e395f41f2cad1d758bfd716df569ec"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/Persistence/Migrations/20261106044032_WorkspaceGovernance.cs",
+      "sha256": "33af5c719e5526adb22769c1307a46b78a4a857ae202386f7d0798c6bc3882f4"
+    },
+    {
+      "path": "src/Services/Reporting/Nexora.Reporting.Infrastructure/ReportingDbContext.cs",
+      "sha256": "fd9a85bc84ab6153cc833c0f927bd3aa91a8b3390abb15526e4d64a539f742a9"
+    },
+    {
+      "path": "src/Services/Reporting/Nexora.Reporting.Infrastructure/WorkspaceCreatedHandler.cs",
+      "sha256": "8e54cc3f50aa5c13cc46b12da01d7f16d37eff9be1dcd69f1276ddf4e197c570"
+    },
+    {
+      "path": "src/Services/Reporting/Nexora.Reporting.Api/ProjectionEndpoints.cs",
+      "sha256": "142a7387a8fb09e74c047473bf06d98aa1a3928b48649c108cdcf302c68f6fca"
+    },
+    {
+      "path": "src/Services/Reporting/Nexora.Reporting.Infrastructure/Persistence/Migrations/20261106044037_AuthorizationWatermarks.cs",
+      "sha256": "3eafcce21f3364aa2de72221cee166ec28f81b742d3bc3533f9c0f78ad9f1f2d"
+    },
+    {
+      "path": "tests/Nexora.Tests/DomainTests.cs",
+      "sha256": "9cbbb574a25a9e1d24a3d53cc710b3b379083ec8d222dd8dfdd32690679c6c66"
+    },
+    {
+      "path": "tests/Nexora.Tests/GovernanceDomainTests.cs",
+      "sha256": "2c3b88413c4fe11b1bb4d680683d776f4596e026951b6c609aa11184653a6f35"
+    },
+    {
+      "path": "tests/Nexora.Tests/GovernanceSliceTests.cs",
+      "sha256": "d4a59e51e73abc262bbdde64602455bcbe5768156fc3075a66c710801ceb08f2"
+    },
+    {
+      "path": "tests/Nexora.Tests/AuthorizationBoundaryTests.cs",
+      "sha256": "6cdf1a5329acec8baee2b59d3f5711b710b4ba03c0d7536b9acc22da77806e7f"
+    },
+    {
+      "path": "tests/Nexora.Tests/AuthorizationAvailabilityTests.cs",
+      "sha256": "4b80271066b2dfc8335608739fb08128bcfe12da523da288f8b6111ed92384c1"
+    },
+    {
+      "path": "tests/Nexora.Tests/WorkspaceSliceTests.cs",
+      "sha256": "e295a93a49fdc9775e42dfb72133f82f15db3afa8cc85fa72ada19495db2f053"
+    },
+    {
+      "path": "src/Web/nexora-web/app/app.vue",
+      "sha256": "6f75ac12d0e0acf8f191328d292f7ae3bf7da1eca2e08832818472e6444ba3d3"
+    },
+    {
+      "path": "src/Web/nexora-web/app/components/WorkspaceGovernance.vue",
+      "sha256": "dad55a5a8bdae957572e6295c0b652d5b347236f9d3c62fca7d91a8c7f756886"
+    },
+    {
+      "path": "src/Web/nexora-web/e2e/workspace.spec.ts",
+      "sha256": "1ef8ea9dfa89d68ac4ccab49ee3718f1cf8d19f1c0d38e4900ccb91f00c2d9fa"
+    },
+    {
+      "path": "src/Web/nexora-web/playwright.config.ts",
+      "sha256": "5d09065c6ef54a2b35ad50a4b0227e7386997e2790953db2b722d5bb8307bc22"
+    },
+    {
+      "path": "Directory.Packages.props",
+      "sha256": "34b9536daeb272d58e639701b6cfd66342c01ab175e88a9c29b0867ad756defc"
+    },
+    {
+      "path": "src/Web/nexora-web/pnpm-lock.yaml",
+      "sha256": "e06b6c814a758e5946e3dc528b23615ba08658c3848cfe0cfce5c45017e8e877"
+    }
+  ]
+}

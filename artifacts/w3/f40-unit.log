@@ -1,0 +1,42 @@
+$ vitest run
+
+ RUN  v5.1.0 D:/Code/CSharp/Nexora ERP/src/Web/nexora-web
+
+stdout | test/workspace.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/security.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/export.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/cli.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/assistantStream.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/setup-wizard.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+stdout | test/dashboard.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+ ✓ test/workspace.test.ts (4 tests) 7277ms
+stdout | test/audit.test.ts
+<Suspense> is an experimental feature and its API will likely change.
+
+ ✓ test/export.test.ts (5 tests) 7737ms
+ ✓ test/setup-wizard.test.ts (3 tests) 7738ms
+ ✓ test/cli.test.ts (5 tests) 7699ms
+ ✓ test/assistantStream.test.ts (5 tests) 7712ms
+ ✓ test/security.test.ts (7 tests) 7738ms
+ ✓ test/audit.test.ts (5 tests) 7757ms
+ ✓ test/dashboard.test.ts (8 tests) 7757ms
+
+ Test Files  8 passed (8)
+      Tests  42 passed (42)
+   Start at  21:55:23
+   Duration  9.45s (tests 83%, environment 10%, transform 4%, setup 2%, import 1%)
+

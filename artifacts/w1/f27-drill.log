@@ -1,0 +1,170 @@
+2026-11-13T03:05:27.163Z drill mode prep cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:05:27.769Z login start alice
+2026-11-13T03:05:32.276Z login ok alice
+2026-11-13T03:05:33.228Z workspaces 200
+2026-11-13T03:05:34.743Z candidate 01a1d2c9-b99e-79ad-8f8f-ed1644488d84 销售闭环验收 1794537798029 zone Asia/Kolkata local 08:35 dueInMin 25 nextOn 2026-11-13
+2026-11-13T03:05:35.378Z PREPARED {"phase":"prepared","preparedAt":"2026-11-13T03:05:35.242Z","workspaceId":"01a1d2c9-b99e-79ad-8f8f-ed1644488d84","workspaceName":"销售闭环验收 1794537798029","customerId":"01a1d2c9-c009-7385-a7c4-13b1f9d67287","customerName":"华东客户","serviceId":"01a1d2c9-bfad-7ba1-8411-60eea5f5c222","scheduleId":"01a1d2de-20df-7d7f-995c-4ff4dff9c13a","scheduleVersion":1,"zone":"Asia/Kolkata","nextOn":"2026-11-13","dueUtc":"2026-11-13T03:30:34.673Z","dueInMinutes":25,"settingsVersion":2,"occurrencesBeforeStop":0,"scheduleList":[{"id":"01a1d2de-20df-7d7f-995c-4ff4dff9c13a","version":1,"nextOn":"2026-11-13","preview":["2026-11-13"],"paused":false}]}
+2026-11-13T03:05:35.861Z DONE
+2026-11-13T03:05:44.530Z drill mode stop cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:05:44.532Z exec "aspire" "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive"
+2026-11-13T03:05:44.579Z stop retry without non-interactive 1 The system cannot find the path specified.
+
+2026-11-13T03:05:44.580Z exec "aspire" "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj"
+2026-11-13T03:05:44.601Z stop exit 1 stdout  stderr The system cannot find the path specified.
+
+2026-11-13T03:05:44.602Z FAILED Error: aspire stop failed with exit 1
+    at stop (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f27-drill.mjs:292:32)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async main (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f27-drill.mjs:418:26)
+2026-11-13T03:06:28.240Z drill mode stop cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:06:28.241Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive"
+2026-11-13T03:06:29.623Z stop exit 0 stdout Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ stderr 
+2026-11-13T03:06:29.624Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health"
+2026-11-13T03:06:31.985Z gateway down confirmed true
+2026-11-13T03:06:31.986Z DONE
+2026-11-13T03:06:32.450Z drill mode wait cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:06:32.452Z waiting until due+90s 2026-11-13T03:32:04.673Z
+2026-11-13T03:06:32.452Z wait remaining seconds 1532
+2026-11-13T03:06:47.465Z wait remaining seconds 1517
+2026-11-13T03:07:02.469Z wait remaining seconds 1502
+2026-11-13T03:07:17.479Z wait remaining seconds 1487
+2026-11-13T03:07:32.483Z wait remaining seconds 1472
+2026-11-13T03:07:47.497Z wait remaining seconds 1457
+2026-11-13T03:08:02.500Z wait remaining seconds 1442
+2026-11-13T03:08:17.512Z wait remaining seconds 1427
+2026-11-13T03:08:32.515Z wait remaining seconds 1412
+2026-11-13T03:08:47.523Z wait remaining seconds 1397
+2026-11-13T03:09:02.539Z wait remaining seconds 1382
+2026-11-13T03:09:17.546Z wait remaining seconds 1367
+2026-11-13T03:09:32.557Z wait remaining seconds 1352
+2026-11-13T03:09:47.565Z wait remaining seconds 1337
+2026-11-13T03:10:02.566Z wait remaining seconds 1322
+2026-11-13T03:10:17.577Z wait remaining seconds 1307
+2026-11-13T03:12:29.990Z drill mode wait cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:12:29.991Z waiting until due+90s 2026-11-13T03:32:04.673Z
+2026-11-13T03:12:29.991Z wait remaining seconds 1175
+2026-11-13T03:12:44.995Z wait remaining seconds 1160
+2026-11-13T03:13:00.011Z wait remaining seconds 1145
+2026-11-13T03:13:15.014Z wait remaining seconds 1130
+2026-11-13T03:13:30.023Z wait remaining seconds 1115
+2026-11-13T03:13:45.025Z wait remaining seconds 1100
+2026-11-13T03:14:00.028Z wait remaining seconds 1085
+2026-11-13T03:14:15.037Z wait remaining seconds 1070
+2026-11-13T03:14:30.050Z wait remaining seconds 1055
+2026-11-13T03:14:45.060Z wait remaining seconds 1040
+2026-11-13T03:15:00.060Z wait remaining seconds 1025
+2026-11-13T03:15:15.068Z wait remaining seconds 1010
+2026-11-13T03:15:30.074Z wait remaining seconds 995
+2026-11-13T03:15:45.078Z wait remaining seconds 980
+2026-11-13T03:16:00.082Z wait remaining seconds 965
+2026-11-13T03:16:15.090Z wait remaining seconds 950
+2026-11-13T03:16:30.097Z wait remaining seconds 935
+2026-11-13T03:16:45.102Z wait remaining seconds 920
+2026-11-13T03:17:00.117Z wait remaining seconds 905
+2026-11-13T03:17:15.128Z wait remaining seconds 890
+2026-11-13T03:17:30.138Z wait remaining seconds 875
+2026-11-13T03:17:45.153Z wait remaining seconds 860
+2026-11-13T03:18:00.158Z wait remaining seconds 845
+2026-11-13T03:18:15.167Z wait remaining seconds 830
+2026-11-13T03:18:30.176Z wait remaining seconds 814
+2026-11-13T03:18:45.190Z wait remaining seconds 799
+2026-11-13T03:19:00.194Z wait remaining seconds 784
+2026-11-13T03:19:15.207Z wait remaining seconds 769
+2026-11-13T03:19:30.214Z wait remaining seconds 754
+2026-11-13T03:19:45.217Z wait remaining seconds 739
+2026-11-13T03:20:00.219Z wait remaining seconds 724
+2026-11-13T03:20:15.233Z wait remaining seconds 709
+2026-11-13T03:20:30.246Z wait remaining seconds 694
+2026-11-13T03:20:45.255Z wait remaining seconds 679
+2026-11-13T03:21:00.260Z wait remaining seconds 664
+2026-11-13T03:21:15.269Z wait remaining seconds 649
+2026-11-13T03:21:30.270Z wait remaining seconds 634
+2026-11-13T03:21:45.275Z wait remaining seconds 619
+2026-11-13T03:22:00.287Z wait remaining seconds 604
+2026-11-13T03:22:15.295Z wait remaining seconds 589
+2026-11-13T03:22:30.298Z wait remaining seconds 574
+2026-11-13T03:22:45.300Z wait remaining seconds 559
+2026-11-13T03:23:00.313Z wait remaining seconds 544
+2026-11-13T03:23:15.319Z wait remaining seconds 529
+2026-11-13T03:23:30.331Z wait remaining seconds 514
+2026-11-13T03:23:45.333Z wait remaining seconds 499
+2026-11-13T03:24:00.339Z wait remaining seconds 484
+2026-11-13T03:24:15.348Z wait remaining seconds 469
+2026-11-13T03:24:30.362Z wait remaining seconds 454
+2026-11-13T03:24:45.363Z wait remaining seconds 439
+2026-11-13T03:25:00.368Z wait remaining seconds 424
+2026-11-13T03:25:15.382Z wait remaining seconds 409
+2026-11-13T03:25:30.388Z wait remaining seconds 394
+2026-11-13T03:25:45.400Z wait remaining seconds 379
+2026-11-13T03:26:00.405Z wait remaining seconds 364
+2026-11-13T03:26:15.420Z wait remaining seconds 349
+2026-11-13T03:26:30.434Z wait remaining seconds 334
+2026-11-13T03:26:45.444Z wait remaining seconds 319
+2026-11-13T03:27:00.456Z wait remaining seconds 304
+2026-11-13T03:27:15.469Z wait remaining seconds 289
+2026-11-13T03:27:30.477Z wait remaining seconds 274
+2026-11-13T03:27:45.490Z wait remaining seconds 259
+2026-11-13T03:28:00.495Z wait remaining seconds 244
+2026-11-13T03:28:15.505Z wait remaining seconds 229
+2026-11-13T03:28:30.511Z wait remaining seconds 214
+2026-11-13T03:28:45.517Z wait remaining seconds 199
+2026-11-13T03:29:00.524Z wait remaining seconds 184
+2026-11-13T03:29:15.540Z wait remaining seconds 169
+2026-11-13T03:29:30.551Z wait remaining seconds 154
+2026-11-13T03:29:45.561Z wait remaining seconds 139
+2026-11-13T03:30:00.576Z wait remaining seconds 124
+2026-11-13T03:30:15.580Z wait remaining seconds 109
+2026-11-13T03:30:30.587Z wait remaining seconds 94
+2026-11-13T03:30:45.597Z wait remaining seconds 79
+2026-11-13T03:31:00.601Z wait remaining seconds 64
+2026-11-13T03:31:15.609Z wait remaining seconds 49
+2026-11-13T03:31:30.623Z wait remaining seconds 34
+2026-11-13T03:31:45.629Z wait remaining seconds 19
+2026-11-13T03:32:00.630Z wait remaining seconds 4
+2026-11-13T03:32:04.674Z DUE PASSED while host stopped
+2026-11-13T03:32:04.674Z DONE
+2026-11-13T03:32:04.983Z drill mode start cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:32:04.983Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive"
+2026-11-13T03:32:17.200Z start exit 0 stdout 正在后台启动 Aspire AppHost...
+
+   AppHost:  src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=00d0403ba0c3ebd40837e71f9f5901a1                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T033205108_detach-child_6483de1d10c64bf7b5d142e750eebc24.log   
+                                                                                                                  
+       PID:  8612                                                                                                 
+
+✅ 已成功启动 AppHost。
+ stderr 
+2026-11-13T03:32:17.200Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive"
+2026-11-13T03:34:06.951Z wait gateway exit 0 stdout 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(109.3秒)
+ stderr 
+2026-11-13T03:34:06.952Z DONE
+2026-11-13T03:34:07.274Z drill mode verify cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:34:07.860Z login start alice
+2026-11-13T03:34:11.565Z login ok alice
+2026-11-13T03:34:14.102Z finance ready at 2026-11-13T03:34:14.102Z
+2026-11-13T03:34:21.260Z occurrences [{"tenantId":"01a1d2c9-b99e-7b97-aa45-3659804c301a","workspaceId":"01a1d2c9-b99e-79ad-8f8f-ed1644488d84","scheduleId":"01a1d2de-20df-7d7f-995c-4ff4dff9c13a","on":"2026-11-13","templateVersion":1,"documentId":"01a1d2f7-9072-7561-8b1c-00271c0ca9b2","createdAtUtc":"2026-11-13T03:33:22.201007+00:00"}]
+2026-11-13T03:34:27.928Z expected number R-01a1d2de20df7d7f995c4ff4dff9c13a-20261113 matching docs []
+2026-11-13T03:34:28.191Z FAILED Error: expected exactly 1 recovered invoice, got 0
+    at verify (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f27-drill.mjs:390:34)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:541:9)
+    at async main (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f27-drill.mjs:421:28)
+2026-11-13T03:37:12.701Z drill mode verify cwd D:\Code\CSharp\Nexora ERP\src\Web\nexora-web repoRoot D:\Code\CSharp\Nexora ERP apphost D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+2026-11-13T03:37:13.231Z login start alice
+2026-11-13T03:37:14.249Z login ok alice
+2026-11-13T03:37:14.985Z finance ready at 2026-11-13T03:37:14.985Z
+2026-11-13T03:37:15.142Z occurrences [{"tenantId":"01a1d2c9-b99e-7b97-aa45-3659804c301a","workspaceId":"01a1d2c9-b99e-79ad-8f8f-ed1644488d84","scheduleId":"01a1d2de-20df-7d7f-995c-4ff4dff9c13a","on":"2026-11-13","templateVersion":1,"documentId":"01a1d2f7-9072-7561-8b1c-00271c0ca9b2","createdAtUtc":"2026-11-13T03:33:22.201007+00:00"}]
+2026-11-13T03:37:15.530Z expected number R-01a1d2de20df7d7f995c4ff4dff9c13a-20261113 documentId 01a1d2f7-9072-7561-8b1c-00271c0ca9b2 matching docs [{"id":"01a1d2f7-9072-7561-8b1c-00271c0ca9b2","number":"R-01a1d2de20df7d7f995c4ff4dff9c13a-20261113","state":"submitted","total":"56.5"}]
+2026-11-13T03:38:15.624Z VERIFIED {"verifiedAt":"2026-11-13T03:38:15.624Z","occurrence":{"tenantId":"01a1d2c9-b99e-7b97-aa45-3659804c301a","workspaceId":"01a1d2c9-b99e-79ad-8f8f-ed1644488d84","scheduleId":"01a1d2de-20df-7d7f-995c-4ff4dff9c13a","on":"2026-11-13","templateVersion":1,"documentId":"01a1d2f7-9072-7561-8b1c-00271c0ca9b2","createdAtUtc":"2026-11-13T03:33:22.201007+00:00"},"invoice":{"id":"01a1d2f7-9072-7561-8b1c-00271c0ca9b2","terms":{"kind":1,"number":"R-01a1d2de20df7d7f995c4ff4dff9c13a-20261113","on":"2026-11-13","customerId":"01a1d2c9-c009-7385-a7c4-13b1f9d67287","customerName":"华东客户","currency":"CNY","total":"56.5","lines":[{"shipmentId":null,"itemId":"01a1d2c9-bfad-7ba1-8411-60eea5f5c222","name":"月度维护服务","quantity":"1","unitPrice":"50","net":"50","tax":"6.5","components":[{"rateId":"01a1d2c9-c5cc-7b7a-998c-655fc593b6b0","code":"SAMPLE","effectiveOn":"2026-01-01","rate":"0.13","amount":"6.5"}]}],"brand":{"legalName":"上海示例商贸","brandName":"明川品牌","accentColor":"#176B6B","logoPngBase64":null,"version":2,"dateFormat":"dd/MM/yyyy","timeZone":"Asia/Kolkata"},"bankId":null,"invoiceId":null,"fundsId":null,"returnId":null,"dueOn":"2026-11-28"},"state":"submitted","version":1,"journalId":null,"openBalance":"0","isMaker":true},"occurrencesAfter60s":1,"invoicesAfter60s":1}
+2026-11-13T03:38:15.874Z DONE

@@ -1,0 +1,22 @@
+{
+  "checkedOn": "2026-11-06",
+  "targetFramework": "net10.0",
+  "observedSdk": "10.0.402",
+  "scope": "P0 candidate compatibility probe; not production version lock or infrastructure acceptance",
+  "source": "https://api.nuget.org/v3/index.json",
+  "packages": {
+    "WolverineFx": "6.61.0",
+    "WolverineFx.Http": "6.61.0",
+    "WolverineFx.FluentValidation": "6.61.0",
+    "WolverineFx.Http.FluentValidation": "6.61.0",
+    "WolverineFx.EntityFrameworkCore": "6.61.0",
+    "WolverineFx.Postgresql": "6.61.0",
+    "WolverineFx.RabbitMQ": "6.61.0",
+    "WolverineFx.RuntimeCompilation": "6.61.0",
+    "Microsoft.EntityFrameworkCore": "10.0.14",
+    "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.3",
+    "Microsoft.AspNetCore.Authentication.OpenIdConnect": "10.0.14",
+    "Microsoft.AspNetCore.Authentication.JwtBearer": "10.0.14",
+    "Alba": "8.5.3"
+  }
+}

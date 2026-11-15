@@ -1,0 +1,153 @@
+{
+  "config": {
+    "argv": [
+      "D:\\Software\\NodeJs\\node.exe",
+      "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--grep",
+      "Custom roles keep department"
+    ],
+    "configFile": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\playwright.config.ts",
+    "rootDir": "D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Code/CSharp/Nexora ERP/artifacts/p1/runtime/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "D:\\Code\\CSharp\\Nexora ERP\\artifacts\\p1\\runtime\\browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e",
+        "snapshotDir": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 120000,
+        "use": {
+          "baseURL": "https://localhost:7443",
+          "channel": "msedge",
+          "headless": true,
+          "actionTimeout": 15000,
+          "navigationTimeout": 20000,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../../../artifacts/p1/browser-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "email-onboarding.spec.ts",
+      "file": "email-onboarding.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Custom roles keep department and warehouse permissions in their approved scope",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 42336,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-15T09:50:23.667Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9c824c25fad2366d85f-d13499e6e8b8186e3b90",
+          "file": "email-onboarding.spec.ts",
+          "line": 296,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-15T09:50:23.161Z",
+    "duration": 43411.496,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

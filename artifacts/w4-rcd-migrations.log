@@ -1,0 +1,24 @@
+== Finance ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+== Organization ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+== MasterData ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+== Sales ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+== Purchasing ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+== Inventory ==
+Build started...
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'

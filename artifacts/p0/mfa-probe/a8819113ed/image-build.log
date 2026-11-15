@@ -1,0 +1,32 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 274B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 54B done
+#3 DONE 0.0s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.1s done
+#4 DONE 0.1s
+
+#5 [2/2] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true --features=recovery-codes:v1,step-up-authentication:v1
+#5 CACHED
+
+#6 exporting to image
+#6 exporting layers done
+#6 exporting manifest sha256:d115cec0647bbbc7d1b59b4645886602d0a477f0e7cb8705e1d91b6f3b89e509 done
+#6 exporting config sha256:02f1bcfc4eef0cdd53e1ddf3337c4ee919c9aa461901f45a79beb1066966bbc8 done
+#6 exporting attestation manifest sha256:f51b6fd0c38b44e220acf23260e93b10a20d4c83358b257ebea846766385f6b0 0.0s done
+#6 exporting manifest list sha256:7217dc1303ea400a3282182cc3fe8d43c04591d5b5d95618273da7c56c11650d
+#6 exporting manifest list sha256:7217dc1303ea400a3282182cc3fe8d43c04591d5b5d95618273da7c56c11650d 0.0s done
+#6 naming to docker.io/library/nexora-p0-mfa-a8819113ed:probe done
+#6 unpacking to docker.io/library/nexora-p0-mfa-a8819113ed:probe 0.0s done
+#6 DONE 0.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ayqt027g2m14ouzgxruuxom54

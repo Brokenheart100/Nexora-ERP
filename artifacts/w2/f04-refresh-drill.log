@@ -1,0 +1,11 @@
+2026-11-13T04:43:30.315Z login complete; /bff/me=200
+2026-11-13T04:43:30.315Z waiting 330s for access token expiry (lifespan 300s)
+2026-11-13T04:44:30.329Z elapsed 60s
+2026-11-13T04:45:30.331Z elapsed 120s
+2026-11-13T04:46:30.332Z elapsed 180s
+2026-11-13T04:47:30.333Z elapsed 240s
+2026-11-13T04:48:30.341Z elapsed 300s
+2026-11-13T04:48:30.400Z after expiry /bff/me=200
+2026-11-13T04:48:30.432Z after expiry /bff/api/workspaces=200
+2026-11-13T04:48:30.442Z after expiry /bff/sessions=200 count=2
+2026-11-13T04:48:30.442Z PASS session refreshed after access token expiry

@@ -1,0 +1,124 @@
+{
+  "checkedAtUtc": "2026-11-06T03:06:16.425768+00:00",
+  "status": "failed",
+  "runId": "2ffb784cdd",
+  "keycloakVersion": "26.8.2",
+  "cases": [
+    {
+      "name": "rfc6238-generator-vectors",
+      "status": "passed",
+      "evidence": "Two published SHA1 8-digit reference vectors passed; server policy is 6 digits / 30 seconds"
+    },
+    {
+      "name": "fixed-version-two-node-mfa",
+      "status": "passed",
+      "evidence": "Built-in TOTP / recovery-codes:v1 / step-up:v1 loaded; two-member JDBC_PING cluster"
+    },
+    {
+      "name": "unbound-user-must-enroll",
+      "status": "passed",
+      "evidence": "A valid password alone reaches mandatory TOTP enrollment, not authorization"
+    },
+    {
+      "name": "invalid-enrollment-not-persisted",
+      "status": "passed",
+      "evidence": "Wrong setup code rejected; admin credential listing confirms no OTP stored"
+    },
+    {
+      "name": "totp-and-recovery-enrollment",
+      "status": "passed",
+      "evidence": "TOTP confirmed and 12 sequential recovery codes generated/acknowledged through required-action forms"
+    },
+    {
+      "name": "first-factor-required",
+      "status": "passed",
+      "evidence": "Wrong password cannot proceed to the independent TOTP challenge"
+    },
+    {
+      "name": "missing-second-factor-rejected",
+      "status": "passed",
+      "evidence": "Password plus empty TOTP cannot obtain an authorization result"
+    },
+    {
+      "name": "password-totp-cross-node-signed-claims",
+      "status": "passed",
+      "evidence": {
+        "acr": "2",
+        "amr": [
+          "pwd",
+          "otp"
+        ],
+        "signature": "RS256 verified with trusted realm JWKS",
+        "nonceIssuerAudienceExpiry": "checked"
+      }
+    },
+    {
+      "name": "totp-time-step-reuse-rejected",
+      "status": "passed",
+      "evidence": "A previously accepted TOTP is rejected in a fresh authentication session on the other node"
+    },
+    {
+      "name": "malformed-totp-rejected",
+      "status": "passed",
+      "evidence": "Direct HTTP submission with non-digit TOTP is rejected server-side"
+    },
+    {
+      "name": "stale-and-future-totp-rejected",
+      "status": "passed",
+      "evidence": "Codes four time steps away are rejected with look-ahead window 0"
+    },
+    {
+      "name": "totp-cross-node-race",
+      "status": "passed",
+      "evidence": {
+        "successfulAuthorizations": 1,
+        "responses": [
+          200,
+          302
+        ]
+      }
+    }
+  ],
+  "harnessSha256": "8a394dad92f852ae049ed4c299d7caca811bba6d39bf7c003581bcd223bae67d",
+  "sharedHarnessSha256": "94d5a95b97caebd8fdba2ef4e09faa9ad8d36ad2bcd0b02d5c0ae2eec33ffccc",
+  "evidenceDirectory": "artifacts\\p0\\mfa-probe\\2ffb784cdd",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-mfa-73h_n45w",
+  "pythonPackages": {
+    "requests": "2.34.2",
+    "cryptography": "50.0.2"
+  },
+  "limitations": [
+    "Local HTTP integration probe; no phone authenticator, WebAuthn, Google or ERP/BFF acceptance",
+    "Recovery rotation includes explicit controlled administrator revocation, not a completed self-service recovery product",
+    "No network partition, full cache loss, production clock drift or external support identity-proofing acceptance"
+  ],
+  "images": {
+    "keycloak": [
+      "quay.io/keycloak/keycloak@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b"
+    ],
+    "postgres": [
+      "postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db"
+    ]
+  },
+  "builtImageId": "sha256:d15ce10782c5ff4bb87fdf9919bd4e7da84d5f83de3300bf7d1366b77a2b6b59",
+  "error": "Recovery method missing",
+  "cleanup": {
+    "containers": [
+      {
+        "name": "nexora-p0-mfa-2ffb784cdd-b",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-mfa-2ffb784cdd-a",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-mfa-2ffb784cdd-db",
+        "removed": true
+      }
+    ],
+    "networkRemoved": true,
+    "ephemeralSecretFilesRemoved": true
+  },
+  "finishedAtUtc": "2026-11-06T03:07:03.115929+00:00"
+}

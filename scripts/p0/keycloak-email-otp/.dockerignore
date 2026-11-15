@@ -1,0 +1,8 @@
+.m2
+.venv
+*.env
+*.key
+*.crt
+realm.json
+target/*
+!target/nexora-p0-email-otp.jar

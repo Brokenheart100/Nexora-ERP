@@ -1,0 +1,37 @@
+{
+  "checkedAtUtc": "2026-11-06T02:00:08.181521+00:00",
+  "status": "failed",
+  "pdfsharpVersion": "6.5.0",
+  "fontCommit": "a85815a42757630ce188fdad368c2dfc444d4773",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-pdf-1_ufabq_",
+  "visualReview": "pending",
+  "steps": [
+    {
+      "name": "restore",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "generate",
+      "exitCode": 3762504530
+    }
+  ],
+  "limitations": [
+    "Windows probe only; Linux container and physical printing pending",
+    "Technical sample only; no statutory invoice or fiscal donation receipt"
+  ],
+  "NotoSansSC.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+    "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+    "bytes": 17772300
+  },
+  "OFL.txt": {
+    "url": "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/OFL.txt",
+    "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    "bytes": 4388
+  },
+  "error": "generate failed; see D:\\Code\\CSharp\\Nexora ERP\\artifacts\\p0\\pdf-probe\\generate.log"
+}

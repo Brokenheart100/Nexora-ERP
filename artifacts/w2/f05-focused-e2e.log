@@ -1,0 +1,26 @@
+
+Running 2 tests using 1 worker
+
+(node:20964) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/2] e2e\workspace.spec.ts:210:1 › OIDC + TOTP, CSRF, workspace creation, projection, tenant denial and logout
+e2e\workspace.spec.ts:210:1 › OIDC + TOTP, CSRF, workspace creation, projection, tenant denial and logout
+Public workspace page loaded
+
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+[2/2] e2e\workspace.spec.ts:2104:1 › Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping
+e2e\workspace.spec.ts:2104:1 › Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  2 passed (38.4s)

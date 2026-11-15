@@ -1,0 +1,4 @@
+  正在确定要还原的项目…
+C:\Users\123\AppData\Local\Temp\nexora-p0-pdf-1_ufabq_\PdfProbe.csproj : warning NU1902: 包 "System.Security.Cryptography.Pkcs" 8.0.1 具有已知的 中 严重性漏洞，https://github.com/advisories/GHSA-2fmv-rv2c-59x7
+C:\Users\123\AppData\Local\Temp\nexora-p0-pdf-1_ufabq_\PdfProbe.csproj : warning NU1903: 包 "System.Security.Cryptography.Pkcs" 8.0.1 具有已知的 高 严重性漏洞，https://github.com/advisories/GHSA-846f-f764-76mx
+  已还原 C:\Users\123\AppData\Local\Temp\nexora-p0-pdf-1_ufabq_\PdfProbe.csproj (用时 2 秒)。

@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Nexora.MasterData.Domain/Nexora.MasterData.Domain.csproj" />
+    <ProjectReference Include="../Nexora.MasterData.Contracts/Nexora.MasterData.Contracts.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/Nexora.BuildingBlocks.Application/Nexora.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+</Project>

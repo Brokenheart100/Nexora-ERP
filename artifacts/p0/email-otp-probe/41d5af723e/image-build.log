@@ -1,0 +1,72 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 317B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 2B done
+#3 DONE 0.1s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.0s done
+#4 DONE 0.3s
+
+#5 [internal] load build context
+#5 transferring context: 10.15kB 0.0s done
+#5 DONE 0.2s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:e0ce47e2a187106be003939913dd16d7213fcb7209d8e2d05e2cf8a890fa2c36
+#4 extracting sha256:e0ce47e2a187106be003939913dd16d7213fcb7209d8e2d05e2cf8a890fa2c36 0.2s done
+#4 DONE 0.5s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:5cf3f809fb9e89176e75306a314a1d7ad99e76b3ac49835e0f94abcab361cdac
+#4 extracting sha256:5cf3f809fb9e89176e75306a314a1d7ad99e76b3ac49835e0f94abcab361cdac 1.4s done
+#4 DONE 1.9s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:ccff5b89a7f3457cf2068fd7356778efc3d4f70541e25417c05ff683cf09f259
+#4 extracting sha256:ccff5b89a7f3457cf2068fd7356778efc3d4f70541e25417c05ff683cf09f259 0.9s done
+#4 DONE 2.8s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:e69632142de57806d39084732e8ee10892cbbb4642929899ab2fdffea359e27b 0.0s done
+#4 DONE 2.9s
+
+#6 [2/4] COPY --chown=keycloak:keycloak target/nexora-p0-email-otp.jar /opt/keycloak/providers/nexora-p0-email-otp.jar
+#6 DONE 0.3s
+
+#7 [3/4] COPY --chown=keycloak:keycloak theme/ /opt/keycloak/themes/
+#7 DONE 0.1s
+
+#8 [4/4] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true
+#8 2.095 Updating the configuration and installing your custom providers, if any. Please wait.
+#8 6.516 2026-11-06 02:22:09,184 WARN  [org.keycloak.common.Profile] (build-21) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+#8 7.729 2026-11-06 02:22:10,400 WARN  [org.keycloak.services] (build-12) KC-SERVICES0047: nexora-p0-email-otp (com.nexora.p0.EmailOtpFactory) is implementing the internal SPI authenticator. This SPI is internal and may change without notice
+#8 15.42 2026-11-06 02:22:18,089 INFO  [io.quarkus.deployment.QuarkusAugmentor] (main) Quarkus augmentation completed in 11882ms
+#8 15.43 Server configuration updated and persisted. Run the following command to review the configuration:
+#8 15.43 
+#8 15.43 	kc.sh show-config
+#8 15.43 
+#8 DONE 15.5s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 0.6s done
+#9 exporting manifest sha256:15f65279fa5d117793c1850d4619981f9cb54462435df3817f9fbe9b81d9b27e 0.0s done
+#9 exporting config sha256:115a42bc9a9b733999228b40dc30f3fb534d234614ed71c614a91f0cbffff9a1 0.0s done
+#9 exporting attestation manifest sha256:6ff10492c888638fca8065b1aef379f9a15facb7e3c12ac3178d2b8fd85a1dcb
+#9 exporting attestation manifest sha256:6ff10492c888638fca8065b1aef379f9a15facb7e3c12ac3178d2b8fd85a1dcb 0.0s done
+#9 exporting manifest list sha256:596ea9cdbd7ea1a014df53e0a88125d6f6054ccc979141aa76d9afdc75be6e30 0.0s done
+#9 naming to docker.io/library/nexora-p0-otp-41d5af723e:probe 0.0s done
+#9 unpacking to docker.io/library/nexora-p0-otp-41d5af723e:probe
+#9 unpacking to docker.io/library/nexora-p0-otp-41d5af723e:probe 0.2s done
+#9 DONE 1.1s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/xhwbs9vvlwx00180c479z5il6

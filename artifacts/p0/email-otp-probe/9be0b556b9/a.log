@@ -1,0 +1,117 @@
+JAVA_OPTS_KC_HEAP already set in environment; overriding default settings
+2026-11-11 07:00:59,637 WARN  [org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory] (main) The option `shouldAttachRoute` is deprecated and will be removed in a future release. Disable it by setting `spi-sticky-session-encoder--infinispan--should-attach-route` to `false`
+2026-11-11 07:01:00,906 INFO  [org.infinispan.CONTAINER] (main) ISPN000974: Virtual threads support: disabled
+2026-11-11 07:01:01,994 INFO  [org.hibernate.orm.jdbc.batch] (JPA Startup Thread) HHH100501: Automatic JDBC statement batching enabled (maximum batch size 32)
+2026-11-11 07:01:02,064 WARN  [org.keycloak.common.Profile] (executor-thread-1) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+2026-11-11 07:01:02,163 INFO  [io.quarkus] (main) Keycloak 26.8.2 on JVM (powered by Quarkus 3.40.1.1) started in 4.114s. Listening on: http://0.0.0.0:8080. Management interface listening on http://0.0.0.0:9000.
+2026-11-11 07:01:02,163 INFO  [io.quarkus] (main) Profile prod activated. 
+2026-11-11 07:01:02,163 INFO  [io.quarkus] (main) Installed features: [agroal, cdi, hibernate-orm, jdbc-postgresql, keycloak, narayana-jta, opentelemetry, rest, rest-jackson, smallrye-context-propagation, smallrye-health, vertx]
+2026-11-11 07:01:02,945 INFO  [org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpaUpdaterProvider] (executor-thread-1) Initializing database schema. Using changelog META-INF/jpa-changelog-master.xml
+2026-11-11 07:01:03,173 WARN  [org.keycloak.quarkus.runtime.services.BootstrapFilter] (vert.x-eventloop-thread-0) Request received during bootstrapping, returning a 503 error. Use the readiness health endpoint to ensure the service is ready before forwarding requests to the service.
+2026-11-11 07:01:11,944 INFO  [org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator] (executor-thread-1) JGroups JDBC_PING discovery enabled.
+2026-11-11 07:01:12,270 INFO  [org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator] (executor-thread-1) JGroups Encryption enabled (mTLS).
+2026-11-11 07:01:12,419 INFO  [org.keycloak.jgroups.certificates.CertificateReloadManager] (executor-thread-1) Starting JGroups certificate reload manager
+2026-11-11 07:01:12,905 INFO  [org.infinispan.CONTAINER] (executor-thread-1) ISPN000556: Starting user marshaller 'org.infinispan.commons.marshall.ImmutableProtoStreamMarshaller'
+2026-11-11 07:01:13,020 INFO  [org.infinispan.CLUSTER] (executor-thread-1) ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`
+2026-11-11 07:01:13,022 INFO  [org.jgroups.JChannel] (executor-thread-1) local_addr: 00000000-0000-0000-0000-000000000001(v=16.0.15), name: ff8a2f34ea5b-6876
+2026-11-11 07:01:13,050 INFO  [org.jgroups.protocols.FD_SOCK2] (executor-thread-1) server listening on *:57800
+2026-11-11 07:01:13,092 INFO  [org.infinispan.CLUSTER] (executor-thread-1) ISPN000094: Received new cluster view for channel ISPN: [ff8a2f34ea5b-6876(v=16.0.15)|0] (1) [ff8a2f34ea5b-6876(v=16.0.15)]
+2026-11-11 07:01:13,093 INFO  [org.keycloak.jgroups.certificates.CertificateReloadManager] (blocking-thread--p3-t2) Reloading JGroups Certificate
+2026-11-11 07:01:13,128 INFO  [org.infinispan.CLUSTER] (executor-thread-1) ISPN000079: Channel `ISPN` local address is `ff8a2f34ea5b-6876`, physical addresses are `[172.18.0.4:7800]`
+2026-11-11 07:01:13,405 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (executor-thread-1) Node name: ff8a2f34ea5b-6876, Site name: null, Cluster name: ISPN
+2026-11-11 07:01:13,541 INFO  [org.keycloak.models.workflow.WorkflowsEventListenerFactory] (executor-thread-1) Workflow runner task scheduled: next execution at 19:01:13, then every PT12H
+2026-11-11 07:01:13,655 INFO  [org.keycloak.exportimport.dir.DirImportProvider] (executor-thread-1) Importing from directory /opt/keycloak/bin/../data/import
+2026-11-11 07:01:13,781 INFO  [org.keycloak.services] (executor-thread-1) KC-SERVICES0050: Initializing master realm
+2026-11-11 07:01:15,012 INFO  [org.keycloak.exportimport.singlefile.SingleFileImportProvider] (executor-thread-1) Full importing from file /opt/keycloak/bin/../data/import/realm.json
+2026-11-11 07:01:16,220 INFO  [org.keycloak.exportimport.util.ImportUtils] (executor-thread-1) Realm 'nexora-p0' imported
+2026-11-11 07:01:16,220 INFO  [org.keycloak.services] (executor-thread-1) KC-SERVICES0030: Full model import requested. Strategy: IGNORE_EXISTING
+2026-11-11 07:01:16,220 INFO  [org.keycloak.services] (executor-thread-1) KC-SERVICES0032: Import finished successfully
+2026-11-11 07:01:16,391 INFO  [org.keycloak.services] (executor-thread-1) KC-SERVICES0077: Created temporary admin user with username p0-admin
+2026-11-11 07:01:16,594 INFO  [org.keycloak.services.resources.KeycloakApplication] (executor-thread-1) Bootstrap completed in 14.529000 seconds
+2026-11-11 07:01:22,376 ERROR [org.jgroups.protocols.TCP] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) 172.18.0.4:7800: failed sending graceful close to 172.18.0.5:7800: closing inbound before receiving peer's close_notify
+2026-11-11 07:01:22,392 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) ISPN000094: Received new cluster view for channel ISPN: [ff8a2f34ea5b-6876(v=16.0.15)|1] (2) [ff8a2f34ea5b-6876(v=16.0.15), bb3591ba397c-41525(v=16.0.15)]
+2026-11-11 07:01:22,392 INFO  [org.keycloak.jgroups.certificates.CertificateReloadManager] (blocking-thread--p3-t2) Reloading JGroups Certificate
+2026-11-11 07:01:22,393 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) ISPN100000: Node bb3591ba397c-41525 joined the cluster
+2026-11-11 07:01:22,394 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) ISPN100000: Node bb3591ba397c-41525 joined the cluster
+2026-11-11 07:01:22,606 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,613 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,617 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t1) [Context=org.infinispan.CONFIG] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,648 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,653 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,655 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=org.infinispan.CONFIG] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,665 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=actionTokens] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,665 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=actionTokens] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,666 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t3) [Context=actionTokens] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,681 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=actionTokens] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,684 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=actionTokens] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,687 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=actionTokens] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,692 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=authenticationSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,692 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=authenticationSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,693 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t2) [Context=authenticationSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,701 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=authenticationSessions] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,704 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=authenticationSessions] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,706 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=authenticationSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,726 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=clientSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,726 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=clientSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,727 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t4) [Context=clientSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,730 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=clientSessions] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,732 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=clientSessions] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,734 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=clientSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,746 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineClientSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,747 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineClientSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,748 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t3) [Context=offlineClientSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,751 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineClientSessions] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,753 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineClientSessions] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,755 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineClientSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,759 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,760 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineSessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,760 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t1) [Context=offlineSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,764 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineSessions] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,766 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineSessions] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,768 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=offlineSessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,775 INFO  [org.infinispan.CLUSTER] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=sessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,775 INFO  [org.infinispan.LIFECYCLE] (jgroups-5,ff8a2f34ea5b-6876(v=16.0.15)) [Context=sessions] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,776 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t2) [Context=sessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,778 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=sessions] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,780 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=sessions] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,782 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=sessions] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:22,789 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=work] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,789 INFO  [org.infinispan.LIFECYCLE] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=work] ISPN100002: Starting rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], phase READ_OLD_WRITE_ALL, topology id 2
+2026-11-11 07:01:22,790 INFO  [org.infinispan.LIFECYCLE] (non-blocking-thread--p2-t4) [Context=work] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 2
+2026-11-11 07:01:22,799 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=work] ISPN100009: Advancing to rebalance phase READ_ALL_WRITE_ALL, topology id 3
+2026-11-11 07:01:22,802 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=work] ISPN100009: Advancing to rebalance phase READ_NEW_WRITE_ALL, topology id 4
+2026-11-11 07:01:22,804 INFO  [org.infinispan.CLUSTER] (jgroups-9,ff8a2f34ea5b-6876(v=16.0.15)) [Context=work] ISPN100010: Finished rebalance with members [ff8a2f34ea5b-6876, bb3591ba397c-41525], topology id 5
+2026-11-11 07:01:25,284 WARN  [org.keycloak.events] (executor-thread-1) type="LOGIN_ERROR", realmId="d555395d-d415-489e-ab91-f0dc91119eea", realmName="nexora-p0", clientId="p0-browser", userId="null", ipAddress="127.0.0.1", error="already_logged_in", response_type="code", redirect_uri="https://127.0.0.1:62819/callback", redirected_to_client="true", response_mode="query"
+2026-11-11 07:01:25,315 WARN  [org.keycloak.protocol.oidc.utils.OAuth2CodeParser] (executor-thread-1) Code '[REDACTED-CODE]' already used for userSession 'ri4QZiCIHuFqmHQ4Sw6yuq6T' and client '8ede769b-6433-43f9-a2a1-36de611b9c8f'.
+2026-11-11 07:01:25,318 WARN  [org.keycloak.events] (executor-thread-1) type="CODE_TO_TOKEN_ERROR", realmId="d555395d-d415-489e-ab91-f0dc91119eea", realmName="nexora-p0", clientId="p0-browser", userId="null", sessionId="ri4QZiCIHuFqmHQ4Sw6yuq6T", ipAddress="127.0.0.1", error="invalid_code", grant_type="authorization_code", code_id="ri4QZiCIHuFqmHQ4Sw6yuq6T", client_auth_method="client-secret"
+2026-11-11 07:01:25,474 WARN  [org.keycloak.events] (executor-thread-1) type="CODE_TO_TOKEN_ERROR", realmId="d555395d-d415-489e-ab91-f0dc91119eea", realmName="nexora-p0", clientId="p0-browser", userId="c95dbb91-bc54-4764-9e06-a19ef3630312", sessionId="R7QIY7oC2OY9eTHDOd3fokgB", ipAddress="127.0.0.1", error="pkce_verification_failed", reason="Code mismatch", grant_type="authorization_code", code_id="R7QIY7oC2OY9eTHDOd3fokgB", client_auth_method="client-secret"
+2026-11-11 07:01:37,918 ERROR [org.keycloak.services] (executor-thread-1) KC-SERVICES0029: Failed to send email: org.eclipse.angus.mail.smtp.SMTPSendFailedException: 451 Local simulated failure
+
+	at org.eclipse.angus.mail.smtp.SMTPTransport.issueSendCommand(SMTPTransport.java:2407)
+	at org.eclipse.angus.mail.smtp.SMTPTransport.finishData(SMTPTransport.java:2128)
+	at org.eclipse.angus.mail.smtp.SMTPTransport.sendMessage(SMTPTransport.java:1306)
+	at org.keycloak.email.DefaultEmailSenderProvider.send(DefaultEmailSenderProvider.java:94)
+	at com.nexora.p0.EmailOtpAuthenticator.issue(EmailOtpAuthenticator.java:119)
+	at com.nexora.p0.EmailOtpAuthenticator.action(EmailOtpAuthenticator.java:74)
+	at org.keycloak.authentication.DefaultAuthenticationFlow.processAction(DefaultAuthenticationFlow.java:174)
+	at org.keycloak.authentication.AuthenticationProcessor.authenticationAction(AuthenticationProcessor.java:1083)
+	at org.keycloak.services.resources.LoginActionsService.processFlow(LoginActionsService.java:385)
+	at org.keycloak.services.resources.LoginActionsService.processAuthentication(LoginActionsService.java:356)
+	at org.keycloak.services.resources.LoginActionsService.authenticate(LoginActionsService.java:348)
+	at org.keycloak.services.resources.LoginActionsService.authenticateForm(LoginActionsService.java:414)
+	at org.keycloak.services.resources.LoginActionsService$quarkusrestinvoker$authenticateForm_8a5eee1a0ec5f9d46c9be1d4352061fa6806b300.invoke(Unknown Source)
+	at org.jboss.resteasy.reactive.server.handlers.InvocationHandler.handle(InvocationHandler.java:29)
+	at org.keycloak.quarkus.runtime.integration.resteasy.TransactionalSessionHandler.handle(TransactionalSessionHandler.java:85)
+	at io.quarkus.resteasy.reactive.server.runtime.QuarkusResteasyReactiveRequestContext.invokeHandler(QuarkusResteasyReactiveRequestContext.java:195)
+	at org.jboss.resteasy.reactive.common.core.AbstractResteasyReactiveContext.run(AbstractResteasyReactiveContext.java:150)
+	at io.quarkus.vertx.core.runtime.VertxCoreRecorder$15.runWith(VertxCoreRecorder.java:695)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.doRunWith(EnhancedQueueExecutor.java:2651)
+	at org.jboss.threads.EnhancedQueueExecutor$Task.run(EnhancedQueueExecutor.java:2630)
+	at org.jboss.threads.EnhancedQueueExecutor.runThreadBody(EnhancedQueueExecutor.java:1622)
+	at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1589)
+	at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:11)
+	at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:11)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+2026-11-11 07:01:37,918 WARN  [com.nexora.p0.EmailOtpAuthenticator] (executor-thread-1) NEXORA_P0_OTP_MAIL_FAILED

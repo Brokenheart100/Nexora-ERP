@@ -1,0 +1,1227 @@
+{
+  "config": {
+    "argv": [
+      "D:\\Software\\NodeJs\\node.exe",
+      "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/workspace.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\playwright.config.ts",
+    "rootDir": "D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "D:/Code/CSharp/Nexora ERP/artifacts/p1/runtime/browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "D:\\Code\\CSharp\\Nexora ERP\\artifacts\\p1\\runtime\\browser",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e",
+        "snapshotDir": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 120000,
+        "use": {
+          "baseURL": "https://localhost:7443",
+          "channel": "msedge",
+          "headless": true,
+          "actionTimeout": 15000,
+          "navigationTimeout": 20000,
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          }
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "workspace.spec.ts",
+      "file": "workspace.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Catalog UI and API preserve workspace scope, versioning and idempotency",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21361,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:42:04.935Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-96b2c598c0323a363680",
+          "file": "workspace.spec.ts",
+          "line": 9,
+          "column": 1
+        },
+        {
+          "title": "The direct frontend URL opens the BFF entry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3178,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:42:26.833Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-c05ed6d04c7105c30131",
+          "file": "workspace.spec.ts",
+          "line": 188,
+          "column": 1
+        },
+        {
+          "title": "Logout reports an unexpected antiforgery response in place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2133,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:42:30.025Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-e0af4c458ffae59b84fd",
+          "file": "workspace.spec.ts",
+          "line": 195,
+          "column": 1
+        },
+        {
+          "title": "OIDC + TOTP, CSRF, workspace creation, projection, tenant denial and logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14960,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Public workspace page loaded\n"
+                    },
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:42:32.172Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-a3832ec6e4bab03de617",
+          "file": "workspace.spec.ts",
+          "line": 211,
+          "column": 1
+        },
+        {
+          "title": "Logout works from an open tab after the BFF session is gone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16753,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:42:47.146Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-b778b2beae88d7d005e4",
+          "file": "workspace.spec.ts",
+          "line": 273,
+          "column": 3
+        },
+        {
+          "title": "Logout works from a reloaded tab after the BFF session is gone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 30091,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:43:03.910Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-4cfb705f8da9f50ad875",
+          "file": "workspace.spec.ts",
+          "line": 273,
+          "column": 3
+        },
+        {
+          "title": "Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 40217,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:43:34.013Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1f03df59c81585905b02",
+          "file": "workspace.spec.ts",
+          "line": 303,
+          "column": 1
+        },
+        {
+          "title": "Partner profiles retain multiple roles and scoped contacts across edits and reference checks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 21051,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:44:14.238Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-84541d834cbcee58a5d3",
+          "file": "workspace.spec.ts",
+          "line": 388,
+          "column": 1
+        },
+        {
+          "title": "Company presentation and private workspace links stay independently scoped",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 36348,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:44:35.299Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1cdf6b4aee2ce01d3fa5",
+          "file": "workspace.spec.ts",
+          "line": 485,
+          "column": 1
+        },
+        {
+          "title": "Account session registry lists devices, revokes other sessions and blocks replay",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 80363,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:45:11.657Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-f6f177f575e8df18bf2f",
+          "file": "workspace.spec.ts",
+          "line": 615,
+          "column": 1
+        },
+        {
+          "title": "Security capabilities report MFA state and gate stale sensitive writes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 31989,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:46:32.033Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-5f5f89fd612c4aedb4f0",
+          "file": "workspace.spec.ts",
+          "line": 682,
+          "column": 1
+        },
+        {
+          "title": "Chart hierarchy, archive, import preview and commit share the same scoped revision",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 35463,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:47:04.032Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-d64b1b2fc65358ddf17c",
+          "file": "workspace.spec.ts",
+          "line": 712,
+          "column": 1
+        },
+        {
+          "title": "Effective tax rates and scoped classifications preserve calculation snapshots",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 26297,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:47:39.505Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-ee60069e98634fc261fc",
+          "file": "workspace.spec.ts",
+          "line": 806,
+          "column": 1
+        },
+        {
+          "title": "Opening, journal approval, period races, reversal and P5 accrual reports preserve the scoped ledger",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 47330,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:48:05.810Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-bb68689189d6364df2d9",
+          "file": "workspace.spec.ts",
+          "line": 884,
+          "column": 1
+        },
+        {
+          "title": "Purchase orders require current scoped references and independent approval",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 53070,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:48:53.151Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-4a334f15152a07f04bdf",
+          "file": "workspace.spec.ts",
+          "line": 1202,
+          "column": 1
+        },
+        {
+          "title": "P4 sales, inventory, invoicing, settlement and communication reconcile",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 96225,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:49:46.232Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-c651582cbd739e5311d0",
+          "file": "workspace.spec.ts",
+          "line": 1686,
+          "column": 1
+        },
+        {
+          "title": "Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9104,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:51:22.470Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-89ef418dfed87037d4a9",
+          "file": "workspace.spec.ts",
+          "line": 2108,
+          "column": 1
+        },
+        {
+          "title": "Business dashboard summarizes finance, aging, inventory and projection state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5411,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:51:31.588Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-12abf52c21f25416caf1",
+          "file": "workspace.spec.ts",
+          "line": 2156,
+          "column": 1
+        },
+        {
+          "title": "CLI device authorization grants scoped access and revokes immediately",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 37564,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:51:37.012Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-a5a0fbdce4f74019a0b8",
+          "file": "workspace.spec.ts",
+          "line": 2206,
+          "column": 1
+        },
+        {
+          "title": "Business data exports download CSV and print from list panels",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25654,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:52:14.588Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-c37422778fd84c7b33a9",
+          "file": "workspace.spec.ts",
+          "line": 2340,
+          "column": 1
+        },
+        {
+          "title": "Unified audit trail lists security and business events, filters, exports and isolates workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24496,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:52:40.250Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1b2022684cc924685516",
+          "file": "workspace.spec.ts",
+          "line": 2449,
+          "column": 1
+        },
+        {
+          "title": "Finance MCP lists read-only tools, answers scoped calls and rejects other audiences",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34958,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:53:04.757Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-e06a8abd412c281b52b8",
+          "file": "workspace.spec.ts",
+          "line": 2505,
+          "column": 1
+        },
+        {
+          "title": "AI assistant streams, cancels, resumes, gates tools and isolates workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 30331,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:53:39.726Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-19b8692b68aca8602aae",
+          "file": "workspace.spec.ts",
+          "line": 2671,
+          "column": 1
+        },
+        {
+          "title": "Billing plans enforce quotas, gate modules, record manual payments and downgrade on cancel",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7510,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:54:10.066Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-b0187d507a31f38018ba",
+          "file": "workspace.spec.ts",
+          "line": 2750,
+          "column": 1
+        },
+        {
+          "title": "Journal links connect posted entries, scan integrity and isolate workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23419,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:54:17.584Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-cbdf2587321fa3011091",
+          "file": "workspace.spec.ts",
+          "line": 2921,
+          "column": 1
+        },
+        {
+          "title": "Record changes capture cross-service snapshots, filter, export and isolate workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24612,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-14T07:54:41.013Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-7d8de403477322810584",
+          "file": "workspace.spec.ts",
+          "line": 3026,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-14T07:42:04.465Z",
+    "duration": 781578.434,
+    "expected": 26,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

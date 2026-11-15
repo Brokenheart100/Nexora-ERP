@@ -1,0 +1,101 @@
+{
+  "phase": "verified",
+  "preparedAt": "2026-11-13T03:05:35.242Z",
+  "workspaceId": "01a1d2c9-b99e-79ad-8f8f-ed1644488d84",
+  "workspaceName": "销售闭环验收 1794537798029",
+  "customerId": "01a1d2c9-c009-7385-a7c4-13b1f9d67287",
+  "customerName": "华东客户",
+  "serviceId": "01a1d2c9-bfad-7ba1-8411-60eea5f5c222",
+  "scheduleId": "01a1d2de-20df-7d7f-995c-4ff4dff9c13a",
+  "scheduleVersion": 1,
+  "zone": "Asia/Kolkata",
+  "nextOn": "2026-11-13",
+  "dueUtc": "2026-11-13T03:30:34.673Z",
+  "dueInMinutes": 25,
+  "settingsVersion": 2,
+  "occurrencesBeforeStop": 0,
+  "scheduleList": [
+    {
+      "id": "01a1d2de-20df-7d7f-995c-4ff4dff9c13a",
+      "version": 1,
+      "nextOn": "2026-11-13",
+      "preview": [
+        "2026-11-13"
+      ],
+      "paused": false
+    }
+  ],
+  "stopAt": "2026-11-13T03:06:29.624Z",
+  "stopExitCode": 0,
+  "stopStdout": "Scanning for running AppHosts...\r\n📦 Found running AppHost: src\\Hosting\\Nexora.AppHost\\Nexora.AppHost.csproj\r\n🛑 Sending stop signal to src\\Hosting\\Nexora.AppHost\\Nexora.AppHost.csproj...\r\nStopping src\\Hosting\\Nexora.AppHost\\Nexora.AppHost.csproj...\r\n\r\n✅ src\\Hosting\\Nexora.AppHost\\Nexora.AppHost.csproj stopped successfully.\r\n",
+  "gatewayDownConfirmed": true,
+  "duePassedAt": "2026-11-13T03:32:04.673Z",
+  "startAt": "2026-11-13T03:32:04.983Z",
+  "gatewayReadyAt": "2026-11-13T03:34:06.951Z",
+  "startExitCode": 0,
+  "verify": {
+    "verifiedAt": "2026-11-13T03:38:15.624Z",
+    "occurrence": {
+      "tenantId": "01a1d2c9-b99e-7b97-aa45-3659804c301a",
+      "workspaceId": "01a1d2c9-b99e-79ad-8f8f-ed1644488d84",
+      "scheduleId": "01a1d2de-20df-7d7f-995c-4ff4dff9c13a",
+      "on": "2026-11-13",
+      "templateVersion": 1,
+      "documentId": "01a1d2f7-9072-7561-8b1c-00271c0ca9b2",
+      "createdAtUtc": "2026-11-13T03:33:22.201007+00:00"
+    },
+    "invoice": {
+      "id": "01a1d2f7-9072-7561-8b1c-00271c0ca9b2",
+      "terms": {
+        "kind": 1,
+        "number": "R-01a1d2de20df7d7f995c4ff4dff9c13a-20261113",
+        "on": "2026-11-13",
+        "customerId": "01a1d2c9-c009-7385-a7c4-13b1f9d67287",
+        "customerName": "华东客户",
+        "currency": "CNY",
+        "total": "56.5",
+        "lines": [
+          {
+            "shipmentId": null,
+            "itemId": "01a1d2c9-bfad-7ba1-8411-60eea5f5c222",
+            "name": "月度维护服务",
+            "quantity": "1",
+            "unitPrice": "50",
+            "net": "50",
+            "tax": "6.5",
+            "components": [
+              {
+                "rateId": "01a1d2c9-c5cc-7b7a-998c-655fc593b6b0",
+                "code": "SAMPLE",
+                "effectiveOn": "2026-01-01",
+                "rate": "0.13",
+                "amount": "6.5"
+              }
+            ]
+          }
+        ],
+        "brand": {
+          "legalName": "上海示例商贸",
+          "brandName": "明川品牌",
+          "accentColor": "#176B6B",
+          "logoPngBase64": null,
+          "version": 2,
+          "dateFormat": "dd/MM/yyyy",
+          "timeZone": "Asia/Kolkata"
+        },
+        "bankId": null,
+        "invoiceId": null,
+        "fundsId": null,
+        "returnId": null,
+        "dueOn": "2026-11-28"
+      },
+      "state": "submitted",
+      "version": 1,
+      "journalId": null,
+      "openBalance": "0",
+      "isMaker": true
+    },
+    "occurrencesAfter60s": 1,
+    "invoicesAfter60s": 1
+  }
+}

@@ -1,0 +1,18 @@
+
+Running 1 test using 1 worker
+
+(node:33088) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\workspace.spec.ts:2920:1 › Journal links connect posted entries, scan integrity and isolate workspaces
+e2e\workspace.spec.ts:2920:1 › Journal links connect posted entries, scan integrity and isolate workspaces
+Starting alice browser login
+
+Starting bob browser login
+
+bob OIDC and TOTP login passed
+
+alice OIDC and TOTP login passed
+
+  1 passed (15.3s)

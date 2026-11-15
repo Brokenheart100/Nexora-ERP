@@ -1,0 +1,149 @@
+{
+  "checkedAtUtc": "2026-11-06T03:08:46.363743+00:00",
+  "status": "failed",
+  "runId": "5b197386cd",
+  "keycloakVersion": "26.8.2",
+  "cases": [
+    {
+      "name": "rfc6238-generator-vectors",
+      "status": "passed",
+      "evidence": "Two published SHA1 8-digit reference vectors passed; server policy is 6 digits / 30 seconds"
+    },
+    {
+      "name": "fixed-version-two-node-mfa",
+      "status": "passed",
+      "evidence": "Built-in TOTP / recovery-codes:v1 / step-up:v1 loaded; two-member JDBC_PING cluster"
+    },
+    {
+      "name": "unbound-user-must-enroll",
+      "status": "passed",
+      "evidence": "A valid password alone reaches mandatory TOTP enrollment, not authorization"
+    },
+    {
+      "name": "invalid-enrollment-not-persisted",
+      "status": "passed",
+      "evidence": "Wrong setup code rejected; admin credential listing confirms no OTP stored"
+    },
+    {
+      "name": "totp-and-recovery-enrollment",
+      "status": "passed",
+      "evidence": "TOTP confirmed and 12 sequential recovery codes generated/acknowledged through required-action forms"
+    },
+    {
+      "name": "first-factor-required",
+      "status": "passed",
+      "evidence": "Wrong password cannot proceed to the independent TOTP challenge"
+    },
+    {
+      "name": "missing-second-factor-rejected",
+      "status": "passed",
+      "evidence": "Password plus empty TOTP cannot obtain an authorization result"
+    },
+    {
+      "name": "password-totp-cross-node-signed-claims",
+      "status": "passed",
+      "evidence": {
+        "acr": "2",
+        "amr": [
+          "pwd",
+          "otp"
+        ],
+        "signature": "RS256 verified with trusted realm JWKS",
+        "nonceIssuerAudienceExpiry": "checked"
+      }
+    },
+    {
+      "name": "tampered-assurance-claim-rejected",
+      "status": "passed",
+      "evidence": "Changing the JWT ACR without the realm signing key fails cryptographic verification"
+    },
+    {
+      "name": "totp-time-step-reuse-rejected",
+      "status": "passed",
+      "evidence": "A previously accepted TOTP is rejected in a fresh authentication session on the other node"
+    },
+    {
+      "name": "malformed-totp-rejected",
+      "status": "passed",
+      "evidence": "Direct HTTP submission with non-digit TOTP is rejected server-side"
+    },
+    {
+      "name": "stale-and-future-totp-rejected",
+      "status": "passed",
+      "evidence": "Codes four time steps away are rejected with look-ahead window 0"
+    },
+    {
+      "name": "totp-cross-node-race",
+      "status": "passed",
+      "evidence": {
+        "successfulAuthorizations": 1,
+        "responses": [
+          302,
+          200
+        ]
+      }
+    },
+    {
+      "name": "lost-device-recovery-code",
+      "status": "passed",
+      "evidence": "Password plus the next sequential offline recovery code completes level 2 without the TOTP device"
+    },
+    {
+      "name": "recovery-replay-rejected-next-code-valid",
+      "status": "passed",
+      "evidence": "Consumed recovery code rejected on a fresh form; next code succeeds"
+    },
+    {
+      "name": "recovery-regeneration-revokes-old-set",
+      "status": "passed",
+      "evidence": "Re-authenticated AIA replaces recovery set; an unused old code fails and a new code works"
+    },
+    {
+      "name": "rebind-requires-existing-second-factor",
+      "status": "passed",
+      "evidence": "Knowing only the password cannot enter replacement-device enrollment"
+    }
+  ],
+  "harnessSha256": "4df470ce8be16cb5b3f7dcb9e5872644fc4a10f8355f34ae6cfcb7fa538499b7",
+  "sharedHarnessSha256": "94d5a95b97caebd8fdba2ef4e09faa9ad8d36ad2bcd0b02d5c0ae2eec33ffccc",
+  "evidenceDirectory": "artifacts\\p0\\mfa-probe\\5b197386cd",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-mfa-3tccwnz2",
+  "pythonPackages": {
+    "requests": "2.34.2",
+    "cryptography": "50.0.2"
+  },
+  "limitations": [
+    "Local HTTP integration probe; no phone authenticator, WebAuthn, Google or ERP/BFF acceptance",
+    "Recovery rotation includes explicit controlled administrator revocation, not a completed self-service recovery product",
+    "No network partition, full cache loss, production clock drift or external support identity-proofing acceptance"
+  ],
+  "images": {
+    "keycloak": [
+      "quay.io/keycloak/keycloak@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b"
+    ],
+    "postgres": [
+      "postgres@sha256:7e32e9833a6fb1c92c32552794cb6ed569d51b445a54907d35fc112ef39684db"
+    ]
+  },
+  "builtImageId": "sha256:96af3be70dc2f8695c6692164c21ac85d4e0c8271f5a7846ee85853b010795a3",
+  "error": "Expected authentication form missing",
+  "cleanup": {
+    "containers": [
+      {
+        "name": "nexora-p0-mfa-5b197386cd-b",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-mfa-5b197386cd-a",
+        "removed": true
+      },
+      {
+        "name": "nexora-p0-mfa-5b197386cd-db",
+        "removed": true
+      }
+    ],
+    "networkRemoved": true,
+    "ephemeralSecretFilesRemoved": true
+  },
+  "finishedAtUtc": "2026-11-06T03:09:34.580169+00:00"
+}

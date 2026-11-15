@@ -1,0 +1,20 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+  <PropertyGroup><AspireUseCliBundle>true</AspireUseCliBundle><OutputType>Exe</OutputType><UserSecretsId>2bf3a2f7-399e-4dda-89e4-926d2b0acc86</UserSecretsId></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" />
+    <ProjectReference Include="../../Gateway/Nexora.ApiGateway/Nexora.ApiGateway.csproj" />
+    <ProjectReference Include="../../Services/Organization/Nexora.Organization.Api/Nexora.Organization.Api.csproj" />
+    <ProjectReference Include="../../Services/Reporting/Nexora.Reporting.Api/Nexora.Reporting.Api.csproj" />
+    <ProjectReference Include="../../Services/MasterData/Nexora.MasterData.Api/Nexora.MasterData.Api.csproj" />
+    <ProjectReference Include="../../Services/Finance/Nexora.Finance.Api/Nexora.Finance.Api.csproj" />
+    <ProjectReference Include="../../Services/Sales/Nexora.Sales.Api/Nexora.Sales.Api.csproj" />
+    <ProjectReference Include="../../Services/Purchasing/Nexora.Purchasing.Api/Nexora.Purchasing.Api.csproj" />
+    <ProjectReference Include="../../Services/Inventory/Nexora.Inventory.Api/Nexora.Inventory.Api.csproj" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Keycloak" />
+    
+  </ItemGroup>
+</Project>

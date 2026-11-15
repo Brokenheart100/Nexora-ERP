@@ -1,0 +1,11 @@
+正在后台启动 Aspire AppHost...
+
+   AppHost:  src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=de44d6d9c2b0bdcca8c8281f5fad7dc9                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261114T042037442_detach-child_8fe565109bb5440b9754609a3d3366ed.log   
+                                                                                                                  
+       PID:  29340                                                                                                
+
+✅ 已成功启动 AppHost。

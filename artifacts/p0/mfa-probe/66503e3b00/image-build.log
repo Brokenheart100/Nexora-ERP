@@ -1,0 +1,56 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 274B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#2 DONE 17.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 54B 0.0s done
+#3 DONE 0.1s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.1s done
+#4 DONE 0.4s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:e0ce47e2a187106be003939913dd16d7213fcb7209d8e2d05e2cf8a890fa2c36
+#4 extracting sha256:e0ce47e2a187106be003939913dd16d7213fcb7209d8e2d05e2cf8a890fa2c36 2.0s done
+#4 DONE 2.4s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:5cf3f809fb9e89176e75306a314a1d7ad99e76b3ac49835e0f94abcab361cdac
+#4 extracting sha256:5cf3f809fb9e89176e75306a314a1d7ad99e76b3ac49835e0f94abcab361cdac 15.0s done
+#4 extracting sha256:ccff5b89a7f3457cf2068fd7356778efc3d4f70541e25417c05ff683cf09f259
+#4 extracting sha256:ccff5b89a7f3457cf2068fd7356778efc3d4f70541e25417c05ff683cf09f259 2.5s done
+#4 DONE 19.9s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 extracting sha256:e69632142de57806d39084732e8ee10892cbbb4642929899ab2fdffea359e27b 0.1s done
+#4 DONE 19.9s
+
+#5 [2/2] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true --features=recovery-codes:v1,step-up-authentication:v1
+#5 7.280 Updating the configuration and installing your custom providers, if any. Please wait.
+#5 16.71 2026-11-11 06:45:08,217 WARN  [org.keycloak.common.Profile] (build-10) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+#5 25.42 2026-11-11 06:45:16,932 INFO  [io.quarkus.deployment.QuarkusAugmentor] (main) Quarkus augmentation completed in 14070ms
+#5 25.43 Server configuration updated and persisted. Run the following command to review the configuration:
+#5 25.43 
+#5 25.43 	kc.sh show-config
+#5 25.43 
+#5 DONE 25.8s
+
+#6 exporting to image
+#6 exporting layers
+#6 exporting layers 0.5s done
+#6 exporting manifest sha256:d154a3e3b26a3344c7da8b2165b1a52f04f47b36bc9c878072024707a15a5bd7 0.0s done
+#6 exporting config sha256:a5ae9bb67d9f6cc8dc5318538efb9035c98a51ccad8703b553d5d82a2d1b09d9 0.0s done
+#6 exporting attestation manifest sha256:446873dc5b49e4ced3f29ea0bbe41ab0aa72b5c1eaed7c9f0210d53209e7fe4b
+#6 exporting attestation manifest sha256:446873dc5b49e4ced3f29ea0bbe41ab0aa72b5c1eaed7c9f0210d53209e7fe4b 0.0s done
+#6 exporting manifest list sha256:8700aa619ef9c9abc4f6a2de26f6c1ccb902b8d2fb04a233171fe70db7438233 0.0s done
+#6 naming to docker.io/library/nexora-p0-mfa-66503e3b00:probe done
+#6 unpacking to docker.io/library/nexora-p0-mfa-66503e3b00:probe 0.1s done
+#6 DONE 0.8s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/qqz7c6taisoj0a4fjuif8kdvi

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "verifiedAtUtc": "2026-11-06T04:18:13.5287423+00:00",
+  "status": "p1-first-slice-locally-verified",
+  "p1Overall": "in-progress",
+  "verificationCommand": "pwsh scripts/p1/Test-Foundation.ps1 -Browser",
+  "verificationExitCode": 0,
+  "backend": {
+    "lockedRestore": "passed",
+    "debugBuildWarnings": 0,
+    "debugBuildErrors": 0,
+    "releaseBuildWarnings": 0,
+    "releaseBuildErrors": 0,
+    "debugTests": [],
+    "releaseTests": []
+  },
+  "frontend": {
+    "frozenInstall": "passed",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "browser": {
+      "expected": 1,
+      "unexpected": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "desktopViewport": "1440x1000",
+    "mobileViewport": "390x844",
+    "httpsErrorsIgnored": false
+  },
+  "scope": [
+    "OIDC-PKCE-and-native-TOTP",
+    "Redis-server-side-session-and-CSRF",
+    "workspace-governance-and-idempotency",
+    "atomic-workspace-audit-outbox",
+    "RabbitMQ-offline-recovery-and-reporting-projection",
+    "cross-user-resource-denial-and-logout"
+  ],
+  "remoteCI": "configured-not-executed",
+  "productionDeployment": "not-executed",
+  "remaining": [
+    "UserAccount-members-invitations-roles",
+    "unified-authorization-revocation-entitlements",
+    "coordinated-refresh-and-session-revocation",
+    "email-OTP-provider-product-integration-and-Google",
+    "MFA-recovery-product-and-step-up-binding",
+    "static-codegen-Saga-delayed-messages-and-process-crash-recovery",
+    "production-secrets-readiness-and-telemetry-acceptance"
+  ],
+  "sourceHashes": [
+    {
+      "path": "src/Hosting/Nexora.AppHost/AppHost.cs",
+      "sha256": "cf5a092d36205e8454d6f1405325267ff2e617e1c6354e6fea655daefb05ceea"
+    },
+    {
+      "path": "src/Gateway/Nexora.Bff/Program.cs",
+      "sha256": "3eaf2aee730607aa482363f06c05f902e074a6c08d8ee628d1ed45031e5c7d50"
+    },
+    {
+      "path": "src/Services/Organization/Nexora.Organization.Infrastructure/Messaging/OpenWorkspaceHandler.cs",
+      "sha256": "891e339a65a2bf8bf1bb4a9febe4eea07200b674a007a498cbffcd14b08e7dfb"
+    },
+    {
+      "path": "src/Services/Reporting/Nexora.Reporting.Infrastructure/WorkspaceCreatedHandler.cs",
+      "sha256": "dd86fe559dd3e46e77942e11c8956c81530bcf9636d11a206c753851854998d7"
+    },
+    {
+      "path": "tests/Nexora.Tests/WorkspaceSliceTests.cs",
+      "sha256": "68474b6907800d0feff4f4d41f22c7a1f386f945736b7db8d10158e17946d226"
+    },
+    {
+      "path": "src/Web/nexora-web/e2e/workspace.spec.ts",
+      "sha256": "d243d4bc13c7e0c0502c34368ac0c796ea7fc03ec07ce3355b747aca6717e97f"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+
+Running 1 test using 1 worker
+
+(node:37396) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\workspace.spec.ts:2670:1 › AI assistant streams, cancels, resumes, gates tools and isolates workspaces
+e2e\workspace.spec.ts:2670:1 › AI assistant streams, cancels, resumes, gates tools and isolates workspaces
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  1 passed (11.2s)

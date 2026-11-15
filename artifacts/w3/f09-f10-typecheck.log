@@ -1,0 +1,16 @@
+$ nuxt typecheck
+i Nuxt Icon server bundle mode is set to local
+i Nuxt Icon client bundle consist of 43 icons with 10.40KB(uncompressed) in size
+[Vue] Resolve plugin path failed: vue-router/volar/sfc-route-blocks Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './volar/sfc-route-blocks' is not defined by "exports" in D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\node_modules\vue-router\package.json
+    at exportsNotFound (node:internal/modules/esm/resolve:315:10)
+    at packageExportsResolve (node:internal/modules/esm/resolve:663:9)
+    at resolveExports (node:internal/modules/cjs/loader:754:36)
+    at Module._findPath (node:internal/modules/cjs/loader:821:31)
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1557:27)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at resolve (node:internal/modules/helpers:175:31)
+    at resolvePlugins (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\node_modules\.pnpm\@vue+language-core@3.3.14\node_modules\@vue\language-core\lib\compilerOptions.js:185:43)
+    at CompilerOptionsResolver.addConfig (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\node_modules\.pnpm\@vue+language-core@3.3.14\node_modules\@vue\language-core\lib\compilerOptions.js:124:40) {
+  code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+}

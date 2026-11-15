@@ -1,0 +1,43 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 389B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 32B
+#3 transferring context: 120B done
+#3 DONE 0.0s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.0s done
+#4 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 291B done
+#5 DONE 0.0s
+
+#6 [2/4] COPY --chown=keycloak:keycloak target/nexora-p0-email-otp.jar /opt/keycloak/providers/nexora-p0-email-otp.jar
+#6 CACHED
+
+#7 [3/4] COPY --chown=keycloak:keycloak theme/ /opt/keycloak/themes/
+#7 CACHED
+
+#8 [4/4] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true
+#8 CACHED
+
+#9 exporting to image
+#9 exporting layers done
+#9 exporting manifest sha256:d21f68572953cfd7ec3be399ee7a4f4a357d6d31ff1af8a3d2e930ae497c0f95 done
+#9 exporting config sha256:015537a5c5779c0280cd855daa9f0b5c3063c64d5382e5a52498a94c2c6ed6d0 done
+#9 exporting attestation manifest sha256:ae74354f9d8868c5b7e9465edb99148b419c98812f434aab506cd1928f785c92 0.0s done
+#9 exporting manifest list sha256:880ff5ccc8a91126414aa00c27cf2ebcb3a21f329bae9b1b4f79caf2143aa329
+#9 exporting manifest list sha256:880ff5ccc8a91126414aa00c27cf2ebcb3a21f329bae9b1b4f79caf2143aa329 0.1s done
+#9 naming to docker.io/library/nexora-p0-otp-71afe84dfc:probe done
+#9 unpacking to docker.io/library/nexora-p0-otp-71afe84dfc:probe 0.0s done
+#9 DONE 0.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/g14h31j23woixwyv95agi45fm

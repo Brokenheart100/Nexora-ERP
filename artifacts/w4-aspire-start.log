@@ -1,0 +1,14 @@
+正在后台启动 Aspire AppHost...
+
+   AppHost:  src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=faa79d59e8b8a34a7a25b235a19762d3                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261114T041150388_detach-child_321b2c25e325448695f63437731a7b6c.log   
+                                                                                                                  
+       PID:  24728                                                                                                
+
+✅ 已成功启动 AppHost。
+正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(87.8秒)

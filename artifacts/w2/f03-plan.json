@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-11-13T06:01:36.523Z",
+  "phase": "done",
+  "assertions": {
+    "capabilitiesPhase1": true,
+    "freshWriteAllowed": true,
+    "staleWriteRejected": true,
+    "staleWriteBody": {
+      "code": "mfa_step_up_required",
+      "reauthPath": "/bff/login?prompt=login"
+    },
+    "retryAfterReauth": true,
+    "retryVersion": 2,
+    "uiCard": true,
+    "disabledPolicyAllowed": true
+  },
+  "phase1StartedAt": "2026-11-13T06:02:47.995Z",
+  "workspaceId": "01a1d380-7f6a-7a06-ae47-51e34723baff",
+  "phase2StartedAt": "2026-11-13T06:04:28.955Z",
+  "finishedAt": "2026-11-13T06:04:38.917Z"
+}

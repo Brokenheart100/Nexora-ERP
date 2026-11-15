@@ -1,0 +1,132 @@
+{
+  "suite": "p6-03-local-projection-latency",
+  "startedAt": "2026-11-15T08:19:22.643Z",
+  "account": "bob",
+  "options": {
+    "samples": 10,
+    "pollMs": 50,
+    "timeoutMs": 60000
+  },
+  "environment": {
+    "platform": "win32 10.0.26300",
+    "cpuCount": 16,
+    "totalMemoryMiB": 16140,
+    "node": "v24.21.0",
+    "playwright": "1.64.1"
+  },
+  "workspaces": [
+    {
+      "index": 1,
+      "id": "01a1de4a-2f9e-7378-94ca-387c051b05d5",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.157Z #1",
+      "createHttpMs": 148.39,
+      "projectVisibleMs": 289.77,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 2,
+      "id": "01a1de4a-3081-7d27-b18b-6948b8acf6bb",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.447Z #2",
+      "createHttpMs": 39.41,
+      "projectVisibleMs": 132.86,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 3,
+      "id": "01a1de4a-3106-7874-a033-c36c91860db5",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.580Z #3",
+      "createHttpMs": 40.37,
+      "projectVisibleMs": 119.86,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 4,
+      "id": "01a1de4a-317b-7587-8e79-3054c0c3cd2c",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.700Z #4",
+      "createHttpMs": 48.36,
+      "projectVisibleMs": 137.42,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 5,
+      "id": "01a1de4a-320c-79b1-8109-f00ebe391dc8",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.838Z #5",
+      "createHttpMs": 67.13,
+      "projectVisibleMs": 151.03,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 6,
+      "id": "01a1de4a-329b-7431-90b8-9deb9d4ce3af",
+      "name": "P6 投影延迟 2026-11-15T08:19:26.989Z #6",
+      "createHttpMs": 34.11,
+      "projectVisibleMs": 113.84,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 7,
+      "id": "01a1de4a-3312-7b10-919b-f5551405ba1c",
+      "name": "P6 投影延迟 2026-11-15T08:19:27.103Z #7",
+      "createHttpMs": 32.3,
+      "projectVisibleMs": 109.87,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 8,
+      "id": "01a1de4a-337d-72b1-83cc-bf23ac70b2d7",
+      "name": "P6 投影延迟 2026-11-15T08:19:27.213Z #8",
+      "createHttpMs": 42.67,
+      "projectVisibleMs": 150.39,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 9,
+      "id": "01a1de4a-3416-74ae-9c1f-9eb67b437413",
+      "name": "P6 投影延迟 2026-11-15T08:19:27.363Z #9",
+      "createHttpMs": 35.15,
+      "projectVisibleMs": 120.01,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    },
+    {
+      "index": 10,
+      "id": "01a1de4a-348b-710c-bc44-0d60809aa546",
+      "name": "P6 投影延迟 2026-11-15T08:19:27.484Z #10",
+      "createHttpMs": 30.41,
+      "projectVisibleMs": 109.52,
+      "pendingPolls": 0,
+      "lastStatus": 200
+    }
+  ],
+  "notes": [
+    "Creates real workspaces through the BFF as the demo account; this leaves workspace rows in the local database because the product has no workspace delete API.",
+    "Measures local BFF -> gateway -> Organization outbox / RabbitMQ -> Reporting projection visibility; local single-node numbers are not a production projection-delay acceptance."
+  ],
+  "summary": {
+    "createHttp": {
+      "count": 10,
+      "min": 30.41,
+      "p50": 39.41,
+      "p95": 67.13,
+      "max": 148.39,
+      "mean": 51.83
+    },
+    "projectVisible": {
+      "count": 10,
+      "min": 109.52,
+      "p50": 120.01,
+      "p95": 151.03,
+      "max": 289.77,
+      "mean": 143.46
+    }
+  },
+  "finishedAt": "2026-11-15T08:19:27.593Z"
+}

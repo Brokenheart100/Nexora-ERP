@@ -1,0 +1,14 @@
+
+Running 1 test using 1 worker
+
+(node:35336) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e\workspace.spec.ts:2203:1 › CLI device authorization grants scoped access and revokes immediately
+e2e\workspace.spec.ts:2203:1 › CLI device authorization grants scoped access and revokes immediately
+Starting alice browser login
+
+alice OIDC and TOTP login passed
+
+  1 passed (30.2s)

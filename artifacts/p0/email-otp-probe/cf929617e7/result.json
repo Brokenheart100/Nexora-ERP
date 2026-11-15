@@ -1,0 +1,32 @@
+{
+  "checkedAtUtc": "2026-11-11T06:39:22.584898+00:00",
+  "runId": "cf929617e7",
+  "status": "failed",
+  "keycloakVersion": "26.8.2",
+  "providerVersion": "0.1.0",
+  "cases": [],
+  "images": {},
+  "pythonPackages": {
+    "requests": "2.34.2",
+    "cryptography": "50.0.2"
+  },
+  "testSettings": {
+    "otpTtlSeconds": 10,
+    "resendCooldownSeconds": 60,
+    "ipRequestsPerMinute": 30
+  },
+  "limitations": [
+    "Isolated local candidate, not production provider approval or ERP/BFF integration",
+    "No real email delivery, Google callback or independent MFA exercised",
+    "No multi-site partition, cache total-loss recovery or timing side-channel proof"
+  ],
+  "evidenceDirectory": "artifacts\\p0\\email-otp-probe\\cf929617e7",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-otp-uvsz6a1y",
+  "error": "Maven build failed; inspect build log",
+  "cleanup": {
+    "containers": [],
+    "networkRemoved": false,
+    "ephemeralSecretFilesRemoved": true
+  },
+  "finishedAtUtc": "2026-11-11T06:44:11.566185+00:00"
+}

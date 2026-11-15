@@ -1,0 +1,68 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.nexora.p0:email-otp-probe >--------------------
+[INFO] Building email-otp-probe 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  04:14 min
+[INFO] Finished at: 2026-11-11T06:44:10Z
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal on project email-otp-probe: Could not resolve dependencies for project com.nexora.p0:email-otp-probe:jar:0.1.0
+[ERROR] dependency: org.keycloak:keycloak-server-spi-private:jar:26.8.2 (provided)
+[ERROR] 	Could not transfer artifact org.keycloak:keycloak-server-spi-private:jar:26.8.2 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] dependency: org.apache.httpcomponents:httpclient:jar:4.5.14 (provided)
+[ERROR] 	Could not transfer artifact org.apache.httpcomponents:httpclient:jar:4.5.14 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] dependency: commons-codec:commons-codec:jar:1.11 (provided)
+[ERROR] 	Could not transfer artifact commons-codec:commons-codec:jar:1.11 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] dependency: io.opentelemetry:opentelemetry-api:jar:1.62.0 (provided)
+[ERROR] 	Could not transfer artifact io.opentelemetry:opentelemetry-api:jar:1.62.0 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] dependency: com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:jar:20260101.1 (provided)
+[ERROR] 	Could not transfer artifact com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:jar:20260101.1 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] dependency: com.googlecode.owasp-java-html-sanitizer:java10-shim:jar:20260101.1 (provided)
+[ERROR] 	Could not transfer artifact com.googlecode.owasp-java-html-sanitizer:java10-shim:jar:20260101.1 from/to central (https://repo.maven.apache.org/maven2): Remote host terminated the handshake
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+Unable to find image 'maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237' locally
+docker.io/library/maven@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237: Pulling from library/maven
+583816d0be0c: Pulling fs layer
+919c22d58535: Pulling fs layer
+8583823b4441: Pulling fs layer
+8167b4f972e8: Pulling fs layer
+b7f312f519fb: Pulling fs layer
+20043066d3d5: Pulling fs layer
+388658fb69f5: Pulling fs layer
+8349365ad94c: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+54b92ed1102d: Pulling fs layer
+4f4fb700ef54: Already exists
+afb74ae916d2: Download complete
+f68b4ebf8aca: Download complete
+54b92ed1102d: Download complete
+919c22d58535: Download complete
+8349365ad94c: Download complete
+8167b4f972e8: Download complete
+583816d0be0c: Download complete
+20043066d3d5: Download complete
+8583823b4441: Download complete
+20043066d3d5: Pull complete
+b7f312f519fb: Download complete
+b7f312f519fb: Pull complete
+388658fb69f5: Download complete
+388658fb69f5: Pull complete
+54b92ed1102d: Pull complete
+919c22d58535: Pull complete
+8349365ad94c: Pull complete
+8583823b4441: Pull complete
+4f4fb700ef54: Pull complete
+8167b4f972e8: Pull complete
+583816d0be0c: Pull complete
+Digest: sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237
+Status: Downloaded newer image for maven@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237

@@ -1,0 +1,44 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 274B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context:
+#3 transferring context: 54B 0.0s done
+#3 DONE 0.1s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.0s done
+#4 DONE 0.1s
+
+#4 [1/2] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 CACHED
+
+#5 [2/2] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true --features=recovery-codes:v1,step-up-authentication:v1
+#5 1.622 Updating the configuration and installing your custom providers, if any. Please wait.
+#5 5.639 2026-11-06 02:58:08,450 WARN  [org.keycloak.common.Profile] (build-7) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+#5 14.53 2026-11-06 02:58:17,348 INFO  [io.quarkus.deployment.QuarkusAugmentor] (main) Quarkus augmentation completed in 11498ms
+#5 14.55 Server configuration updated and persisted. Run the following command to review the configuration:
+#5 14.55 
+#5 14.55 	kc.sh show-config
+#5 14.55 
+#5 DONE 14.6s
+
+#6 exporting to image
+#6 exporting layers
+#6 exporting layers 0.4s done
+#6 exporting manifest sha256:d115cec0647bbbc7d1b59b4645886602d0a477f0e7cb8705e1d91b6f3b89e509 0.1s done
+#6 exporting config sha256:02f1bcfc4eef0cdd53e1ddf3337c4ee919c9aa461901f45a79beb1066966bbc8 0.0s done
+#6 exporting attestation manifest sha256:7a887ecaa75a8972dd3bc5b652a316032cab2985810bc5d50b0476cc6a455b1a 0.0s done
+#6 exporting manifest list sha256:bc3c62fb30f760eb09fe16f047c0d69b87b13012eab2294239fad8517a18afd2 0.0s done
+#6 naming to docker.io/library/nexora-p0-mfa-bfb4ccfd7c:probe
+#6 naming to docker.io/library/nexora-p0-mfa-bfb4ccfd7c:probe done
+#6 unpacking to docker.io/library/nexora-p0-mfa-bfb4ccfd7c:probe 0.1s done
+#6 DONE 0.8s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/3su4xc0806jjwn804ydh6bm6i

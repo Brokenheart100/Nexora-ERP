@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../../Sales/Nexora.Sales.Contracts/Nexora.Sales.Contracts.csproj" />
+    <ProjectReference Include="../Nexora.Inventory.Domain/Nexora.Inventory.Domain.csproj" />
+    <ProjectReference Include="../../Purchasing/Nexora.Purchasing.Contracts/Nexora.Purchasing.Contracts.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/Nexora.BuildingBlocks.Application/Nexora.BuildingBlocks.Application.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,448 @@
+{
+  "realm": "nexora-p0-mfa",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "browserFlow": "p0-stepup",
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "otpPolicyLookAheadWindow": 0,
+  "otpPolicyCodeReusable": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 3,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 60,
+  "minimumQuickLoginWaitSeconds": 1,
+  "eventsEnabled": true,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "requiredActions": [
+    {
+      "alias": "CONFIGURE_TOTP",
+      "providerId": "CONFIGURE_TOTP",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10,
+      "config": {
+        "add-recovery-codes": "true"
+      }
+    },
+    {
+      "alias": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "providerId": "CONFIGURE_RECOVERY_AUTHN_CODES",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "loa1",
+      "config": {
+        "loa-condition-level": "1",
+        "loa-max-age": "36000"
+      }
+    },
+    {
+      "alias": "loa2",
+      "config": {
+        "loa-condition-level": "2",
+        "loa-max-age": "0"
+      }
+    },
+    {
+      "alias": "fallback",
+      "config": {
+        "flow_to_check": "p0-second-factor",
+        "check_result": "not-executed"
+      }
+    },
+    {
+      "alias": "password-ref",
+      "config": {
+        "default.reference.value": "pwd",
+        "default.reference.maxAge": "300"
+      }
+    },
+    {
+      "alias": "otp-ref",
+      "config": {
+        "default.reference.value": "otp",
+        "default.reference.maxAge": "300"
+      }
+    },
+    {
+      "alias": "recovery-ref",
+      "config": {
+        "default.reference.value": "recovery",
+        "default.reference.maxAge": "300"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "p0-stepup",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "authenticatorFlow": false
+        },
+        {
+          "flowAlias": "p0-forms",
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 20
+        }
+      ]
+    },
+    {
+      "alias": "p0-forms",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "p0-loa1",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 10
+        },
+        {
+          "flowAlias": "p0-loa2",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 20
+        }
+      ]
+    },
+    {
+      "alias": "p0-loa1",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "loa1"
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "password-ref"
+        }
+      ]
+    },
+    {
+      "alias": "p0-loa2",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "loa2"
+        },
+        {
+          "flowAlias": "p0-second-factor",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 20
+        },
+        {
+          "flowAlias": "p0-enforce-setup",
+          "authenticatorFlow": true,
+          "requirement": "CONDITIONAL",
+          "priority": 30
+        }
+      ]
+    },
+    {
+      "alias": "p0-second-factor",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "otp-ref"
+        },
+        {
+          "authenticator": "auth-recovery-authn-code-form",
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "recovery-ref"
+        }
+      ]
+    },
+    {
+      "alias": "p0-enforce-setup",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-sub-flow-executed",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "fallback"
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "authenticatorConfig": "otp-ref"
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "mfa-low",
+      "enabled": true,
+      "publicClient": true,
+      "fullScopeAllowed": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "https://127.0.0.1:50409/callback"
+      ],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "acr"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "default.acr.values": "[\"1\"]",
+        "minimum.acr.value": "1"
+      },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "mfa-high",
+      "enabled": true,
+      "publicClient": true,
+      "fullScopeAllowed": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "https://127.0.0.1:50409/callback"
+      ],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "acr"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "default.acr.values": "[\"2\"]",
+        "minimum.acr.value": "2"
+      },
+      "protocolMappers": [
+        {
+          "name": "amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "enroll",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "enroll@example.invalid",
+      "firstName": "P0",
+      "lastName": "enroll",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "normal",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "normal@example.invalid",
+      "firstName": "P0",
+      "lastName": "normal",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "invalid",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "invalid@example.invalid",
+      "firstName": "P0",
+      "lastName": "invalid",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "timewindow",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "timewindow@example.invalid",
+      "firstName": "P0",
+      "lastName": "timewindow",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "race",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "race@example.invalid",
+      "firstName": "P0",
+      "lastName": "race",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "recovery",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "recovery@example.invalid",
+      "firstName": "P0",
+      "lastName": "recovery",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "rebind",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "rebind@example.invalid",
+      "firstName": "P0",
+      "lastName": "rebind",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "locked",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "locked@example.invalid",
+      "firstName": "P0",
+      "lastName": "locked",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "stepup",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "stepup@example.invalid",
+      "firstName": "P0",
+      "lastName": "stepup",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "unbound",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "unbound@example.invalid",
+      "firstName": "P0",
+      "lastName": "unbound",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "[REDACTED]",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

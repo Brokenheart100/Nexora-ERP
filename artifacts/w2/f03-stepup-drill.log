@@ -1,0 +1,323 @@
+2026-11-13T05:34:11.360Z F03 step-up drill start
+2026-11-13T05:34:11.361Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:34:12.365Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:34:12.365Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:34:12.580Z gateway down true
+2026-11-13T05:34:12.581Z phase1: start with Web__MfaStepUpSeconds=8
+2026-11-13T05:34:12.582Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" {"Web__MfaStepUpSeconds":"8"}
+2026-11-13T05:34:21.516Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=d142f87f94e6c4356f2dc48aac27d912                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T053412940_detach-child_f662021a78d748c680dc408308fff55e.log   
+                                                                                                                  
+       PID:  9736                                                                                                 
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:34:21.517Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T05:35:24.253Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(62.3秒)
+ 
+2026-11-13T05:35:25.046Z login start alice /bff/login
+2026-11-13T05:35:28.505Z login ok alice
+2026-11-13T05:35:29.367Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":300,"lastVerifiedAt":"2026-11-13T05:35:27.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:35:29.693Z DRILL FAILED Error: phase1 stepUpSeconds expected 8, got 300
+    at main (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f03-stepup-drill.mjs:167:41)
+2026-11-13T05:36:39.552Z F03 step-up drill start
+2026-11-13T05:36:39.553Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:36:40.630Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:36:40.631Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:36:40.756Z gateway down true
+2026-11-13T05:36:40.757Z phase1: start with Web__MfaStepUpSeconds=8
+2026-11-13T05:36:40.758Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaStepUpSeconds=8" 
+2026-11-13T05:36:49.567Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=8d93e16d48da1fa4d33647f701754822                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T053641142_detach-child_0a74cb2098d348b2a81a2b894e8e7b90.log   
+                                                                                                                  
+       PID:  11936                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:36:49.567Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T05:37:44.767Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(54.8秒)
+ 
+2026-11-13T05:37:45.650Z login start alice /bff/login
+2026-11-13T05:37:48.457Z login ok alice
+2026-11-13T05:37:49.139Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":300,"lastVerifiedAt":"2026-11-13T05:37:47.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:37:49.476Z DRILL FAILED Error: phase1 stepUpSeconds expected 8, got 300
+    at main (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f03-stepup-drill.mjs:168:41)
+2026-11-13T05:46:22.666Z F03 step-up drill start
+2026-11-13T05:46:22.667Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:46:23.597Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:46:23.598Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:46:23.800Z gateway down true
+2026-11-13T05:46:23.801Z phase1: start with Web:MfaStepUpSeconds=8
+2026-11-13T05:46:23.802Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaStepUpSeconds=8" 
+2026-11-13T05:46:32.078Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=88b20db9cedcdfdb086ca46072e5676f                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T054624039_detach-child_e03603ea59ad42c992825c84a37ad0ce.log   
+                                                                                                                  
+       PID:  20540                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:46:32.078Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T05:47:28.225Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(55.8秒)
+ 
+2026-11-13T05:47:28.960Z login start alice /bff/login
+2026-11-13T05:47:31.751Z login ok alice
+2026-11-13T05:47:31.980Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":8,"lastVerifiedAt":"2026-11-13T05:47:30.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:47:37.519Z fresh write allowed version 1
+2026-11-13T05:47:46.608Z stale write 403 {
+  "error": true,
+  "url": "https://localhost:7443/bff/api/workspaces/01a1d372-70da-7634-ae23-9301263fff5b/settings",
+  "statusCode": 403,
+  "statusMessage": "Multi-factor verification required",
+  "message": "Multi-factor verification required",
+  "data": {
+    "code": "mfa_step_up_required",
+    "reauthPath": "/bff/login?prompt=login"
+  },
+  "stack": [
+    "Multi-factor verification required",
+    "at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node
+2026-11-13T05:47:46.608Z login start alice /bff/login?prompt=login
+2026-11-13T05:48:17.217Z DRILL FAILED locator.fill: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#username')[22m
+
+    at login (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\e2e\f03-stepup-drill.mjs:86:35)
+    at async main (D:\Code\CSharp\Nexora ERP\src\Web\nexora-web\e2e\f03-stepup-drill.mjs:199:5)
+2026-11-13T05:49:22.207Z F03 step-up drill start
+2026-11-13T05:49:22.207Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:49:23.097Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:49:23.098Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:49:23.233Z gateway down true
+2026-11-13T05:49:23.234Z phase1: start with Web:MfaStepUpSeconds=8
+2026-11-13T05:49:23.234Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaStepUpSeconds=8" 
+2026-11-13T05:49:30.730Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=727f859fc2824103245294506f47da5c                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T054923648_detach-child_85201971f9ca4ea6bbd61eac50ce3138.log   
+                                                                                                                  
+       PID:  19868                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:49:30.731Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T05:50:29.922Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(58.8秒)
+ 
+2026-11-13T05:50:31.208Z login start alice /bff/login
+2026-11-13T05:50:34.484Z login ok alice
+2026-11-13T05:50:35.365Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":8,"lastVerifiedAt":"2026-11-13T05:50:33.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:50:40.305Z fresh write allowed version 1
+2026-11-13T05:50:49.385Z stale write 403 {
+  "error": true,
+  "url": "https://localhost:7443/bff/api/workspaces/01a1d375-3ad7-7c03-9d4b-aca80ba082cf/settings",
+  "statusCode": 403,
+  "statusMessage": "Multi-factor verification required",
+  "message": "Multi-factor verification required",
+  "data": {
+    "code": "mfa_step_up_required",
+    "reauthPath": "/bff/login?prompt=login"
+  },
+  "stack": [
+    "Multi-factor verification required",
+    "at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node
+2026-11-13T05:50:49.386Z login start alice /bff/login?prompt=login
+2026-11-13T05:51:00.607Z login ok alice
+2026-11-13T05:51:00.719Z capabilities after reauth {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":8,"lastVerifiedAt":"2026-11-13T05:51:00.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:51:00.911Z retry after reauth allowed version 2
+2026-11-13T05:51:01.427Z account security region 账户安全 敏感操作（公司资料、成员角色、银行账户、账簿决策）需要最近完成多因素验证。 多因素认证 已启用 敏感操作策略 需要最近验证 本账户已绑定 是 验证方式 一次性验证码（TOTP） 最近验证 2026/11/13 13:51:00 有效期 8 秒 重新验证身份 刷新安全状态
+2026-11-13T05:51:01.428Z phase2: restart with Web:MfaRequired=false
+2026-11-13T05:51:01.734Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:51:02.770Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:51:02.770Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:51:02.892Z gateway down true
+2026-11-13T05:51:02.893Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaRequired=false" 
+2026-11-13T05:51:11.537Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=92fce2ee15e0012f1f770e81d1bb6f0b                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T055103205_detach-child_bf1f74d0a1344de88825e58e326ad599.log   
+                                                                                                                  
+       PID:  8936                                                                                                 
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:51:11.538Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T05:52:38.077Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(86.1秒)
+ 
+2026-11-13T05:52:39.472Z login start alice /bff/login
+2026-11-13T05:52:49.159Z login ok alice
+2026-11-13T05:52:49.548Z capabilities phase2 {"available":true,"required":false,"enrolled":false,"methods":[],"stepUpSeconds":300,"lastVerifiedAt":null,"reauthPath":"/bff/login?prompt=login"}
+2026-11-13T05:52:59.253Z phase2 stale write 200 {"workspaceId":"01a1d375-3ad7-7c03-9d4b-aca80ba082cf","baseCurrency":"CNY","version":3,"presentation":{"legalName":"MFA 演练 1794549035366","brandName":"MFA 演练 1794549035366","accentColor":"#274580","dateFormat":"yyyy-MM-dd","timeZone":"Asia/Shanghai","logoDataUrl":null},"canManage":true}
+2026-11-13T05:52:59.254Z DRILL PASSED
+2026-11-13T05:59:42.759Z F03 step-up drill start
+2026-11-13T05:59:42.760Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T05:59:43.743Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T05:59:43.743Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T05:59:43.845Z gateway down true
+2026-11-13T05:59:43.845Z phase1: start with Web:MfaStepUpSeconds=8
+2026-11-13T05:59:43.846Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaStepUpSeconds=8" 
+2026-11-13T05:59:51.556Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=4875b20963b25338ddc4bc05d5a3ec19                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T055944171_detach-child_c4cca316df284493993a3eb06363d3cb.log   
+                                                                                                                  
+       PID:  27328                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T05:59:51.557Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T06:00:48.686Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(56.8秒)
+ 
+2026-11-13T06:00:49.569Z login start alice /bff/login
+2026-11-13T06:00:53.313Z login ok alice
+2026-11-13T06:00:54.549Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":8,"lastVerifiedAt":"2026-11-13T06:00:51.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T06:01:00.823Z DRILL FAILED Error: fresh MFA write expected 200, got 403 {
+  "error": true,
+  "url": "https://localhost:7443/bff/api/workspaces/01a1d37e-af9d-788b-92fa-92243edf0949/settings",
+  "statusCode": 403,
+  "statusMessage": "Multi-factor verification required",
+  "message": "Multi-factor verification required",
+  "data": {
+    "code": "mfa_step_up_required",
+    
+    at main (file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/e2e/f03-stepup-drill.mjs:185:37)
+2026-11-13T06:01:36.524Z F03 step-up drill start
+2026-11-13T06:01:36.524Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T06:01:37.454Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T06:01:37.454Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T06:01:37.617Z gateway down true
+2026-11-13T06:01:37.617Z phase1: start with Web:MfaStepUpSeconds=20
+2026-11-13T06:01:37.618Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaStepUpSeconds=20" 
+2026-11-13T06:01:45.370Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=cef5a1e1383add1ba32bf72cf64c2b92                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T060137891_detach-child_4b94d5946f674167ac272c56eda0d0b3.log   
+                                                                                                                  
+       PID:  29436                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T06:01:45.370Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T06:02:47.995Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(62.3秒)
+ 
+2026-11-13T06:02:48.619Z login start alice /bff/login
+2026-11-13T06:02:52.669Z login ok alice
+2026-11-13T06:02:53.686Z capabilities phase1 {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":20,"lastVerifiedAt":"2026-11-13T06:02:51.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T06:02:58.611Z fresh write allowed version 1
+2026-11-13T06:03:19.701Z stale write 403 {
+  "error": true,
+  "url": "https://localhost:7443/bff/api/workspaces/01a1d380-7f6a-7a06-ae47-51e34723baff/settings",
+  "statusCode": 403,
+  "statusMessage": "Multi-factor verification required",
+  "message": "Multi-factor verification required",
+  "data": {
+    "code": "mfa_step_up_required",
+    "reauthPath": "/bff/login?prompt=login"
+  },
+  "stack": [
+    "Multi-factor verification required",
+    "at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node
+2026-11-13T06:03:19.702Z login start alice /bff/login?prompt=login
+2026-11-13T06:03:20.463Z login ok alice
+2026-11-13T06:03:20.574Z capabilities after reauth {"available":true,"required":true,"enrolled":true,"methods":["otp"],"stepUpSeconds":20,"lastVerifiedAt":"2026-11-13T06:03:20.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T06:03:20.770Z retry after reauth allowed version 2
+2026-11-13T06:03:21.300Z account security region 账户安全 敏感操作（公司资料、成员角色、银行账户、账簿决策）需要最近完成多因素验证。 多因素认证 已启用 敏感操作策略 需要最近验证 本账户已绑定 是 验证方式 一次性验证码（TOTP） 最近验证 2026/11/13 14:03:20 有效期 20 秒 重新验证身份 刷新安全状态
+2026-11-13T06:03:21.300Z phase2: restart with Web:MfaRequired=false
+2026-11-13T06:03:21.613Z exec aspire "stop" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" 
+2026-11-13T06:03:22.530Z stop exit 0 Scanning for running AppHosts...
+📦 Found running AppHost: src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj
+🛑 Sending stop signal to src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+Stopping src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj...
+
+✅ src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj stopped successfully.
+ 
+2026-11-13T06:03:22.531Z exec curl "-s" "-o" "NUL" "-w" "%{http_code}" "--max-time" "3" "https://localhost:7443/health" 
+2026-11-13T06:03:22.662Z gateway down true
+2026-11-13T06:03:22.663Z exec aspire "start" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--non-interactive" "--" "--Web:MfaRequired=false" 
+2026-11-13T06:03:31.143Z start exit 0 xora.AppHost\Nexora.AppHost.csproj                                                     
+                                                                                                                  
+    仪表板:  https://localhost:17298/login?t=9b58c3b6a477569ce4abc4af456c6d8d                                     
+                                                                                                                  
+      日志:  C:\Users\123\.aspire\logs\cli_20261113T060322964_detach-child_7b36a68ea0d1453bb12410b20c92aa9d.log   
+                                                                                                                  
+       PID:  29120                                                                                                
+
+✅ 已成功启动 AppHost。
+ 
+2026-11-13T06:03:31.144Z exec aspire "wait" "gateway" "--apphost" "D:\Code\CSharp\Nexora ERP\src\Hosting\Nexora.AppHost\Nexora.AppHost.csproj" "--timeout" "300" "--non-interactive" 
+2026-11-13T06:04:28.954Z wait gateway exit 0 正在等待资源“gateway”healthy...
+
+✅ 资源“gateway”已healthy。(57.5秒)
+ 
+2026-11-13T06:04:29.395Z login start alice /bff/login
+2026-11-13T06:04:32.307Z login ok alice
+2026-11-13T06:04:32.575Z capabilities phase2 {"available":true,"required":false,"enrolled":true,"methods":["otp"],"stepUpSeconds":300,"lastVerifiedAt":"2026-11-13T06:04:31.000Z","reauthPath":"/bff/login?prompt=login"}
+2026-11-13T06:04:38.917Z phase2 stale write 200 {"workspaceId":"01a1d380-7f6a-7a06-ae47-51e34723baff","baseCurrency":"CNY","version":3,"presentation":{"legalName":"MFA 演练 1794549773688","brandName":"MFA 演练 1794549773688","accentColor":"#274580","dateFormat":"yyyy-MM-dd","timeZone":"Asia/Shanghai","logoDataUrl":null},"canManage":true}
+2026-11-13T06:04:38.918Z DRILL PASSED

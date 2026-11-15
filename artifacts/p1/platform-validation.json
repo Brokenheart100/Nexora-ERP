@@ -1,0 +1,52 @@
+{
+  "verifiedAtUtc": "2026-11-06T11:07:30.9008795+00:00",
+  "scope": "Local P1 platform readiness, broker permissions and pinned base images",
+  "completedTodos": [
+    "P1-03c",
+    "P1-03d",
+    "P1-03e"
+  ],
+  "overallP1Complete": false,
+  "backend": {
+    "debug": {
+      "passed": 21,
+      "failed": 0,
+      "report": "artifacts/p1/test-results/p1-platform-debug.trx"
+    },
+    "release": {
+      "passed": 21,
+      "failed": 0,
+      "report": "artifacts/p1/test-results/p1-platform-release.trx"
+    }
+  },
+  "httpChecks": 36,
+  "brokerPermissionChecks": 4,
+  "imageDigestChecks": 4,
+  "browserTests": 2,
+  "reports": [
+    "artifacts/p1/readiness-validation.json",
+    "artifacts/p1/broker-permissions.json",
+    "artifacts/p1/browser-results.json"
+  ],
+  "newAndOriginalDatabaseVolumesPreserved": true,
+  "remoteCiExecuted": false,
+  "productionAccepted": false,
+  "sourceHashes": {
+    "Directory.Packages.props": "DD59C8153167A56FE496560B9E01411F30112ACC138212CAA9B874F85B477B93",
+    "src/Hosting/Nexora.ServiceDefaults/DependencyReadiness.cs": "AAD62229E1626A7DC5F420634C8E6F77A2FB60058652FE27DBB9367C927A9F45",
+    "src/Hosting/Nexora.ServiceDefaults/Extensions.cs": "8B111597CD7225A51652F1460BBE71AF488B8A587080A0776988290C62CFE991",
+    "src/Hosting/Nexora.AppHost/AppHost.cs": "AEDD19149F96E74FA0CBF1C8874BE038494C2406806D945A9235103D651A2E02",
+    "src/Hosting/Nexora.AppHost/RabbitAccessExtensions.cs": "45C7276BB6C6173F7C47CAB877F874919B425B7FD2EB80F1DE8F0726A963803B",
+    "src/Hosting/Nexora.AppHost/ContainerImageDigests.cs": "2DDC3831D0AF7269649797672BF3A1A05E0F14595D097B3540A566826EAAC3A7",
+    "src/Services/Organization/Nexora.Organization.Api/Program.cs": "B34DB5082B2A5A224FDA438547AC7CBCF39EFACC2D7ED4CBF33110D332D166A6",
+    "src/Services/Reporting/Nexora.Reporting.Api/Program.cs": "DE40EE77093A2FD20C2892F925DAA2DCF94BAF679839307AE8902D4998FC94EB",
+    "src/Gateway/Nexora.Bff/Program.cs": "6803EF2332CA62D444DE04F4A7B615610D29C25680E0D0D4870AF7E16AFA6A86",
+    "src/Services/Organization/Nexora.Organization.Infrastructure/DependencyInjection.cs": "B94F0557E5DEDB3C46A8191F20AC9926D014117FB26B762D0DF6E464CE209F44",
+    "src/Services/Reporting/Nexora.Reporting.Infrastructure/WorkspaceCreatedHandler.cs": "D17E2868728641C7084CB3CD79A1C15E193C46FE61E9123FC6688DFA63EF6EA9",
+    "tests/Nexora.Tests/ReadinessTests.cs": "39F9701280291884A3475525E9447074E008DDB8B8A2853ACBDB7E2693D9978A",
+    "tests/Nexora.Tests/GovernanceSliceTests.cs": "83507AC55D4C4AE451A599A0EF559850D32479AAD71E87C52BE690B4665725F1",
+    "scripts/p1/Test-Platform.ps1": "800F401F83370074351D8864A3F51F8155B024AA3EBB1D14C532EF61450115BA",
+    "scripts/p1/Probe-BrokerPermissions.cs": "28C6C443125D2E72BA900EB9659C01D3BA0DEDD63A94513B6EE2B846BDFDD3EB",
+    "scripts/p1/packages.lock.json": "8E9225DBA590959B4AFB0C4C4DEA10DC42AD06A319A1C76BA8AD9F69B77A4122"
+  }
+}

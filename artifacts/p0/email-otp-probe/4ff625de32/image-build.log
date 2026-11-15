@@ -1,0 +1,51 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 389B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#2 DONE 4.4s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 120B 0.0s done
+#3 DONE 0.1s
+
+#4 [1/4] FROM quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+#4 resolve quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b 0.0s done
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 10.17kB 0.0s done
+#5 DONE 0.1s
+
+#6 [2/4] COPY --chown=keycloak:keycloak target/nexora-p0-email-otp.jar /opt/keycloak/providers/nexora-p0-email-otp.jar
+#6 DONE 0.1s
+
+#7 [3/4] COPY --chown=keycloak:keycloak theme/ /opt/keycloak/themes/
+#7 DONE 0.1s
+
+#8 [4/4] RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true
+#8 1.900 Updating the configuration and installing your custom providers, if any. Please wait.
+#8 6.155 2026-11-11 06:59:23,901 WARN  [org.keycloak.common.Profile] (build-24) Deprecated features identity-brokering-api:v1, twitter-broker:v1 enabled by default. Check the upgrading guide for steps to use later versions if available.
+#8 7.099 2026-11-11 06:59:24,848 WARN  [org.keycloak.services] (build-12) KC-SERVICES0047: nexora-p0-email-otp (com.nexora.p0.EmailOtpFactory) is implementing the internal SPI authenticator. This SPI is internal and may change without notice
+#8 14.09 2026-11-11 06:59:31,837 INFO  [io.quarkus.deployment.QuarkusAugmentor] (main) Quarkus augmentation completed in 10978ms
+#8 14.10 Server configuration updated and persisted. Run the following command to review the configuration:
+#8 14.10 
+#8 14.10 	kc.sh show-config
+#8 14.10 
+#8 DONE 14.2s
+
+#9 exporting to image
+#9 exporting layers
+#9 exporting layers 0.5s done
+#9 exporting manifest sha256:6689cd1bde3c41d6191e5cf6489d95e11e347500394e110ba1066610e71fab53 0.0s done
+#9 exporting config sha256:7c24b4d91254e96ac40f3d9037698c4827fba0c588d61b64ee56f1ef9da2d793 0.0s done
+#9 exporting attestation manifest sha256:c7a4a771dedb8938fafe2cbe01c3df971a3f4eecf8c54f1f7310211974b8b26b
+#9 exporting attestation manifest sha256:c7a4a771dedb8938fafe2cbe01c3df971a3f4eecf8c54f1f7310211974b8b26b 0.0s done
+#9 exporting manifest list sha256:1f8024be9f46b353da7f24897876c141cd98adfa284ddba91047a04b58e303e9 0.0s done
+#9 naming to docker.io/library/nexora-p0-otp-4ff625de32:probe done
+#9 unpacking to docker.io/library/nexora-p0-otp-4ff625de32:probe 0.1s done
+#9 DONE 0.9s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/9mdzo4sysd281kbde2e6f0now

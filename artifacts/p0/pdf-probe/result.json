@@ -1,0 +1,68 @@
+{
+  "checkedAtUtc": "2026-11-06T02:05:20.500270+00:00",
+  "status": "passed",
+  "playwrightVersion": "1.64.1",
+  "fontCommit": "a85815a42757630ce188fdad368c2dfc444d4773",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-pdf-o6tk7sy3",
+  "pythonPackages": {
+    "pypdf": "6.21.2",
+    "fonttools": "4.62.1"
+  },
+  "visualReview": {
+    "status": "passed",
+    "reviewedAtUtc": "2026-11-06T02:06:08.831054+00:00",
+    "images": [
+      "page-1.png",
+      "page-2.png"
+    ],
+    "checks": [
+      "Chinese and CNY legible",
+      "No text clipping or overlap",
+      "Wrapping, separate pages and footers visible"
+    ]
+  },
+  "steps": [
+    {
+      "name": "restore",
+      "exitCode": 0
+    },
+    {
+      "name": "build",
+      "exitCode": 0
+    },
+    {
+      "name": "browser-install",
+      "exitCode": 0
+    },
+    {
+      "name": "generate",
+      "exitCode": 0
+    },
+    {
+      "name": "render",
+      "exitCode": 0
+    }
+  ],
+  "limitations": [
+    "Windows probe only; Linux container and physical printing pending",
+    "Technical sample only; no statutory invoice or fiscal donation receipt"
+  ],
+  "NotoSansSC.ttf": {
+    "url": "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+    "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+    "bytes": 17772300
+  },
+  "OFL.txt": {
+    "url": "https://raw.githubusercontent.com/google/fonts/a85815a42757630ce188fdad368c2dfc444d4773/ofl/notosanssc/OFL.txt",
+    "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    "bytes": 4388
+  },
+  "fontDerivation": {
+    "weight": 400,
+    "subset": "Unicode characters in trusted Program.cs fixture",
+    "sha256": "8803defea78d1cc10f9a4cd62949342a717bf4c64cc3c92dd78aba59b7f84e5d"
+  },
+  "pages": 2,
+  "embeddedFontDescriptors": 2,
+  "pdfSha256": "f59870add46f053bc4b74d4e78f0fef6bf15333f2fd882fcf2871b71b5a4e293"
+}

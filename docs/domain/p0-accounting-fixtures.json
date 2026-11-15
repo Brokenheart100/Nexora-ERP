@@ -1,0 +1,26 @@
+{
+  "profile": "CN-CNY-RESEARCH",
+  "scope": "Independent research examples; not a tax return or live accounting dataset",
+  "currency": "CNY",
+  "rounding": "ROUND_HALF_UP",
+  "roundingExamples": [
+    { "input": "0.005", "expected": "0.01" },
+    { "input": "-0.005", "expected": "-0.01" },
+    { "input": "1.004", "expected": "1.00" }
+  ],
+  "taxExclusive": { "unitPrice": "100.00", "quantity": "3", "discountRate": "0.10", "sampleTaxRate": "0.13", "expectedNet": "270.00", "expectedTax": "35.10", "expectedGross": "305.10" },
+  "taxInclusive": { "gross": "113.00", "sampleTaxRate": "0.13", "expectedNet": "100.00", "expectedTax": "13.00" },
+  "costing": { "openingQuantity": "10", "openingValue": "100.00", "receiptQuantity": "10", "receiptValue": "140.00", "issueQuantity": "5", "reservationQuantity": "4", "expectedAverage": "12.00", "expectedIssueCost": "60.00", "expectedRemainingQuantity": "15", "expectedRemainingValue": "180.00", "expectedAvailable": "11" },
+  "payable": { "initial": "1130.00", "allocated": "600.00", "expectedOpen": "530.00" },
+  "receivable": { "initial": "1130.00", "net": "1000.00", "tax": "130.00", "allocated": "500.00", "expectedOpen": "630.00", "expectedCashBasisNet": "442.48", "expectedCashBasisTax": "57.52" },
+  "bank": { "opening": "1000.00", "income": "500.00", "expense": "200.00", "expectedClosing": "1300.00", "lineAmount": "500.00", "allocations": ["300.00", "200.00"] },
+  "journals": [
+    { "id": "C03-RECEIPT", "debits": ["1000.00"], "credits": ["1000.00"] },
+    { "id": "C03-BILL", "debits": ["1000.00", "130.00"], "credits": ["1130.00"] },
+    { "id": "C03-PAYMENT", "debits": ["600.00"], "credits": ["600.00"] },
+    { "id": "C04-INVOICE", "debits": ["1130.00"], "credits": ["1000.00", "130.00"] },
+    { "id": "C04-ISSUE", "debits": ["600.00"], "credits": ["600.00"] },
+    { "id": "C04-RECEIPT", "debits": ["500.00"], "credits": ["500.00"] },
+    { "id": "C06-DONATION", "debits": ["200.00"], "credits": ["200.00"] }
+  ]
+}

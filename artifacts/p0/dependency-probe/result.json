@@ -1,0 +1,29 @@
+{
+  "checkedAtUtc": "2026-11-06T01:40:26.9497912Z",
+  "scratchDirectory": "C:\\Users\\123\\AppData\\Local\\Temp\\nexora-p0-5ea12009d0e54009aa7d56c248f946b1",
+  "baseline": "docs/domain/p0-dependency-baseline.json",
+  "status": "passed",
+  "steps": [
+    {
+      "exitCode": 0,
+      "name": "restore"
+    },
+    {
+      "exitCode": 0,
+      "name": "restore-locked"
+    },
+    {
+      "exitCode": 0,
+      "name": "build"
+    },
+    {
+      "exitCode": 0,
+      "name": "load"
+    }
+  ],
+  "limitations": [
+    "No EF transaction or Outbox integration runtime tested",
+    "No PostgreSQL/RabbitMQ/Keycloak connections",
+    "No external provider delivery or production acceptance"
+  ]
+}

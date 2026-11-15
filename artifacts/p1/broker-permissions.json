@@ -1,0 +1,25 @@
+{
+  "checks": [
+    {
+      "service": "organization",
+      "operation": "consume-other-service",
+      "denied": true
+    },
+    {
+      "service": "organization",
+      "operation": "declare-unrelated-queue",
+      "denied": true
+    },
+    {
+      "service": "reporting",
+      "operation": "consume-other-service",
+      "denied": true
+    },
+    {
+      "service": "reporting",
+      "operation": "declare-unrelated-queue",
+      "denied": true
+    }
+  ],
+  "passed": 4
+}

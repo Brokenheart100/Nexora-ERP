@@ -1,0 +1,67 @@
+
+Running 15 tests using 1 worker
+
+(node:8236) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok  1 e2e\workspace.spec.ts:8:1 › Catalog UI and API preserve workspace scope, versioning and idempotency (11.3s)
+  ok  2 e2e\workspace.spec.ts:187:1 › The direct frontend URL opens the BFF entry (2.6s)
+  ok  3 e2e\workspace.spec.ts:194:1 › Logout reports an unexpected antiforgery response in place (2.1s)
+Public workspace page loaded
+Starting alice browser login
+alice OIDC and TOTP login passed
+Starting bob browser login
+bob OIDC and TOTP login passed
+  ok  4 e2e\workspace.spec.ts:210:1 › OIDC + TOTP, CSRF, workspace creation, projection, tenant denial and logout (9.9s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok  5 e2e\workspace.spec.ts:270:3 › Logout works from an open tab after the BFF session is gone (26.0s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok  6 e2e\workspace.spec.ts:270:3 › Logout works from a reloaded tab after the BFF session is gone (30.5s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+Starting bob browser login
+bob OIDC and TOTP login passed
+  ok  7 e2e\workspace.spec.ts:300:1 › Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF (36.7s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok  8 e2e\workspace.spec.ts:383:1 › Partner profiles retain multiple roles and scoped contacts across edits and reference checks (24.6s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+Starting bob browser login
+bob OIDC and TOTP login passed
+  ok  9 e2e\workspace.spec.ts:480:1 › Company presentation and private workspace links stay independently scoped (36.0s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+Starting alice browser login
+alice OIDC and TOTP login passed
+Starting bob browser login
+bob OIDC and TOTP login passed
+  ok 10 e2e\workspace.spec.ts:610:1 › Account session registry lists devices, revokes other sessions and blocks replay (1.3m)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok 11 e2e\workspace.spec.ts:677:1 › Chart hierarchy, archive, import preview and commit share the same scoped revision (40.0s)
+Starting alice browser login
+alice OIDC and TOTP login passed
+  ok 12 e2e\workspace.spec.ts:771:1 › Effective tax rates and scoped classifications preserve calculation snapshots (23.6s)
+Starting alice browser login
+Starting bob browser login
+bob OIDC and TOTP login passed
+alice OIDC and TOTP login passed
+  ok 13 e2e\workspace.spec.ts:849:1 › Opening, journal approval, period races, reversal and P5 accrual reports preserve the scoped ledger (39.6s)
+Starting alice browser login
+Starting bob browser login
+bob OIDC and TOTP login passed
+alice OIDC and TOTP login passed
+  ok 14 e2e\workspace.spec.ts:1166:1 › Purchase orders require current scoped references and independent approval (50.5s)
+Starting alice browser login
+Starting bob browser login
+bob OIDC and TOTP login passed
+alice OIDC and TOTP login passed
+  ok 15 e2e\workspace.spec.ts:1650:1 › P4 sales, inventory, invoicing, settlement and communication reconcile (1.5m)
+
+  Slow test file: e2e\workspace.spec.ts (8.4m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  15 passed (8.5m)
