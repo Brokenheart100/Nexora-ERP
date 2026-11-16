@@ -145,7 +145,7 @@ onMounted(() => run())
 </script>
 
 <template>
-  <section class="card governance" aria-label="工作区成员与授权">
+  <section class="governance rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="工作区成员与授权">
     <div class="section-top">
       <p v-if="access" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ workspaceRoleName(access.role) }} · 当前公司</p>
       <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run()">刷新权限与成员</UButton>

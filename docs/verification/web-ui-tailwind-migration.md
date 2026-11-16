@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css 验证记录
 
 - 日期：2026-11-15
-- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5 已完成（表格与详情规则迁 scoped / UTable，main.css 535 → 393 行）；Phase 6–8 待执行。
+- 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5 已完成（表格与详情规则迁 scoped / UTable，main.css 535 → 393 行）；Phase 6 已完成（tokens 拆分到 tokens.css、全部分区删除，main.css 393 → 3 行；.card 迁 utility / 页面 scoped；链接颜色 @layer base 修复）；Phase 7 已完成（全量 45 项 e2e、截图矩阵补齐移动暗色与财务报表打印页）。Tailwind 迁移完成。
 - 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
 
 ## 终态定义
@@ -14,7 +14,7 @@
 @import "./tokens.css";
 ```
 
-- tokens 以 CSS 变量 + `@theme inline` 桥接保留，暗色靠 token 切换自动生效；模板不写大面积 `dark:`。
+- tokens 以 CSS 变量 + `@theme static` 桥接保留在 `tokens.css`，暗色靠 token 切换自动生效；模板不写大面积 `dark:`。
 - 模板优先级：Nuxt UI 组件 > Tailwind utility > 组件 scoped CSS。
 - 复杂规则不强行 utility 化，留在组件 scoped：财务报表打印隔离、固定列 / 高密度表格、PWA 安全区 `env()`、壳层 sticky / 滚动锁。
 - 不改动：label 文本、`name` / `id`、`data-testid`、错误文案、API payload、权限与业务逻辑。
@@ -29,9 +29,9 @@
 | Phase 3 壳层与页面布局 | Shell / Main column / Hero / Workspace deck / Responsive → layout 与页面 scoped / utility（暗色区段删除并入 Phase 5） | 完成 | 本文「Phase 3」 |
 | Phase 4 表单基础 | 原生 input / file 控件 → UFormField / UInput / USelect / UCheckbox / UFileUpload；日期控件保留 UInput type=date | 完成 | 本文「Phase 4」 |
 | Phase 5 表格 / 详情 | Tables / Details / lists 迁组件 scoped；Readiness → UTable；暗色收尾 | 完成 | 本文「Phase 5」 |
-| Phase 6 拆分 tokens.css | tokens 与 `@theme inline` 拆到独立文件 | 待执行 | |
-| Phase 7 删除死 CSS | 删除未使用选择器、暗色残余与重复 reset | 待执行 | |
-| Phase 8 收尾 | main.css 只剩 @import；全量验证与文档 | 待执行 | |
+| Phase 6 拆分 tokens.css | tokens、`@theme` 桥接、文档 base 与打印隔离拆到 `tokens.css`；`.card` 迁 utility / 页面 scoped；main.css 393 → 3 行 | 完成 | 本文「Phase 6」 |
+| Phase 7 删除死 CSS | 随 Phase 6 全部分区删除，`main.css` 选择器归零（`grep -c '{'` = 0） | 完成 | 本文「Phase 6」 |
+| Phase 8 收尾 | main.css 只剩 3 行 `@import`；全量验证与文档 | 完成 | 本文「Phase 6」「Phase 7」 |
 
 ## Phase 0 基线（2026-11-15）
 
@@ -158,6 +158,29 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 - 计划偏差：Tables / Details 全局规则以「组件 scoped 1:1 复制」收尾而非全部 utility / UTable；裸 `<table>` 仅剩 `WorkspaceFinancialReports`（ADR 允许）；Nuxt dev 不热更新 `app/`，每次改 scoped 需 `aspire stop` → `start` → `wait gateway` 后验证。
 - 提交：`feat(web): Tailwind migration Phase 5 (tables and details)`。
 
+## Phase 6 tokens.css 拆分与 main.css 清空（2026-11-16）
+
+- tokens 拆分：新建 `app/assets/css/tokens.css`（339 行 / 8.8 KB）：`:root` 的 20 个 `--nx-*` 令牌、`@theme static`（brand 50–950 色阶、`--font-sans`、`--color-nx-*` / `--radius-nx*` / `--shadow-nx*` utility 桥接；`static` 保证变量真实输出，是 Phase 3 主色缺陷修复的前提）、文档 base（html / body 背景与字体 / `::selection` / button / a / h1–h4 / h2 / h3 / h4 / p / small / `:focus-visible`）、fieldset / legend、`p[role=status]`、`fieldset > button`、`html.dark` 令牌覆盖与 body / fieldset / legend / `::selection`、`@media (max-width: 700px)` fieldset、`prefers-reduced-motion`、`@media print` 打印隔离（原 `.card` 打印规则改为 `section { break-inside: avoid; box-shadow: none }`）。**偏差**：ADR 终态约定 main.css 只剩 3 行 import，因此文档级 base 与打印隔离层由 tokens.css 承载（不再只是变量文件），已在文件头注释与本记录说明。
+- main.css：393 → 3 行 / 67 bytes，仅剩 `@import "tailwindcss";`、`@import "@nuxt/ui";`、`@import "./tokens.css";`；`grep -c '{'` = 0。
+- `.card` 迁移：22 个模块组件 `section class="card …"` → utility 串 `rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm`（AccountDeletionReview / AccountSecurity / AccountSessions / WorkspaceAging / WorkspaceAssistant / WorkspaceAudit / WorkspaceBilling / WorkspaceBook / WorkspaceCapabilities / WorkspaceCatalog / WorkspaceCompanySettings / WorkspaceCustomRoleEditor / WorkspaceDashboard / WorkspaceFinancialReports / WorkspaceGovernance / WorkspaceInventory / WorkspacePartners / WorkspacePurchasing / WorkspaceReceivables / WorkspaceRoleCatalog / WorkspaceSales / InvoiceShareDownload）。`pages/index.vue`：login-card 改为 scoped 完整卡片规则（`.card` 基础 + `main > section.card` 紧凑规则 1:1 合并），create / join / workspace / overview 四卡改 utility；deck 覆盖选择器由 `.deck :deep(.card)` 改为 `.deck > .create-card, .deck > .join-card, .deck > .workspace-card, .deck .overview-card, .deck :deep(.deck-card)`（WorkspaceCapabilities / AccountDeletionReview / AccountSessions / AccountSecurity 补 `deck-card`）。`pages/join.vue`（invitation-card）、`pages/cli/authorize.vue`（device-card）、`pages/companies/[workspaceId]/*` 的 fallback（page-card）、`InvoiceShareDownload`（shared-invoice-card）用 scoped 1:1 合并 `.card` 基础 + 紧凑规则；页面根 section 直接挂 layout `<main>` 的卡片全部保留紧凑外观。
+- 像素对照：与 Phase 5 / Phase 4 截图相比，reports light/dark 0.00%、audit dark 0.00%、company dark 0.00% / light 0.08%，证明 `.card` → utility 为 1:1 迁移。
+- 验证中发现的遗漏（已修）：`pages/pricing.vue` 的 `section.pricing-note.card` 与 `WorkspaceSetup.vue` 的 `section.setup.card` 未在首轮清单内（`grep 'class="card'` 无法匹配 `class="pricing-note card"`）。pricing-note 是 layout `<main>` 直系子元素，需 `.card` 基础 + 紧凑规则；改为 scoped 完整规则（grid、`padding: 17px 20px`、`margin-top: 22px`、hover、暗色、700px 断点）后与基线像素差从 14.71% 降到 0.14%；WorkspaceSetup 改 utility。
+- 链接颜色缺陷修复：tokens.css 文档 base 的 `a { color: var(--nx-primary); text-decoration: none }` 是 unlayered 规则，会压过 Tailwind utilities，导致未登录首页主 CTA「登录 Nexora」蓝底蓝字不可见、`UButton` link 变体文字被染成主色（Phase 2 起的潜在缺陷，此前未截登录页）。改为 `@layer base { a { … } }` 并加注释；重启 AppHost 后 CTA 白字可见、neutral 链接恢复。
+- 构建产物核查：客户端 CSS 含 `--color-brand-500`、`.rounded-nx`、`.bg-nx-surface`、`.shadow-nx-sm`、`.border-nx-border`、`.p-6`；`--ui-color-primary-500` 仍由 Nuxt UI colors 插件运行时注入（Phase 3 已确认）。
+- 静态检查：typecheck exit 0；lint 0 error / 63 warning（全部 `vue/first-attribute-linebreak`）；单测 16 文件 / 89 通过（53.2s）；build exit 0（冷启动 17.4s，热缓存 5.5s）。
+- 截图：`artifacts/ui-tailwind-phase6/` 15 张（workspaces / dashboard / reports / company settings / audit / pricing light+dark、setup light、workspaces mobile、login light）。
+- 聚焦 e2e：8 passed（2.2m，readiness + workspace 报表 / 账龄 / 审计 / 账簿 / 公司设置 / 仪表盘 / 初始化）。
+- 全量 e2e：45 passed（16.1m）。
+- 计划偏差：日期控件仍保留 `UInput type=date`；财务报表自定义表格保留；审计页签 active 硬编码浅色；`pages/index.vue` 的 card-sub / card-head / card-hint 等子类名保留（非卡片本体）。
+
+## Phase 7 全量验证与文档（2026-11-16）
+
+- 全量 e2e：45 passed（16.1m；workspace.spec.ts 单文件约 13.7m），覆盖 workspace / email-onboarding / pwa / billing-subx / readiness / runtime-status / session-policy。
+- 截图矩阵：累计 `artifacts/ui-tailwind-baseline/`（Phase 0，35 张）、`ui-tailwind-phase2/`（5）、`phase3/`（15）、`phase4/`（6）、`phase5/`（8）、`phase6/`（15）、`phase7/`（4）。Phase 7 补齐：`90-workspaces-mobile-dark`（390×844 暗色移动端，无横向溢出）、`91-setup-dark`（初始化向导暗色卡片）、`92-login-dark`（未登录登录卡暗色）、`93-reports-print`（设置 `html[data-print-financial]` + print media：仅保留报表内容，壳层 / 侧栏 / 表单与按钮按打印规则隐藏，表格全宽）。覆盖 8 类页面 × light/dark 桌面、workspaces 移动 light/dark 与财务报表打印布局。
+- 文档：本记录、`todolist.md`、ADR 0020（状态「Tailwind 迁移完成」）、`docs/计划.md` 同步回填。
+- 收尾：`aspire stop` 正常停止 AppHost；工作区保留并发会话改动不纳入本次提交。
+- 已知外观差异与边界（保持）：审计页签 active 硬编码浅色（Phase 2 决策）；模块页 console rail 窄列换行（基线行为）；`UInput type=date` 保留原生日期选择器；财务报表保留自定义表格；`tokens.css` 兼文档 base / 打印隔离层（ADR 终态偏差已记录）。
+
 ## 复现命令
 
 ```powershell
@@ -168,4 +191,6 @@ pnpm --dir src/Web/nexora-web build
 aspire start --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj --non-interactive
 aspire wait gateway --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj --timeout 180 --non-interactive
 pnpm --dir src/Web/nexora-web exec playwright test e2e/runtime-status.spec.ts e2e/pwa.spec.ts --reporter=line
+# 全量（串行，约 16–17m；临时截图 spec 不提交）
+pnpm --dir src/Web/nexora-web test:e2e
 ```

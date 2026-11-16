@@ -1,7 +1,7 @@
 # 前端完全迁移到 Tailwind / 清空 main.css — 迁移 TODO
 
 > 目标：把全局设计系统从 `app/assets/css/main.css` 迁到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import`（+ 一行 tokens.css 导入）。
-> 状态：执行中（2026-11-15）。Phase 0–5 已完成（Phase 3 暗色区段删除并入 Phase 5 完成；Phase 4 日期控件保留 `UInput type=date`）；Phase 6–8 待执行。基线数据来自当前工作区实测。
+> 状态：已完成（2026-11-16）。Phase 0–7 已完成（Phase 3 暗色区段删除并入 Phase 5/6 完成；Phase 4 日期控件保留 `UInput type=date`）；Tailwind 迁移完成：main.css 只剩 3 行 import，样式集中在 `tokens.css` 与组件 scoped / utility。基线数据来自当前工作区实测。
 
 ---
 
@@ -212,7 +212,7 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 - [x] WorkspaceFinancialReports：`report-screen` 局部 scoped、`.table-scroll` 全局规则留 Phase 5，打印规则 scoped
 - [x] WorkspaceAudit：`audit-tabs` 保留 scoped（Phase 2 已记录原因）
 - [x] 删除 main.css Hero / Workspace hero / Deck / Library / Module internals / Login state 区段
-- [ ] **暗色收尾**：推迟到 Phase 5 末（Forms / Tables / Cards 仍依赖 `html.dark` 覆盖；Phase 3 已删除壳层与页面暗色块）
+- [x] **暗色收尾**：Phase 5/6 完成——Forms / Tables / Cards 规则迁 scoped / utility 后，main.css Dark theme 区段随分区删除；`html.dark` 令牌覆盖保留在 `tokens.css`，组件暗色走 `html.dark .x`（Vue scoped `:global(html.dark)` 编译陷阱已记录）
 - [x] 截图矩阵 + 聚焦 e2e：Dashboard / Setup / Pricing / Join / CLI authorize / Reports（聚焦 8 passed，全量 45 passed）
 
 ### Phase 4 — 表单基础元素与原生控件（2–3 天）
@@ -230,19 +230,21 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts -g "关
 - [x] 聚焦 e2e：`readiness.spec.ts` 2 passed；报表 / 账龄 / 审计 / 账簿由全量套件覆盖；全量 45 passed（17.0m）
 
 ### Phase 6 — 删除 main.css 分区 + tokens 拆分（约 1 天）
-- [ ] 逐段删除已归零的 CSS 分区（每删一段跑 typecheck/lint/unit/build）
-- [ ] 提取 tokens：`:root` + `html.dark` + `@theme inline` → `app/assets/css/tokens.css`
-- [ ] main.css 最终只剩 3 行 import；`grep -c '{' main.css` ≈ 0
-- [ ] 复查 39 个 scoped 样式：`var(--nx-*)` 仍可用（tokens.css 提供）
-- [ ] 全量静态检查：typecheck / lint / unit / build
+- [x] 逐段删除已归零的 CSS 分区：Shell / Main column / Hero / Workspace hero / Cards / Deck / Library / Forms / Buttons / Tables / Details / Module internals / Responsive / Theme controls / Dark theme 随 Phase 3–6 全部删除（每段后跑 typecheck/lint/unit/build）
+- [x] 提取 tokens：`:root` + `html.dark` + `@theme static` → `app/assets/css/tokens.css`（339 行；另承载文档 base 与打印隔离层，ADR 终态偏差已在验证文档记录）
+- [x] main.css 最终只剩 3 行 import（67 bytes）；`grep -c '{' main.css` = 0
+- [x] 复查 scoped 样式：`var(--nx-*)` 仍可用（tokens.css 提供）；构建产物含 `--color-brand-500`、`.bg-nx-surface` 等
+- [x] 全量静态检查：typecheck / lint / unit / build（exit 0 / 0 error / 89 通过 / exit 0）
+- [x] `.card` 迁 utility / 页面 scoped（22 组件 + `pages/index.vue` + join / cli / companies fallback / InvoiceShareDownload；补漏 `pricing-note` 与 `WorkspaceSetup`）；链接颜色 `a` 规则移入 `@layer base`
+- [x] 截图与像素对照：`artifacts/ui-tailwind-phase6/` 15 张；reports / audit / company 与 Phase 4/5 像素差 0.00–0.08%
 
 ### Phase 7 — 全量验证与文档（约 0.5–1 天）
-- [ ] 全量 e2e：workspace.spec + email-onboarding.spec + pwa.spec + billing-subx.spec + readiness.spec（串行）
-- [ ] 截图矩阵：8 类页面 × light/dark × desktop/mobile + 打印页
-- [ ] `docs/verification/web-ui-tailwind-migration.md` 完成（批次结果/截图/命令/边界）
-- [ ] ADR 0020 状态更新为“Tailwind 迁移完成”
-- [ ] `docs/计划.md` 更新
-- [ ] `aspire stop`；最终报告
+- [x] 全量 e2e：45 passed（16.1m；workspace / email-onboarding / pwa / billing-subx / readiness / runtime-status / session-policy 串行）
+- [x] 截图矩阵：累计 baseline 35 + phase2 5 + phase3 15 + phase4 6 + phase5 8 + phase6 15 + phase7 4；补移动暗色、初始化暗色、登录暗色与财务报表打印页
+- [x] `docs/verification/web-ui-tailwind-migration.md` 完成（批次结果/截图/命令/边界）
+- [x] ADR 0020 状态更新为“Tailwind 迁移完成”
+- [x] `docs/计划.md` 更新
+- [x] `aspire stop`；最终报告
 
 ---
 

@@ -19,7 +19,7 @@ async function read() {
 </script>
 
 <template>
-  <section class="card" aria-label="账号删除预检">
+  <section class="rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="账号删除预检">
     <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-user-x" aria-hidden="true" />账号安全与删除预检</h2>
     <p><a class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-[9px] border border-nx-border bg-nx-surface px-3 py-[7px] text-[12px] font-semibold text-nx-ink-2 shadow-nx-sm transition-colors hover:border-nx-border-strong hover:bg-nx-surface-muted hover:text-nx-primary-strong" href="/bff/account" target="_blank" rel="noopener noreferrer">管理登录凭据与设备会话</a></p>
     <UButton class="col-start-2 justify-self-end" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="read">检查删除条件</UButton>

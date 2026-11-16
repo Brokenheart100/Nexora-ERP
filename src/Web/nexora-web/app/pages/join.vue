@@ -34,7 +34,7 @@ async function join() {
 </script>
 
 <template>
-  <section v-if="ready" class="card max-w-[520px]">
+  <section v-if="ready" class="invitation-card max-w-[520px]">
     <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-mail-open" aria-hidden="true" />{{ t('invitation.title') }}</h1>
     <p v-if="!code">{{ t('invitation.missing') }}</p>
     <template v-else>
@@ -51,3 +51,25 @@ async function join() {
     <NuxtLink to="/">{{ t('invitation.home') }}</NuxtLink>
   </section>
 </template>
+
+<style scoped>
+.invitation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 17px 20px;
+  margin-top: 14px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow-sm);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.invitation-card:hover { border-color: #d8e1ee; box-shadow: var(--nx-shadow-md) }
+.invitation-card > * { grid-column: 1 / -1; min-width: 0 }
+html.dark .invitation-card:hover { border-color: var(--nx-border-strong) }
+@media (max-width: 700px) {
+  .invitation-card { padding: 15px 16px; border-radius: 14px }
+}
+</style>

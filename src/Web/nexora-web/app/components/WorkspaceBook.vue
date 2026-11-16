@@ -63,7 +63,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card book" aria-labelledby="book-heading">
+  <section class="book rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="book-heading">
     <h2 id="book-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-book-open" aria-hidden="true" />账簿设置</h2>
     <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="open">{{ book ? '刷新账簿' : '打开账簿设置' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />

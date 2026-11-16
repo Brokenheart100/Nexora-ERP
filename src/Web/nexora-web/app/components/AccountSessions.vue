@@ -61,7 +61,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="card" aria-label="设备与会话">
+  <section class="rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="设备与会话">
     <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-monitor-smartphone" aria-hidden="true" />设备与会话</h2>
     <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">这里列出使用当前账号登录的浏览器会话。撤销后该设备立即退出，需要重新验证身份。</p>
     <p v-if="policy" class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3" data-testid="session-policy">

@@ -26,7 +26,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="card" aria-label="账户安全">
+  <section class="rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="账户安全">
     <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-shield-check" aria-hidden="true" />账户安全</h2>
     <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">敏感操作（公司资料、成员角色、银行账户、账簿决策）需要最近完成多因素验证。</p>
     <dl v-if="capabilities">

@@ -143,7 +143,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card partners" aria-labelledby="partners-heading">
+  <section class="partners rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="partners-heading">
     <h2 id="partners-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-contact" aria-hidden="true" />往来单位</h2>
     <div class="partner-actions">
       <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="show()">{{ open ? '刷新往来单位' : '打开往来单位' }}</UButton>

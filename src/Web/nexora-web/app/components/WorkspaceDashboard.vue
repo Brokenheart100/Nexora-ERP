@@ -282,7 +282,7 @@ onMounted(() => { void load() })
 </script>
 
 <template>
-  <section class="card dashboard" aria-labelledby="dashboard-title">
+  <section class="dashboard rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="dashboard-title">
     <div class="flex items-baseline justify-between gap-3 mb-2">
       <div>
         <h2 id="dashboard-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-gauge" aria-hidden="true" />经营仪表盘</h2>

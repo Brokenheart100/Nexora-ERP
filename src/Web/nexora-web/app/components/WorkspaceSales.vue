@@ -187,7 +187,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section ref="card" class="card sales" aria-labelledby="sales-heading">
+  <section ref="card" class="sales rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="sales-heading">
     <h2 id="sales-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-truck" aria-hidden="true" />销售报价与订单</h2>
     <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="open">{{ state ? '刷新销售订单' : '打开销售订单' }}</UButton>
     <div class="mb-3 mt-2 flex flex-wrap gap-2">

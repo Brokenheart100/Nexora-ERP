@@ -73,7 +73,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card aging" aria-labelledby="aging-title">
+  <section class="aging rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="aging-title">
     <h2 id="aging-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-hourglass" aria-hidden="true" />财务概览与账龄</h2>
     <UButton v-if="!startsOn" variant="outline" color="neutral" size="sm" :disabled="busy" type="button" @click="run(open)">打开财务概览与账龄</UButton>
     <form v-else @submit.prevent="run(query)">

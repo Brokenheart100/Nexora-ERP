@@ -137,7 +137,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card settings" aria-labelledby="settings-heading">
+  <section class="settings rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="settings-heading">
     <h2 id="settings-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-building" aria-hidden="true" />公司设置</h2>
     <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="show">{{ settings ? '刷新公司设置' : '打开公司设置' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />

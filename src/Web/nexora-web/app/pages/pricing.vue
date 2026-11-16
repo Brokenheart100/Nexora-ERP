@@ -51,7 +51,7 @@ const moduleName = (key: string) => moduleNames[key] ?? key
     </article>
   </section>
 
-  <section class="pricing-note card">
+  <section class="pricing-note">
     <h2>套餐变更如何计费？</h2>
     <p>
       升级时按当前付费周期剩余天数折算新套餐费用，并抵扣原套餐未使用部分；降级不会产生补款，也不会退还未使用差额。
@@ -97,8 +97,20 @@ const moduleName = (key: string) => moduleNames[key] ?? key
   display: inline-flex; font-weight: 650; justify-content: center; margin-top: 4px; min-height: 40px; padding: 8px 14px;
 }
 .pricing-action:hover { background: var(--nx-primary-strong) }
-.pricing-note { color: var(--nx-ink-2); margin-top: 22px; max-width: 900px }
-.pricing-note h2 { margin-bottom: 10px }
+/* Phase 6: .pricing-note was `section.card` directly under layout <main>, so it also
+   received the compact `main > section.card` rules; folded into scoped rules 1:1. */
+.pricing-note {
+  color: var(--nx-ink-2); margin-top: 22px; max-width: 900px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 18px; align-items: center;
+  padding: 17px 20px; background: var(--nx-surface); border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius); box-shadow: var(--nx-shadow-sm);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.pricing-note:hover { border-color: #d8e1ee; box-shadow: var(--nx-shadow-md) }
+.pricing-note > * { grid-column: 1 / -1; min-width: 0 }
+.pricing-note > h2 { grid-column: 1; margin-bottom: 10px }
+html.dark .pricing-note:hover { border-color: var(--nx-border-strong) }
+@media (max-width: 700px) { .pricing-note { padding: 15px 16px; border-radius: 14px } }
 .pricing-note p { line-height: 1.8; margin: 0 0 10px }
 .pricing-links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px }
 /* Phase 5: scoped equivalents of the removed global article/list rules. */

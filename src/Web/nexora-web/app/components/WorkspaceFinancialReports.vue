@@ -150,7 +150,7 @@ onMounted(() => { void open().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card financial-reports" data-testid="financial-reports" aria-labelledby="financial-reports-heading">
+  <section class="financial-reports rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" data-testid="financial-reports" aria-labelledby="financial-reports-heading">
     <h2 id="financial-reports-heading" class="report-screen"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-file-spreadsheet" aria-hidden="true" />财务报表</h2>
     <UButton v-if="!startedOn" class="report-screen" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(open)">打开财务报表</UButton>
     <form v-else class="report-screen" @submit.prevent="run(query)">

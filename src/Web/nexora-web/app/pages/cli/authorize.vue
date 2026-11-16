@@ -29,7 +29,7 @@ function continueAuthorization() {
 </script>
 
 <template>
-  <section class="card max-w-[520px]">
+  <section class="device-card max-w-[520px]">
     <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-terminal" aria-hidden="true" />CLI 设备授权</h1>
     <p>Nexora CLI 正在请求只读访问你当前可访问的工作区。授权在身份服务页面完成，可选择同意或拒绝。</p>
     <p v-if="code" class="setup-sub">
@@ -50,3 +50,25 @@ function continueAuthorization() {
     </p>
   </section>
 </template>
+
+<style scoped>
+.device-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 17px 20px;
+  margin-top: 14px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow-sm);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.device-card:hover { border-color: #d8e1ee; box-shadow: var(--nx-shadow-md) }
+.device-card > * { grid-column: 1 / -1; min-width: 0 }
+html.dark .device-card:hover { border-color: var(--nx-border-strong) }
+@media (max-width: 700px) {
+  .device-card { padding: 15px 16px; border-radius: 14px }
+}
+</style>

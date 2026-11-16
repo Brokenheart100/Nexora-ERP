@@ -152,7 +152,7 @@ async function acceptInvitation() {
     </div>
   </section>
 
-  <section v-if="!user" class="card login-card">
+  <section v-if="!user" class="login-card">
     <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-log-in" aria-hidden="true" />{{ t('workspaces.login.title') }}</h2>
     <p>{{ t('workspaces.login.body') }}</p>
     <div class="login-actions">
@@ -193,7 +193,7 @@ async function acceptInvitation() {
     <div id="console-panel" class="console-panel" role="tabpanel" :aria-labelledby="'console-tab-' + active">
       <template v-if="active === 'home' || !selected">
         <div class="deck">
-          <section class="card create-card">
+          <section class="create-card rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
             <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-square-plus" aria-hidden="true" />{{ t('workspaces.create.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.create.subtitle') }}</p>
             <form @submit.prevent="create">
@@ -212,7 +212,7 @@ async function acceptInvitation() {
             </form>
           </section>
 
-          <section class="card join-card">
+          <section class="join-card rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
             <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-ticket" aria-hidden="true" />{{ t('workspaces.join.title') }}</h2>
             <p class="card-sub">{{ t('workspaces.join.subtitle') }}</p>
             <form @submit.prevent="acceptInvitation">
@@ -229,7 +229,7 @@ async function acceptInvitation() {
           </section>
           <UAlert v-if="message" role="status" aria-live="polite" class="deck-wide" :description="message" />
 
-          <section class="card workspace-card">
+          <section class="workspace-card rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
             <div class="card-head">
               <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-layers" aria-hidden="true" />{{ t('workspaces.list.title') }} <small>{{ filteredWorkspaces.length }} / {{ workspaces.length
                   }}</small></h2>
@@ -256,7 +256,7 @@ async function acceptInvitation() {
           </section>
 
           <div class="rail">
-            <div class="card overview-card">
+            <div class="overview-card rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
               <div class="card-head">
                 <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-gauge" aria-hidden="true" />{{ t('workspaces.overview.title') }}</h2>
               </div>
@@ -294,13 +294,13 @@ async function acceptInvitation() {
                 <span class="empty-icon" aria-hidden="true"><UIcon name="i-lucide-inbox" /></span>
                 <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">{{ t('workspaces.overview.empty') }}</p>
               </div>
-              <WorkspaceCapabilities v-if="selected" :key="'capabilities-' + selected.id" :workspace-id="selected.id" />
+              <WorkspaceCapabilities v-if="selected" :key="'capabilities-' + selected.id" :workspace-id="selected.id" class="deck-card" />
             </div>
           </div>
 
-          <AccountDeletionReview :key="user?.subject ?? 'account'" class="deck-wide" />
-          <AccountSessions :key="'sessions-' + (user?.subject ?? 'account')" class="deck-wide" />
-          <AccountSecurity class="deck-wide" />
+          <AccountDeletionReview :key="user?.subject ?? 'account'" class="deck-wide deck-card" />
+          <AccountSessions :key="'sessions-' + (user?.subject ?? 'account')" class="deck-wide deck-card" />
+          <AccountSecurity class="deck-wide deck-card" />
         </div>
       </template>
 
@@ -644,7 +644,11 @@ html.dark .console-tab[aria-selected='true'] {
   grid-column: 1 / -1;
 }
 
-.deck :deep(.card) {
+.deck > .create-card,
+.deck > .join-card,
+.deck > .workspace-card,
+.deck .overview-card,
+.deck :deep(.deck-card) {
   padding: 26px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(251, 252, 255, 0.94)),
@@ -958,7 +962,61 @@ html.dark .console-tab[aria-selected='true'] {
 
 /* Login state ------------------------------------------------------------ */
 .login-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
   max-width: 520px;
+  padding: 17px 20px;
+  margin-top: 14px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow-sm);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.login-card:hover {
+  border-color: #d8e1ee;
+  box-shadow: var(--nx-shadow-md);
+}
+
+.login-card > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.login-card > h2 {
+  grid-column: 1;
+  margin: 0;
+}
+
+.login-card > h2::before {
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  margin-right: 9px;
+  vertical-align: -1px;
+  content: "";
+  background: linear-gradient(180deg, #7aa0ea, #2f5fbf);
+  border-radius: 2px;
+}
+
+html.dark .login-card:hover {
+  border-color: var(--nx-border-strong);
+}
+
+@media (max-width: 700px) {
+  .login-card {
+    padding: 15px 16px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-card > h2 {
+    font-size: 15px;
+  }
 }
 
 .login-actions {
@@ -1022,7 +1080,11 @@ html.dark .card-hint {
   color: var(--nx-ink-3);
 }
 
-html.dark .deck :deep(.card) {
+html.dark .deck > .create-card,
+html.dark .deck > .join-card,
+html.dark .deck > .workspace-card,
+html.dark .deck .overview-card,
+html.dark .deck :deep(.deck-card) {
   background: var(--nx-surface);
   border-color: var(--nx-border);
 }
@@ -1074,7 +1136,11 @@ html.dark .empty-state {
     gap: 14px;
   }
 
-  .deck :deep(.card) {
+  .deck > .create-card,
+  .deck > .join-card,
+  .deck > .workspace-card,
+  .deck .overview-card,
+  .deck :deep(.deck-card) {
     padding: 19px;
   }
 

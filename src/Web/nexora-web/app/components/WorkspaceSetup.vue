@@ -228,7 +228,7 @@ onMounted(() => { void load() })
 </script>
 
 <template>
-  <section class="setup card" aria-labelledby="setup-heading">
+  <section class="setup rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="setup-heading">
     <header class="setup-head">
       <div>
         <h2 id="setup-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-list-checks" aria-hidden="true" />工作区初始化</h2>

@@ -122,7 +122,7 @@ onMounted(() => { void show().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section class="card catalog" aria-labelledby="catalog-heading">
+  <section class="catalog rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="catalog-heading">
     <h2 id="catalog-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-package" aria-hidden="true" />商品目录</h2>
     <UButton variant="outline" color="neutral" size="sm" :disabled="busy" @click="show()">{{ open ? '刷新目录' : '打开商品目录' }}</UButton>
     <UAlert v-if="notice" role="status" :description="notice" />

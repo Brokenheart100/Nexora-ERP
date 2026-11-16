@@ -301,7 +301,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="card assistant">
+  <section class="assistant rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
     <header class="assistant-head">
       <div>
         <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-sparkles" aria-hidden="true" />AI 助手</h2>

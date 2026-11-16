@@ -237,7 +237,7 @@ onMounted(() => { void readHome().catch(() => { /* 首屏加载失败时保留�
 </script>
 
 <template>
-  <section ref="card" class="card inventory" aria-labelledby="inventory-heading">
+  <section ref="card" class="inventory rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="inventory-heading">
     <h2 id="inventory-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-warehouse" aria-hidden="true" />仓库、收货与库存</h2>
     <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="run(readHome)">{{ home ? '刷新库存工作台' : '打开库存工作台' }}</UButton>
     <div class="mb-3 mt-2 flex flex-wrap gap-2">

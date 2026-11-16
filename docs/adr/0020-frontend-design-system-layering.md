@@ -1,7 +1,7 @@
 # ADR 0020 — 前端样式分层与 Nuxt UI 交互底座
 
 - 日期：2026-11-14
-- 状态：已采纳；Phase 0 基线已记录、Phase 1–7 已实施并通过本地静态检查、聚焦与全量 e2e；Phase 8（完全迁移到 Tailwind）已完成 Phase 0–5（基线 / 护栏、新增样式搬 scoped、域级语义类 5 类迁移、壳层与页面语义、表单基础与原生控件、表格与详情迁 scoped / UTable），Phase 6–8 执行中。
+- 状态：已采纳；Phase 0 基线已记录、Phase 1–7 已实施并通过本地静态检查、聚焦与全量 e2e；Phase 8（完全迁移到 Tailwind）已完成 Phase 0–7（基线 / 护栏、新增样式搬 scoped、域级语义类迁移、壳层与页面语义、表单基础与原生控件、表格与详情迁 scoped / UTable、tokens 拆分与 main.css 清空、全量验证与文档）。**Tailwind 迁移完成**：`main.css` 只剩 3 行 `@import`，样式集中在 `tokens.css`、组件 scoped 与 utility。
 - 关联：[架构](../架构.md)、[计划](../计划.md)、[依赖](../依赖.md)、[Nuxt CSR 与类型化接入](0010-nuxt-client.md)、[Phase 1–2 验证记录](../verification/web-ui-design-system-phase1-2.md)。
 
 ## 背景
@@ -42,9 +42,9 @@
 
 Phase 1–7 已把交互底座、表格、表单、页签、壳层与死 CSS 收敛，但 main.css 仍有约 2200 行全局设计系统。Phase 8 的目标是把全局样式迁移到 **Nuxt UI 组件 + Tailwind utility + 组件 scoped CSS**，最终 main.css 只剩 `@import "tailwindcss"`、`@import "@nuxt/ui"`、`@import "./tokens.css"`。
 
-- 终态：`tokens.css` 保留 `--nx-*` 变量与 `@theme inline` 桥接（light / dark 两套），暗色靠 token 自动切换；复杂规则留在组件 scoped（财务报表打印隔离、固定列 / 高密度表格、PWA 安全区 `env()`、壳层 sticky / 滚动锁）。
+- 终态：`tokens.css` 保留 `--nx-*` 变量与 `@theme static` 桥接（light / dark 两套，`static` 确保变量真实输出），并承载文档 base 与打印隔离层（因 `main.css` 只剩 import 的终态约定，属已记录偏差）；复杂规则留在组件 scoped（财务报表打印隔离、固定列 / 高密度表格、PWA 安全区 `env()`、壳层 sticky / 滚动锁）。
 - 映射规则：`.quiet` → `UButton variant="ghost" color="neutral"`；`.primary` → `UButton color="primary"`；`.card` → `UCard` 或 `rounded-nx border border-nx-border bg-nx-surface shadow-nx-sm`；`.hint` → `text-sm text-nx-ink-3`；`.heading-icon` → `size-5 shrink-0 text-nx-primary`；`.actions` → `flex flex-wrap items-center gap-2`；`.status-pill` → `UBadge`；原生 `input/select/textarea` → `UFormField` / `UInput` / `USelect` / `UInputDate` / `UFileUpload`；打印规则 → 组件 scoped `@media print`；PWA 安全区 → `default.vue` scoped；暗色 → token utility 自动切换。
-- 批次：Phase 0 基线 + 护栏 → Phase 1 搬出 version-notice / status-overlay / PWA 安全区 → Phase 2 域级语义类（quiet / primary / card / hint / heading-icon / actions，4 批）→ Phase 3 壳层与页面布局 → Phase 4 表单基础 → Phase 5 表格 / 详情 → Phase 6 拆分 tokens.css → Phase 7 删除死 CSS → Phase 8 收尾（main.css 只剩 @import）。当前进度：Phase 0–5 已完成（main.css 2208 → 2000 → 1895 → 732 → 535 → 393 行），Phase 6 起待执行。
+- 批次：Phase 0 基线 + 护栏 → Phase 1 搬出 version-notice / status-overlay / PWA 安全区 → Phase 2 域级语义类（quiet / primary / card / hint / heading-icon / actions，4 批）→ Phase 3 壳层与页面布局 → Phase 4 表单基础 → Phase 5 表格 / 详情 → Phase 6 拆分 tokens.css → Phase 7 删除死 CSS → Phase 8 收尾（main.css 只剩 @import）。当前进度：Phase 0–7 已完成（main.css 2208 → 2000 → 1895 → 732 → 535 → 393 → 3 行；`tokens.css` 339 行），全量 e2e 45 passed，迁移完成。
 - 护栏：不再向 main.css 新增业务选择器（只减不增）；e2e 只使用 data-testid / role / label；每批 typecheck / lint / unit / build + 聚焦 e2e + light / dark 截图对照，Phase 末全量 e2e；不改 label 文本、`name` / `id`、`data-testid`、错误文案、API payload 与业务逻辑。
 - 验证记录：[前端 Tailwind 迁移验证](../verification/web-ui-tailwind-migration.md)。
 

@@ -67,7 +67,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="card role-catalog" aria-label="工作区角色目录">
+  <section class="role-catalog rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="工作区角色目录">
     <div v-if="loading" class="space-y-3 py-2" role="status" aria-label="正在加载角色">
       <USkeleton class="h-5 w-40" />
       <USkeleton class="h-10 w-full" />

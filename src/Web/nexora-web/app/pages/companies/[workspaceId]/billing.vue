@@ -12,7 +12,7 @@ useHead({ title: () => t('app.billing') })
     </div>
   </section>
   <WorkspaceBilling v-if="workspace" :key="workspace.id" :workspace-id="workspace.id" />
-  <section v-else-if="ready" class="card">
+  <section v-else-if="ready" class="page-card">
     <UAlert role="alert" color="warning" icon="i-lucide-triangle-alert" :description="t('app.companyUnavailable')" />
     <NuxtLink to="/">{{ t('app.workspace') }}</NuxtLink>
   </section>
@@ -34,4 +34,24 @@ useHead({ title: () => t('app.billing') })
   .heading h1 { font-size: 24px }
 }
 html.dark .heading > div:first-child > p:last-child { color: var(--nx-ink-3) }
+
+.page-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 17px 20px;
+  margin-top: 14px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow-sm);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.page-card:hover { border-color: #d8e1ee; box-shadow: var(--nx-shadow-md) }
+.page-card > * { grid-column: 1 / -1; min-width: 0 }
+html.dark .page-card:hover { border-color: var(--nx-border-strong) }
+@media (max-width: 700px) {
+  .page-card { padding: 15px 16px; border-radius: 14px }
+}
 </style>

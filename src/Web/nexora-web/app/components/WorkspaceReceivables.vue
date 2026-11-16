@@ -161,7 +161,7 @@ onMounted(() => { void read().catch(() => { /* 首屏加载失败时保留空状
 </script>
 
 <template>
-  <section ref="card" class="card receivables" aria-labelledby="receivable-heading">
+  <section ref="card" class="receivables rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="receivable-heading">
     <h2 id="receivable-heading"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-receipt-text" aria-hidden="true" />客户开票与应收</h2>
     <UButton type="button" variant="outline" color="neutral" size="sm" :disabled="busy" @click="run(read)">{{ home ? '刷新应收工作台' : '打开应收工作台' }}</UButton>
     <div class="mb-3 mt-2 flex flex-wrap gap-2">

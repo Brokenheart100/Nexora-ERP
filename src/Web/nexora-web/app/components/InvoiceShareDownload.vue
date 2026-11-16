@@ -40,7 +40,7 @@ async function download() {
 
 <template>
   <main class="shared-invoice">
-    <section class="card">
+    <section class="shared-invoice-card">
       <h1><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-file-text" aria-hidden="true" />客户发票</h1>
       <p v-if="!token">请打开完整的发票分享链接。</p>
       <UButton v-else type="button" color="primary" :disabled="busy" @click="download">下载共享发票 PDF</UButton>
@@ -51,4 +51,24 @@ async function download() {
 
 <style scoped>
 .shared-invoice { max-width: 640px; margin: 12vh auto; padding: 0 24px }
+
+.shared-invoice-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 17px 20px;
+  margin-top: 14px;
+  background: var(--nx-surface);
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: var(--nx-shadow-sm);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.shared-invoice-card:hover { border-color: #d8e1ee; box-shadow: var(--nx-shadow-md) }
+.shared-invoice-card > * { grid-column: 1 / -1; min-width: 0 }
+html.dark .shared-invoice-card:hover { border-color: var(--nx-border-strong) }
+@media (max-width: 700px) {
+  .shared-invoice-card { padding: 15px 16px; border-radius: 14px }
+}
 </style>

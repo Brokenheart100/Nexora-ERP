@@ -128,7 +128,7 @@ onMounted(() => { void run(() => load(true)).catch(() => { /* 首屏失败保留
 </script>
 
 <template>
-  <section class="card audit" aria-labelledby="audit-title">
+  <section class="audit rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="audit-title">
     <h2 id="audit-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-shield-check" aria-hidden="true" />审计查询</h2>
     <div class="audit-tabs" role="tablist" aria-label="审计视图">
       <button id="audit-view-audit" type="button" role="tab" class="audit-tab" :class="{ active: tab === 'audit' }"

@@ -21,7 +21,7 @@ async function read() {
 </script>
 
 <template>
-  <section class="card" aria-label="公告与工作区能力">
+  <section class="rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-label="公告与工作区能力">
     <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-megaphone" aria-hidden="true" />公告与工作区能力</h2>
     <UButton class="col-start-2 justify-self-end" variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="read">查看公告与能力</UButton>
     <p v-if="announcements?.length === 0">暂无适用于当前工作区的公告。</p>

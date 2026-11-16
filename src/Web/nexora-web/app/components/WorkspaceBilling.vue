@@ -185,7 +185,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="card billing" aria-labelledby="billing-title">
+  <section class="billing rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm" aria-labelledby="billing-title">
     <h2 id="billing-title"><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-credit-card" aria-hidden="true" />计费与套餐</h2>
     <p class="mt-2 text-[12px] leading-[1.62] text-nx-ink-3">
       自托管手工计费：选择套餐并登记线下付款参考号后订阅立即生效；免费版可直接切换。取消订阅会立即降级到免费版。计费按工作区独立结算。

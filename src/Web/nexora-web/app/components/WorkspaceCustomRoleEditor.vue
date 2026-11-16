@@ -79,7 +79,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="card custom-roles">
+  <section class="custom-roles rounded-nx border border-nx-border bg-nx-surface p-6 shadow-nx-sm">
     <div class="mb-3 mt-2 flex flex-wrap gap-2">
       <h2><UIcon class="mr-2 inline-block size-[1.08em] align-[-0.16em] text-nx-primary" name="i-lucide-user-cog" aria-hidden="true" />自定义角色</h2>
       <UButton variant="outline" color="neutral" size="sm" type="button" :disabled="busy" @click="load">重新加载角色</UButton>
