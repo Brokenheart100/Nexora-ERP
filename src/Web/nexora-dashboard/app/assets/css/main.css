@@ -1,0 +1,364 @@
+@import "tailwindcss" theme(static);
+@import "@nuxt/ui";
+
+/*
+ * Nexora ERP UI 原型 — Carbon 视觉基线。
+ * 组件继续使用 Nuxt UI 语义 token（--ui-*），这里统一换成 Carbon 的
+ * 色阶、2px 小圆角和 48px 紧凑顶栏，浅色与暗色各一套。
+ */
+@theme static {
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Carbon Blue 60（#0f62fe）作为 500，其余按 Carbon 蓝阶近似 */
+  --color-brand-50: #edf5ff;
+  --color-brand-100: #d0e2ff;
+  --color-brand-200: #a6c8ff;
+  --color-brand-300: #78a9ff;
+  --color-brand-400: #4589ff;
+  --color-brand-500: #0f62fe;
+  --color-brand-600: #0043ce;
+  --color-brand-700: #002d9c;
+  --color-brand-800: #001d6c;
+  --color-brand-900: #001141;
+  --color-brand-950: #000a26;
+
+  /* Carbon Gray 色阶（Gray 10 → Gray 100） */
+  --color-carbon-50: #f4f4f4;
+  --color-carbon-100: #e0e0e0;
+  --color-carbon-200: #c6c6c6;
+  --color-carbon-300: #a8a8a8;
+  --color-carbon-400: #8d8d8d;
+  --color-carbon-500: #6f6f6f;
+  --color-carbon-600: #525252;
+  --color-carbon-700: #393939;
+  --color-carbon-800: #262626;
+  --color-carbon-900: #161616;
+  --color-carbon-950: #0a0a0a;
+}
+
+@layer theme {
+
+  :root,
+  .light {
+    --ui-header-height: 3rem;
+    --ui-radius: 0.125rem;
+
+    --ui-text-dimmed: #8d8d8d;
+    --ui-text-muted: #525252;
+    --ui-text-toned: #393939;
+    --ui-text: #161616;
+    --ui-text-highlighted: #161616;
+    --ui-text-inverted: #ffffff;
+
+    --ui-bg: #ffffff;
+    --ui-bg-muted: #f4f4f4;
+    --ui-bg-elevated: #ffffff;
+    --ui-bg-accented: #e0e0e0;
+    --ui-bg-inverted: #161616;
+
+    --ui-border: #e0e0e0;
+    --ui-border-muted: #eaeaea;
+    --ui-border-accented: #c6c6c6;
+    --ui-border-inverted: #161616;
+
+    --ui-chart-1: #0f62fe;
+    --ui-chart-2: #6929c4;
+    --ui-chart-3: #1192e8;
+    --ui-chart-4: #005d5d;
+    --ui-chart-5: #9f1853;
+    --ui-chart-6: #fa4d56;
+
+    --nx-page: #f4f4f4;
+  }
+
+  .dark {
+    --ui-text-dimmed: #6f6f6f;
+    --ui-text-muted: #a8a8a8;
+    --ui-text-toned: #c6c6c6;
+    --ui-text: #f4f4f4;
+    --ui-text-highlighted: #ffffff;
+    --ui-text-inverted: #161616;
+
+    --ui-bg: #161616;
+    --ui-bg-muted: #262626;
+    --ui-bg-elevated: #262626;
+    --ui-bg-accented: #393939;
+    --ui-bg-inverted: #f4f4f4;
+
+    --ui-border: #393939;
+    --ui-border-muted: #333333;
+    --ui-border-accented: #525252;
+    --ui-border-inverted: #f4f4f4;
+
+    --ui-chart-1: #4589ff;
+    --ui-chart-2: #a56eff;
+    --ui-chart-3: #33b1ff;
+    --ui-chart-4: #08bdba;
+    --ui-chart-5: #ee5396;
+    --ui-chart-6: #ff8389;
+
+    --nx-page: #161616;
+  }
+}
+
+@layer base {
+  body {
+    font-family: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.4286;
+  }
+
+  ::selection {
+    background: rgba(15, 98, 254, 0.2);
+  }
+
+  .dark ::selection {
+    background: rgba(69, 137, 255, 0.3);
+  }
+}
+
+/*
+ * 动效基线：150–250ms、ease-out 曲线；所有动效都可被 prefers-reduced-motion 关闭。
+ */
+@layer base {
+  :root {
+    --nx-ease: cubic-bezier(0.2, 0, 0.38, 0.9);
+    --nx-duration: 180ms;
+    --nx-shadow-hover: 0 4px 12px rgb(22 22 22 / 8%);
+  }
+
+  .dark {
+    --nx-shadow-hover: 0 6px 18px rgb(0 0 0 / 45%);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+
+  /* 首屏区块进入：配合 :style="{ '--nx-delay': '80ms' }" 做交错 */
+  .nx-reveal {
+    animation: nx-rise 240ms var(--nx-ease) both;
+    animation-delay: var(--nx-delay, 0ms);
+  }
+
+  /* 卡片悬停：轻微上浮 + 阴影，仅用于宽松排布的区域 */
+  .nx-lift {
+    transition: transform var(--nx-duration) var(--nx-ease), box-shadow var(--nx-duration) var(--nx-ease), border-color var(--nx-duration) var(--nx-ease);
+  }
+
+  .nx-lift:hover {
+    transform: translateY(-2px);
+    border-color: var(--ui-border-accented);
+    box-shadow: var(--nx-shadow-hover);
+  }
+
+  /* 表格行：Carbon 风格的行级悬停反馈 */
+  .nx-table tbody tr {
+    transition: background-color 140ms var(--nx-ease);
+  }
+
+  .nx-table tbody tr:hover {
+    background-color: var(--ui-bg-muted);
+  }
+
+  /* 键盘可聚焦的表格行：清晰焦点环，Enter/Space 打开详情 */
+  .nx-table tbody tr[data-selectable]:focus-visible {
+    outline: 2px solid var(--ui-primary);
+    outline-offset: -2px;
+    background-color: var(--ui-bg-muted);
+  }
+}
+
+@keyframes nx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .nx-lift,
+  .nx-table tbody tr {
+    transition: none;
+  }
+
+  .nx-reveal {
+    animation: none;
+  }
+
+  .nx-lift:hover {
+    transform: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 列表分页/筛选切换：内容淡入，配合 :key 强制重挂载 */
+@layer components {
+  .nx-fade {
+    animation: nx-fade-in 180ms var(--nx-ease) both;
+  }
+}
+
+@keyframes nx-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 页面切换：轻微上移淡入；减少动效时直接切换 */
+.nx-page-enter-active,
+.nx-page-leave-active {
+  transition: opacity var(--nx-duration) var(--nx-ease), transform var(--nx-duration) var(--nx-ease);
+}
+
+.nx-page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.nx-page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-fade {
+    animation: none;
+  }
+
+  .nx-page-enter-active,
+  .nx-page-leave-active {
+    transition: none;
+  }
+
+  .nx-page-enter-from,
+  .nx-page-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 同时压制 Nuxt UI 抽屉、对话框与 Toast 自带过渡，避免任何位移动画。 */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 采购单打印预览：@media print 隐藏应用界面，只输出 [data-print-document] */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  body:has(> [data-print-document])>* {
+    display: none !important;
+  }
+
+  body:has(> [data-print-document])>[data-print-document] {
+    display: block !important;
+  }
+
+  [data-print-document] {
+    width: 100%;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  [data-print-document] table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  [data-print-document] th,
+  [data-print-document] td {
+    border: 1px solid #d4d4d4 !important;
+    padding: 4px 6px;
+  }
+
+  [data-print-document] thead {
+    display: table-header-group;
+  }
+
+  [data-print-document] tr {
+    break-inside: avoid;
+  }
+}
+
+/* 表格列宽分隔条：仅桌面指针交互；首次拖拽后切换 fixed 布局，保留已测量宽度 */
+@layer components {
+  .nx-table-resizable thead th {
+    position: relative;
+  }
+
+  .nx-table-resizable thead th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 8px;
+    cursor: col-resize;
+    background: linear-gradient(to right,
+        transparent 3px,
+        var(--ui-border) 3px,
+        var(--ui-border) 4px,
+        transparent 4px);
+  }
+
+  .nx-table-resizable thead th:not(:last-child):hover::after {
+    background: linear-gradient(to right,
+        transparent 3px,
+        var(--ui-primary) 3px,
+        var(--ui-primary) 4px,
+        transparent 4px);
+  }
+
+  .nx-table-fixed table {
+    table-layout: fixed;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .nx-table-fixed th,
+  .nx-table-fixed td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+body.nx-col-resizing,
+body.nx-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
