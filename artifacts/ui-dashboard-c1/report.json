@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-11-18T10:35:22.659Z",
+  "steps": [
+    {
+      "name": "payables overview and fixed ledger",
+      "outstanding": "¥530.00",
+      "pending": "1 张",
+      "available": "2 行",
+      "payments": "3 笔",
+      "aging": "¥530.00",
+      "bills": 4
+    },
+    {
+      "name": "fixed bill detail opens from query bill",
+      "outstanding": "¥530.00"
+    },
+    {
+      "name": "payment overpay rejected",
+      "error": "付款金额不能超过未结金额 ¥530.00。"
+    },
+    {
+      "name": "fixed ledger paid off",
+      "outstanding": "¥0.00",
+      "aging": "¥0.00"
+    },
+    {
+      "name": "variance bill gated and posted",
+      "journal": "JE-AP-2026-1102"
+    },
+    {
+      "name": "duplicate payment rejected",
+      "error": "检测到重复提交，请稍后刷新付款记录后再试。"
+    },
+    {
+      "name": "posted bill paid to zero after duplicate guard"
+    },
+    {
+      "name": "new supplier bill created and posted",
+      "id": "BILL-2026-1105",
+      "total": "¥994.40"
+    },
+    {
+      "name": "supplier credit refund recorded",
+      "refund": "RF-2026-1102",
+      "amount": "¥291.54"
+    },
+    {
+      "name": "purchase order payables card and deep link",
+      "url": "http://localhost:3001/finance?tab=payables&bill=BILL-2026-1101"
+    },
+    {
+      "name": "payables dark theme",
+      "className": "dark"
+    },
+    {
+      "name": "regression /sales",
+      "title": "销售与应收"
+    },
+    {
+      "name": "regression /inventory",
+      "title": "库存管理"
+    },
+    {
+      "name": "regression /purchase-audit",
+      "title": "采购审计"
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": []
+}

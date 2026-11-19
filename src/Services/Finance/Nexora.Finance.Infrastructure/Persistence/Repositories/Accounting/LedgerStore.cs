@@ -7,6 +7,8 @@ namespace Nexora.Finance.Infrastructure;
 
 public sealed class LedgerStore(FinanceDbContext db) : ILedgerStore
 {
+    public Task<bool> ImportedSourceExistsAsync(ResourceScope scope, string provider, string externalId, CancellationToken ct) =>
+        Journals(scope).AnyAsync(x => x.ImportProvider == provider && x.ExternalId == externalId, ct);
     private IQueryable<Journal> Journals(ResourceScope scope) => db.Set<Journal>()
         .Where(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId);
     private IQueryable<FiscalPeriod> Periods(ResourceScope scope) => db.Set<FiscalPeriod>()
@@ -37,6 +39,13 @@ public sealed class LedgerStore(FinanceDbContext db) : ILedgerStore
     public Task<bool> HasPostingsAsync(ResourceScope scope, CancellationToken ct) =>
         Journals(scope).AnyAsync(x => x.State == JournalState.Posted, ct);
 
+    public Task<bool> HasOrdinaryPostingsAsync(ResourceScope scope, CancellationToken ct) =>
+        Journals(scope).AnyAsync(x => x.State == JournalState.Posted && x.Kind != JournalKind.Opening, ct);
+
+    public Task<bool> HasApplyingOpeningSubledgersAsync(ResourceScope scope, CancellationToken ct) =>
+        db.Set<OpeningSubledgerBatch>().AnyAsync(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId
+            && x.State == OpeningSubledgerState.ApplyingStock, ct);
+
     public async Task<PeriodCheck> CheckAsync(ResourceScope scope, DateOnly month, CancellationToken ct)
     {
         var until = month.AddMonths(1);
@@ -62,10 +71,12 @@ public sealed class LedgerStore(FinanceDbContext db) : ILedgerStore
         }
         if (accountId is Guid id) query = query.Where(x => x.Lines.Any(line => line.AccountId == id));
         var pageRows = await query.OrderByDescending(x => x.On).ThenByDescending(x => x.Id).Skip(page.Offset).Take(page.Size)
-            .Select(x => new { x.Id, x.Kind, x.SourceNumber, x.On, x.Memo, x.State, x.Version, x.PostingNumber, x.ReversesId })
+            .Select(x => new { x.Id, x.Kind, x.SourceNumber, x.On, x.Memo, x.State, x.Version, x.PostingNumber, x.ReversesId,
+                x.ImportProvider, x.ExternalId })
             .ToArrayAsync(ct);
         return pageRows.Select(x => new JournalSummary(x.Id, x.Kind.ToString().ToLowerInvariant(), x.SourceNumber,
-            x.On, x.Memo, x.State.ToString().ToLowerInvariant(), x.Version, x.PostingNumber, x.ReversesId)).ToArray();
+            x.On, x.Memo, x.State.ToString().ToLowerInvariant(), x.Version, x.PostingNumber, x.ReversesId,
+            x.ImportProvider, x.ExternalId)).ToArray();
     }
 
     public Task<BalanceRow[]> BalancesAsync(ResourceScope scope, DateOnly through, CancellationToken ct) =>

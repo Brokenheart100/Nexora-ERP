@@ -1,5 +1,5 @@
-import { startRuntimePolling } from '~/composables/useRuntimeStatus'
-import { startVersionPolling } from '~/composables/useBuildVersion'
+import { startRuntimePolling } from '~/composables/runtime/useRuntimeStatus'
+import { startVersionPolling } from '~/composables/runtime/useBuildVersion'
 
 function pollMs(value: unknown, fallback: number): number {
   const parsed = Number(value)

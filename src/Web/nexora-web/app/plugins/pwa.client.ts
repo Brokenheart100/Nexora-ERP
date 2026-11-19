@@ -1,4 +1,4 @@
-import { captureInstallPrompt, swEnabled } from '~/utils/pwa'
+import { captureInstallPrompt, swEnabled } from '~/utils/shell/pwa'
 
 export default defineNuxtPlugin(() => {
   captureInstallPrompt()

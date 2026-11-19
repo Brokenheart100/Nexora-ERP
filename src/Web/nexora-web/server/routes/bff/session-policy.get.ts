@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
-import { readBffSession, sessionHandle } from '../../utils/bff-session'
-import { enforceSessionIdle, fetchSessionPolicy } from '../../utils/bff-session-policy'
+import { readBffSession, sessionHandle } from '../../utils/session/bff-session'
+import { enforceSessionIdle, fetchSessionPolicy } from '../../utils/session/bff-session-policy'
 
 export default defineEventHandler(async (event) => {
   setHeader(event, 'Cache-Control', 'no-store')

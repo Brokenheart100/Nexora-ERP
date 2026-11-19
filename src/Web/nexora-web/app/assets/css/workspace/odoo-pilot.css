@@ -1,0 +1,552 @@
+/* Odoo-style pilot overrides for the workspace home page.
+   Imported last in index.vue so these rules win over the older scoped files at equal specificity. */
+/* Page header ------------------------------------------------------------ */
+.hero.odoo-pilot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px 28px;
+  margin: 0 0 18px;
+  padding: 2px 0 16px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--od-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+.hero.odoo-pilot::before {
+  display: none;
+}
+.hero.odoo-pilot .hero-copy {
+  max-width: none;
+  min-width: 0;
+}
+.hero.odoo-pilot .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--od-muted);
+}
+.hero.odoo-pilot .eyebrow::before {
+  width: 14px;
+  height: 1px;
+  background: var(--od-border);
+}
+.hero.odoo-pilot .hero-copy h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--od-ink);
+}
+.hero.odoo-pilot .hero-sub {
+  margin: 4px 0 0;
+  max-width: 80ch;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--od-muted);
+}
+.hero.odoo-pilot .hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+.hero.odoo-pilot .hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 10px;
+  background: var(--nx-surface);
+  backdrop-filter: none;
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  box-shadow: none;
+  font-size: 12px;
+  color: var(--od-muted);
+}
+.hero.odoo-pilot .hero-stat svg {
+  width: 14px;
+  height: 14px;
+  color: var(--od-muted);
+}
+.hero.odoo-pilot .hero-stat span {
+  font-size: 11.5px;
+}
+.hero.odoo-pilot .hero-stat strong {
+  display: inline;
+  margin: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--od-ink);
+}
+
+/* Login card ------------------------------------------------------------- */
+.login-card.odoo-pilot {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 8vh auto 0;
+  padding: 26px 28px;
+  background: var(--nx-surface);
+  border: 1px solid var(--od-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+.login-card.odoo-pilot:hover {
+  border-color: var(--od-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+.login-card.odoo-pilot > h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--od-ink);
+}
+.login-card.odoo-pilot > h2::before {
+  display: none;
+}
+.login-card.odoo-pilot > p {
+  margin: 0 0 18px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--od-muted);
+}
+.login-card.odoo-pilot .login-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+}
+.login-card.odoo-pilot .login-actions > a,
+.login-card.odoo-pilot .login-actions :deep(button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  background: var(--nx-surface);
+  color: var(--od-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: none;
+}
+.login-card.odoo-pilot .login-actions > a:first-child {
+  background: var(--nx-primary);
+  border-color: var(--nx-primary);
+  color: #fff;
+}
+.login-card.odoo-pilot .login-actions > a:hover,
+.login-card.odoo-pilot .login-actions :deep(button:hover) {
+  border-color: var(--nx-primary);
+  color: var(--nx-primary);
+}
+.login-card.odoo-pilot .login-actions > a:first-child:hover {
+  background: var(--nx-primary-strong);
+  border-color: var(--nx-primary-strong);
+  color: #fff;
+}
+
+/* Console ---------------------------------------------------------------- */
+.console.odoo-pilot {
+  margin-top: 0;
+}
+.console.odoo-pilot .console-bar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--nx-surface);
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  box-shadow: none;
+}
+.console.odoo-pilot .console-workspace {
+  flex: 0 0 auto;
+  max-width: 320px;
+  gap: 8px;
+}
+.console.odoo-pilot .console-workspace-text > span {
+  font-size: 10.5px;
+  white-space: nowrap;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .console-workspace-text > strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--od-ink);
+}
+.console.odoo-pilot .console-chip {
+  padding: 1px 7px;
+  border: 1px solid var(--od-border);
+  border-radius: 3px;
+  background: var(--od-subtle);
+  color: var(--od-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.console.odoo-pilot .console-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 0;
+  justify-content: flex-start;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.console.odoo-pilot .console-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 2px;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--od-ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  box-shadow: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.console.odoo-pilot .console-tab:hover {
+  background: var(--od-subtle);
+  color: var(--od-ink);
+}
+.console.odoo-pilot .console-tab[aria-selected='true'] {
+  background: transparent;
+  border-bottom-color: var(--nx-primary);
+  color: var(--nx-primary);
+  font-weight: 600;
+  box-shadow: none;
+}
+html.dark .console.odoo-pilot .console-tab[aria-selected='true'] {
+  background: transparent;
+  color: var(--nx-primary);
+  box-shadow: none;
+}
+.console.odoo-pilot .console-tab svg {
+  width: 14px;
+  height: 14px;
+  margin-right: 0;
+}
+.console.odoo-pilot .console-panel {
+  gap: 14px;
+  animation: none;
+}
+
+/* Deck / cards ----------------------------------------------------------- */
+.console.odoo-pilot .deck {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 0;
+}
+.console.odoo-pilot .deck > .create-card {
+  grid-column: span 7;
+}
+.console.odoo-pilot .deck > .join-card {
+  grid-column: span 5;
+}
+.console.odoo-pilot .deck > .workspace-card {
+  grid-column: span 8;
+  min-height: 480px;
+}
+.console.odoo-pilot .deck > .rail {
+  display: grid;
+  grid-column: span 4;
+  gap: 12px;
+  align-content: start;
+}
+.console.odoo-pilot .deck > .deck-wide {
+  grid-column: 1 / -1;
+}
+.console.odoo-pilot .deck > .create-card,
+.console.odoo-pilot .deck > .join-card,
+.console.odoo-pilot .deck > .workspace-card,
+.console.odoo-pilot .deck .overview-card,
+.console.odoo-pilot .deck :deep(.deck-card) {
+  padding: 16px 18px;
+  background: var(--nx-surface);
+  border: 1px solid var(--od-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.console.odoo-pilot .deck :deep(h2) {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--od-ink);
+}
+.console.odoo-pilot .deck .card-sub {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .deck .card-head {
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.console.odoo-pilot .deck .card-head h2 {
+  margin: 0;
+}
+.console.odoo-pilot .deck .card-hint {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .deck .list-tools {
+  gap: 8px;
+}
+.console.odoo-pilot .deck .ws-search {
+  width: 220px;
+}
+.console.odoo-pilot .deck .personal-option {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  margin: 0 0 10px;
+  padding: 5px 10px;
+  background: var(--od-subtle);
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  color: var(--od-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.console.odoo-pilot .deck .personal-option:hover {
+  background: var(--od-subtle);
+  border-color: var(--nx-primary);
+}
+.console.odoo-pilot .deck .personal-hint {
+  margin: 0 0 12px !important;
+  font-size: 11.5px !important;
+  color: var(--od-muted) !important;
+}
+.console.odoo-pilot .deck > .create-card :deep(label),
+.console.odoo-pilot .deck > .join-card :deep(label) {
+  margin-bottom: 3px;
+  color: var(--od-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.console.odoo-pilot .deck > .create-card :deep(input),
+.console.odoo-pilot .deck > .join-card :deep(input) {
+  height: 30px;
+  border-radius: var(--od-radius);
+  font-size: 13px;
+}
+.console.odoo-pilot .deck > .create-card :deep(button),
+.console.odoo-pilot .deck > .join-card :deep(button) {
+  height: 30px;
+  border-radius: var(--od-radius);
+  font-size: 13px;
+  box-shadow: none;
+}
+.console.odoo-pilot .deck :deep([role='status']),
+.console.odoo-pilot .deck :deep([role='alert']) {
+  margin: 0;
+  border-radius: var(--od-radius);
+  font-size: 12.5px;
+}
+
+/* Workspace list --------------------------------------------------------- */
+.console.odoo-pilot .workspace-list {
+  display: block;
+  max-height: 420px;
+  margin: 0;
+  padding: 0;
+  background: var(--nx-surface);
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  overflow-y: auto;
+}
+.console.odoo-pilot .workspace {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--od-border-soft);
+  border-radius: 0;
+  box-shadow: none;
+  transform: none;
+}
+.console.odoo-pilot .workspace:last-child {
+  border-bottom: 0;
+}
+.console.odoo-pilot .workspace:hover {
+  background: var(--od-subtle);
+  border-color: var(--od-border-soft);
+  box-shadow: none;
+  transform: none;
+}
+.console.odoo-pilot .workspace[aria-current='true'] {
+  background: var(--nx-primary-soft);
+  border-color: var(--od-border-soft);
+  box-shadow: none;
+}
+.console.odoo-pilot .workspace[aria-current='true'] strong {
+  color: var(--nx-primary);
+}
+.console.odoo-pilot .ws-badge {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--od-border);
+  border-radius: var(--od-radius);
+  background: var(--od-subtle);
+  color: var(--od-ink-2);
+  font-size: 11.5px;
+}
+.console.odoo-pilot .ws-badge.lg {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--od-radius);
+  font-size: 14px;
+}
+.console.odoo-pilot .ws-main strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--od-ink);
+}
+.console.odoo-pilot .ws-main > span {
+  font-size: 11.5px;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .ws-arrow {
+  font-size: 14px;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .workspace:hover .ws-arrow {
+  color: var(--nx-primary);
+  transform: none;
+}
+
+/* Overview rail ---------------------------------------------------------- */
+.console.odoo-pilot .overview-hero {
+  gap: 10px;
+  padding: 0 0 12px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--od-border-soft);
+}
+.console.odoo-pilot .overview-hero h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.console.odoo-pilot .overview-hero p {
+  margin: 1px 0 0;
+  font-size: 11.5px;
+  color: var(--od-muted);
+}
+.console.odoo-pilot .overview-card :deep(dl) {
+  display: grid;
+  grid-template-columns: minmax(76px, auto) minmax(0, 1fr);
+  gap: 7px 12px;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+}
+.console.odoo-pilot .overview-card :deep(dt) {
+  color: var(--od-muted);
+}
+.console.odoo-pilot .overview-card :deep(dd) {
+  margin: 0;
+  color: var(--od-ink);
+  font-weight: 600;
+}
+.console.odoo-pilot .overview-card :deep(button) {
+  height: 28px;
+  border-radius: var(--od-radius);
+  font-size: 12.5px;
+  box-shadow: none;
+}
+.console.odoo-pilot .status-pill {
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+.console.odoo-pilot .status-dot {
+  width: 5px;
+  height: 5px;
+  box-shadow: none;
+}
+.console.odoo-pilot .empty-state {
+  min-height: 140px;
+  margin-top: 0;
+  padding: 16px;
+  background: var(--od-subtle);
+  border: 1px dashed var(--od-border);
+  border-radius: var(--od-radius);
+}
+.console.odoo-pilot .empty-state .empty-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--od-radius);
+  font-size: 16px;
+  background: var(--nx-surface);
+  border: 1px solid var(--od-border);
+  color: var(--od-muted);
+}
+
+/* Responsive ------------------------------------------------------------- */
+@media (max-width: 980px) {
+  .console.odoo-pilot .deck > .create-card,
+  .console.odoo-pilot .deck > .join-card,
+  .console.odoo-pilot .deck > .workspace-card,
+  .console.odoo-pilot .deck > .rail {
+    grid-column: 1 / -1;
+  }
+  .console.odoo-pilot .deck > .workspace-card {
+    min-height: 0;
+  }
+}
+@media (max-width: 700px) {
+  .hero.odoo-pilot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .console.odoo-pilot .console-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px;
+  }
+  .console.odoo-pilot .deck .ws-search {
+    width: 100%;
+  }
+  .login-card.odoo-pilot {
+    margin-top: 5vh;
+    padding: 20px;
+  }
+}

@@ -8,11 +8,12 @@ public sealed class TradeDocument
     {
         if (terms.On < book.StartsOn || terms.On.Year > 9998 || terms.Number.Length is < 1 or > 60 || terms.Memo.Length is < 1 or > 300)
             throw new ArgumentException("Invalid trading document date, number or description.");
+        book.DemandTaxDateOpen(terms.On);
         if (terms.Kind is not (TradeKind.Void or TradeKind.SupplierCredit) && (terms.Amount <= 0 || terms.Amount > 1_000_000_000_000m || Math.Round(terms.Amount, book.MinorUnits) != terms.Amount))
             throw new ArgumentException("Invalid amount for the book currency.");
         if (terms.Kind == TradeKind.Bill && terms.BillReceipts is null && (terms.Quantity is <= 0 or > 1_000_000m || Math.Round(terms.Quantity, 6) != terms.Quantity))
             throw new ArgumentException("Invalid invoice quantity.");
-        if (terms.DueOn is DateOnly due && (terms.Kind != TradeKind.Bill || due < terms.On || due.Year > 9998))
+        if (terms.DueOn is DateOnly due && (terms.Kind != TradeKind.Bill || terms.OpeningSource is null && due < terms.On || due.Year > 9998))
             throw new ArgumentException("The supplier bill due date is invalid.");
         Id = Guid.CreateVersion7();
         TenantId = book.TenantId;

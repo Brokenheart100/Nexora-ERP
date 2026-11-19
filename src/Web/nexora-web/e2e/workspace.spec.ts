@@ -5,12 +5,18 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node
 import { resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { formatDecimal } from '../app/utils/formatDecimal'
+import { localBffNode } from './support/local-bff-node'
 
 test('Catalog UI and API preserve workspace scope, versioning and idempotency', async ({ page }) => {
   await login(page, 'alice')
-  const first = await write(page, '/bff/api/workspaces', 'POST', { operationId: crypto.randomUUID(), name: `商品目录 ${Date.now()}` })
+  const workspaceName = `商品目录 ${Date.now()}`
+  const workspaceKey = crypto.randomUUID()
+  const first = await write(page, '/bff/api/workspaces', 'POST', { name: workspaceName }, { 'Idempotency-Key': workspaceKey })
   expect(first.status).toBe(201)
   const workspace = JSON.parse(first.text) as { id: string; name: string }
+  const replayWorkspace = await write(page, '/bff/api/workspaces', 'POST', { name: workspaceName, operationId: workspaceKey })
+  expect(replayWorkspace.status).toBe(200)
+  expect(JSON.parse(replayWorkspace.text).id).toBe(workspace.id)
   const second = await write(page, '/bff/api/workspaces', 'POST', { operationId: crypto.randomUUID(), name: `目录隔离 ${Date.now()}` })
   expect(second.status).toBe(201)
   const other = JSON.parse(second.text) as { id: string }
@@ -63,17 +69,24 @@ test('Catalog UI and API preserve workspace scope, versioning and idempotency', 
   expect((await write(page, `${path}/items/${saved.id}`, 'PUT', {
     operationId: crypto.randomUUID(), expectedVersion: 1, name: '过期版本', categoryId: saved.categoryId, isActive: true,
   })).status).toBe(409)
-  const service = await write(page, `${path}/items`, 'POST', data)
-  expect(service.status).toBe(200)
+  const { operationId, ...itemInput } = data
+  const service = await write(page, `${path}/items`, 'POST', itemInput, { 'Idempotency-Key': `"${operationId}"` })
+  expect(service.status, service.text).toBe(201)
   const retry = await write(page, `${path}/items`, 'POST', data)
-  expect(retry.status).toBe(200)
+  expect(retry.status).toBe(201)
   expect(JSON.parse(retry.text)).toEqual(JSON.parse(service.text))
   expect((await write(page, `${path}/items`, 'POST', { ...data, name: '不同的操作内容' })).status).toBe(409)
   const servicePath = `${path}/items/${JSON.parse(service.text).id}`
+  expect(service.location).toBe(servicePath)
+  const initialDetail = await api(page, servicePath)
+  expect(initialDetail.etag).toBe('"1"')
   const edits = await Promise.all(['安装服务 A', '安装服务 B'].map(name =>
-    write(page, servicePath, 'PUT', { operationId: crypto.randomUUID(), expectedVersion: 1,
-      name, categoryId: saved.categoryId, isActive: true })))
-  expect(edits.map(x => x.status).sort()).toEqual([200, 409])
+    write(page, servicePath, 'PUT', { name, categoryId: saved.categoryId, isActive: true },
+      { 'If-Match': initialDetail.etag!, 'Idempotency-Key': crypto.randomUUID() })))
+  expect(edits.map(x => x.status).sort()).toEqual([200, 412])
+  expect(JSON.parse(edits.find(x => x.status === 412)!.text)).toMatchObject({ code: 'masterdata.precondition_failed', traceId: expect.any(String) })
+  const paged = await api(page, `${path}/catalog?pageSize=1`)
+  expect(JSON.parse(paged.text).page).toMatchObject({ items: [expect.any(Object)], hasMore: true })
   const detail = await api(page, servicePath)
   expect(detail.status).toBe(200)
   expect(JSON.parse(detail.text).version).toBe(2)
@@ -83,7 +96,7 @@ test('Catalog UI and API preserve workspace scope, versioning and idempotency', 
   const stock = await write(page, `${path}/items`, 'POST', {
     ...data, operationId: crypto.randomUUID(), code: 'stock-02', kind: 'product', tracksInventory: true,
   })
-  expect(stock.status).toBe(200)
+  expect(stock.status).toBe(201)
   const stockReference = `${path}/items/${JSON.parse(stock.text).id}/reference?inventory=true`
   expect((await api(page, stockReference)).status).toBe(200)
   await page.getByText('分类与计量单位', { exact: true }).click()
@@ -110,6 +123,73 @@ test('Catalog UI and API preserve workspace scope, versioning and idempotency', 
   expect((await api(page, `${outside}/items/${JSON.parse(stock.text).id}/reference`)).status).toBe(404)
   await page.setViewportSize({ width: 390, height: 844 })
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('Local capacity drill measures concurrent business reads and writes', async ({ page, browser }) => {
+  test.skip(process.env.NEXORA_TEST_P6_WRITE_LOAD !== '1', 'Run explicitly as a local capacity drill.')
+  test.setTimeout(180_000)
+  const second = await browser.newContext({ baseURL: 'https://localhost:7443' })
+  const reviewer = await second.newPage()
+  try {
+    await Promise.all([login(page, 'alice'), login(reviewer, 'bob')])
+    const post = (actor: Page, path: string, data: object) =>
+      write(actor, path, 'POST', { ...data, operationId: crypto.randomUUID() })
+    const created = await post(page, '/bff/api/workspaces', { name: '本地并发读写 ' + Date.now() })
+    expect(created.status, created.text).toBe(201)
+    const work = JSON.parse(created.text) as { id: string }
+    const org = '/bff/api/workspaces/' + work.id
+    const version = JSON.parse((await api(page, org + '/access')).text).authorizationVersion
+    const issued = await post(page, org + '/invitations', {
+      expectedVersion: version, email: 'bob@nexora.invalid', role: 'AccessAdministrator',
+    })
+    expect(issued.status, issued.text).toBe(201)
+    const invite = JSON.parse(issued.text)
+    const joined = await post(reviewer, '/bff/api/invitations/' + invite.invitation.id + '/redeem', { token: invite.token })
+    expect(joined.status, joined.text).toBe(200)
+    const endpoint = '/bff/api/masterdata/workspaces/' + work.id + '/definitions'
+    const catalog = '/bff/api/masterdata/workspaces/' + work.id + '/catalog'
+    const csrf = await Promise.all([page, reviewer].map(async (actor) =>
+      JSON.parse((await api(actor, '/bff/antiforgery')).text).requestToken as string))
+    const subjects = await Promise.all([page, reviewer].map(async (actor) => JSON.parse((await api(actor, '/bff/me')).text).subject))
+    const identities = new Set(subjects).size
+    expect(identities).toBe(2)
+    const concurrency = 50
+    const sample = (actor: Page, group: number, csrfToken: string) => actor.evaluate(async ({ endpoint, catalog, group, csrfToken, count }) => {
+      return Promise.all(Array.from({ length: count }, async (_, offset) => {
+        const command = (offset + group) % 2 === 0
+        const start = performance.now()
+        const response = await fetch(command ? endpoint : catalog, command ? {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+          body: JSON.stringify({
+            operationId: crypto.randomUUID(), kind: 'category', code: 'P6-' + group + '-' + offset, name: '并发分类 ' + offset,
+          }),
+        } : { method: 'GET' })
+        const body = await response.text()
+        return { command, elapsed: performance.now() - start, status: response.status,
+          problem: response.ok ? null : JSON.parse(body).code ?? null }
+      }))
+    }, { endpoint, catalog, group, csrfToken, count: concurrency / 2 })
+    const results = (await Promise.all([sample(page, 0, csrf[0]!), sample(reviewer, 1, csrf[1]!)])).flat()
+    const summarize = (command: boolean) => {
+      const subset = results.filter(row => row.command === command)
+      const times = subset.map(x => x.elapsed).sort((a, b) => a - b)
+      return { count: subset.length, p95Ms: Number(times[Math.ceil(times.length * 0.95) - 1]!.toFixed(2)),
+        maxMs: Number(times.at(-1)!.toFixed(2)), statuses: subset.reduce<Record<string, number>>((counts, row) => {
+          counts[row.status] = (counts[row.status] ?? 0) + 1
+          return counts
+        }, {}) }
+    }
+    const report = { startedFrom: 'local Aspire via Nitro and YARP', identities, concurrency, reads: summarize(false), writes: summarize(true) }
+    writeFileSync(resolve(runtime, 'p6-mixed-read-write.json'), JSON.stringify(report, null, 2))
+    console.log(JSON.stringify(report))
+    expect(results.filter(row => row.status !== (row.command ? 201 : 200))).toEqual([])
+    const list = await api(page, catalog + '?page=1&pageSize=100')
+    expect(list.status, list.text).toBe(200)
+    const definitions = JSON.parse(list.text)
+    expect(definitions.definitions.filter((item: { code: string }) => item.code.startsWith('P6-'))).toHaveLength(25)
+  } finally {
+    await second.close()
+  }
 })
 
 
@@ -146,7 +226,7 @@ async function api(page: Page, path: string, method = 'GET', data?: unknown, hea
 }
 
 async function write(page: Page, path: string, method: 'POST' | 'PUT', data: object, headers?: Record<string, string>) {
-  return page.evaluate(async ({ path, method, data, headers }) => {
+  const response = await page.evaluate(async ({ path, method, data, headers }) => {
     const csrf = await fetch('/bff/antiforgery')
     if (!csrf.ok) return { status: csrf.status, text: await csrf.text(), location: null, contentType: null }
     const { requestToken } = await csrf.json()
@@ -157,6 +237,24 @@ async function write(page: Page, path: string, method: 'POST' | 'PUT', data: obj
     return { status: response.status, text: await response.text(),
       location: response.headers.get('location'), contentType: response.headers.get('content-type') }
   }, { path, method, data, headers })
+  const validPreview = method === 'POST' && path.endsWith('/imports/preview') && response.status >= 200 && response.status < 300
+    && JSON.parse(response.text).previewId
+  return { ...response, expectedSuccess: validPreview ? 201 : expectedWriteStatus(path, method) }
+}
+
+function expectedWriteStatus(path: string, method: 'POST' | 'PUT') {
+  if (method === 'PUT') return 200
+  if (/\/api\/(?:purchasing|sales)\/workspaces\/[^/]+\/orders\/[^/]+\/(?:receipts|fulfillments)$/.test(path)) return 202
+  const created = [
+    /\/api\/workspaces(?:\/[^/]+\/invitations)?$/,
+    /\/api\/masterdata\/workspaces\/[^/]+\/(?:items|definitions|partners)$/,
+    /\/api\/inventory\/workspaces\/[^/]+\/warehouses(?:\/[^/]+\/stock-operations)?$/,
+    /\/api\/(?:purchasing|sales)\/workspaces\/[^/]+\/orders(?:\/[^/]+\/convert)?$/,
+    /\/api\/finance\/workspaces\/[^/]+\/(?:ledger\/(?:journals(?:\/[^/]+\/reversal)?|opening-subledgers)|report-exports(?:\/[^/]+\/rebuild)?)$/,
+    /\/api\/finance\/workspaces\/[^/]+\/(?:trade\/(?:banks|documents)|receivables\/documents(?:\/[^/]+\/dispatches)?)$/,
+    /\/api\/finance\/workspaces\/[^/]+\/trade\/documents\/[^/]+\/donation-receipt\/(?:fiscal-tickets|dispatches)$/,
+  ]
+  return created.some(route => route.test(path)) ? 201 : 200
 }
 
 async function login(page: Page, username: string) {
@@ -444,7 +542,7 @@ test('Partner profiles retain multiple roles and scoped contacts across edits an
   const create = { operationId: crypto.randomUUID(), code: 'party-01', profile }
   expect((await write(page, path, 'POST', create)).status).toBe(409)
   const outside = await write(page, otherPath, 'POST', create)
-  expect(outside.status).toBe(200)
+  expect(outside.status).toBe(201)
   const outsidePartner = `${otherPath}/${JSON.parse(outside.text).id}`
   expect((await write(page, outsidePartner, 'PUT', {
     operationId: crypto.randomUUID(), expectedVersion: 1, isActive: true,
@@ -629,6 +727,7 @@ test('Account session registry lists devices, revokes other sessions and blocks 
   await login(page, 'alice')
   const second = await browser.newContext({ baseURL: 'https://localhost:7443' })
   const bob = await browser.newContext({ baseURL: 'https://localhost:7443' })
+  const node = process.env.NEXORA_TEST_P1_TWO_BFF === '1' ? await localBffNode() : undefined
   try {
     const secondPage = await second.newPage()
     await login(secondPage, 'alice')
@@ -650,7 +749,23 @@ test('Account session registry lists devices, revokes other sessions and blocks 
     expect(bobList.sessions.some(item => first.sessions.some(other => other.id === item.id))).toBe(false)
     expect((await write(bobPage, '/bff/sessions/' + target.id + '/revoke', 'POST', {})).status).toBe(404)
 
-    const revoked = await write(page, '/bff/sessions/' + target.id + '/revoke', 'POST', {})
+    let revoked
+    if (node) {
+      await node.start()
+      const primaryCookie = await node.cookie(page.context())
+      const targetCookie = await node.cookie(second)
+      expect((await node.call('/bff/me', primaryCookie)).status).toBe(200)
+      expect((await node.call('/bff/me', targetCookie)).status).toBe(200)
+      await node.stop()
+      expect((await api(page, '/bff/me')).status).toBe(200)
+      await node.start(true)
+      expect((await node.call('/bff/me', targetCookie)).status).toBe(200)
+      const csrf = JSON.parse((await api(page, '/bff/antiforgery')).text).requestToken
+      revoked = await node.call('/bff/sessions/' + target.id + '/revoke', await node.cookie(page.context()), csrf)
+      expect((await node.call('/bff/me', targetCookie)).status).toBe(401)
+    } else {
+      revoked = await write(page, '/bff/sessions/' + target.id + '/revoke', 'POST', {})
+    }
     expect(revoked.status).toBe(200)
     expect(JSON.parse(revoked.text)).toEqual({ revoked: true, current: false })
     expect((await api(secondPage, '/bff/me')).status).toBe(401)
@@ -687,6 +802,7 @@ test('Account session registry lists devices, revokes other sessions and blocks 
     }).toBe(1)
     expect((await api(page, '/bff/me')).status).toBe(200)
   } finally {
+    await node?.stop()
     await second.close()
     await bob.close()
   }
@@ -797,8 +913,12 @@ test('Chart hierarchy, archive, import preview and commit share the same scoped 
     { code: '1001', name: '类别冲突', category: 'liability' }), 'upsert')
   expect(JSON.parse(mixed.text).previewId).toBeNull()
   expect(await read()).toEqual(currentAfterEdit)
-  const xero = JSON.parse((await preview('Code,Name,Type,Tax Code\n0012,"样例,银行",Bank,No Tax', 'append', 'xero-csv')).text)
+  const xeroResponse = await preview('Code,Name,Type,Tax Code\n0012,"样例,银行",Bank,No Tax', 'append', 'xero-csv')
+  expect(xeroResponse.status).toBe(201)
+  const xero = JSON.parse(xeroResponse.text)
   expect(xero.previewId).toBeTruthy()
+  expect(xeroResponse.location).toBe(`${chart}/imports/${xero.previewId}`)
+  expect(JSON.parse((await api(page, xeroResponse.location!)).text)).toMatchObject({ id: xero.previewId, state: 'ready' })
   expect((await commit(xero.previewId)).status).toBe(200)
   const qbo = JSON.parse((await preview('Account Number,Account Name,Type,Detail Type\n1101,门店银行,Bank,Checking', 'upsert', 'qbo-csv')).text)
   expect(qbo.previewId).toBeTruthy()
@@ -850,16 +970,16 @@ test('Effective tax rates and scoped classifications preserve calculation snapsh
   expect((await save('groups', { code: 'ITEM', name: '样例商品组', expectedVersion: 0, rateCodes: ['ITEM5'] })).status).toBe(200)
   const define = async (kind: string, code: string) => {
     const response = await post(`${master}/definitions`, { kind, code, name: code })
-    expect(response.status, response.text).toBe(200)
+    expect(response.status, response.text).toBe(201)
     return JSON.parse(response.text).id as string
   }
   const categoryId = await define('category', 'sample')
   const unitId = await define('unit', 'piece')
   const item = await post(`${master}/items`, { code: 'SAMPLE', name: '样例商品', kind: 'product', tracksInventory: false, categoryId, unitId })
-  expect(item.status, item.text).toBe(200)
+  expect(item.status, item.text).toBe(201)
   const itemId = JSON.parse(item.text).id as string
   const partner = await post(`${master}/partners`, { code: 'SAMPLE', profile: { name: '样例客户', roles: ['customer'], contacts: [] } })
-  expect(partner.status, partner.text).toBe(200)
+  expect(partner.status, partner.text).toBe(201)
   const partnerId = JSON.parse(partner.text).id as string
   expect((await save('classifications', { kind: 'item', resourceId: crypto.randomUUID(), groupCode: 'SALE', expectedVersion: 0 })).status).toBe(404)
   for (const [kind, resourceId] of [['item', itemId], ['partner', partnerId]]) {
@@ -905,9 +1025,9 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
     await Promise.all([login(page, 'alice'), login(reviewer, 'bob')])
     const name = `总账验收 ${Date.now()}`
     const post = (actor: Page, path: string, body: object) => write(actor, path, 'POST', { operationId: crypto.randomUUID(), ...body })
-    const ok = async (promise: Promise<{ status: number; text: string }>, status = 200) => {
+    const ok = async (promise: Promise<{ status: number; text: string; expectedSuccess?: number }>, status?: number) => {
       const response = await promise
-      expect(response.status, response.text).toBe(status)
+      expect(response.status, response.text).toBe(status ?? response.expectedSuccess ?? 200)
       return JSON.parse(response.text)
     }
     const workspace = await ok(post(page, '/bff/api/workspaces', { name }), 201)
@@ -986,23 +1106,29 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
     expect((await api(reviewer, `/bff/api/finance/workspaces/${outside.id}/ledger`)).status).toBe(404)
 
     await ready(page)
-    await page.getByLabel('凭证类型').click()
-    await page.getByRole('option', { name: '期初单', exact: true }).click()
-    await page.getByLabel('凭证摘要').fill('期初核对')
-    const accountOption = (id: string) => {
-      const account = book.accounts.find((x: { id: string }) => x.id === id) as { code: string; name: string }
-      return `${account.code} · ${account.name}`
-    }
-    await page.getByLabel('科目 1', { exact: true }).click()
-    await page.getByRole('option', { name: accountOption(cash), exact: true }).click()
-    await page.getByLabel('科目 2', { exact: true }).click()
-    await page.getByRole('option', { name: accountOption(equity), exact: true }).click()
-    await page.getByLabel('借方 1').fill('1000')
-    await page.getByLabel('贷方 2').fill('1000')
-    await page.getByRole('button', { name: '保存凭证草稿', exact: true }).click()
-    await expect(page.getByText('凭证草稿已保存。', { exact: true })).toBeVisible()
+    const accountCode = (id: string) => book.accounts.find((x: { id: string }) => x.id === id).code
+    const file = `Code,Debit,Credit\n${accountCode(cash)},1000,0\n${accountCode(equity)},0,1000`
+    const previewOpening = root + '/opening-balances/preview'
+    const importOpening = root + '/opening-balances/import'
+    const badPreview = await ok(post(page, previewOpening, { on: '2026-01-01', file: file.replace('0,1000', '0,999') }))
+    expect(badPreview.errors).toContainEqual(expect.objectContaining({ message: expect.stringContaining('借贷合计') }))
+    expect((await post(reviewer, importOpening, { on: '2026-01-01', file, memo: '越权', fileHash: badPreview.fileHash, chartRevision: badPreview.chartRevision })).status).toBe(403)
+    await page.getByRole('button', { name: '导入总账期初' }).click()
+    await page.getByLabel('期初余额 CSV').fill(file)
+    await page.getByRole('button', { name: '预览期初余额' }).click()
+    await page.getByLabel('期初摘要').fill('期初核对')
+    const [openingResponse] = await Promise.all([
+      page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === importOpening),
+      page.getByRole('button', { name: '创建期初导入草稿' }).click(),
+    ])
+    expect(openingResponse.status(), await openingResponse.text()).toBe(201)
+    await expect(page.getByText('期初导入草稿已创建。', { exact: true })).toBeVisible()
     const [opening] = await ok(api(page, `${root}/journals`))
     expect(opening.kind).toBe('opening')
+    const replay = openingResponse.request().postDataJSON()
+    expect(opening).toMatchObject({ importProvider: 'opening-csv', externalId: replay.fileHash })
+    expect(await ok(post(page, importOpening, replay), 201)).toMatchObject({ id: opening.id })
+    expect((await post(page, importOpening, { ...replay, operationId: crypto.randomUUID() })).status).toBe(409)
     expect((await create('opening', '', draft(cash, equity, 1000))).status).toBe(409)
     expect((await post(page, `${chart}/imports/${emptyReplacement.previewId}/commit`, {})).status).toBe(409)
     expect(await getChart()).toEqual(before)
@@ -1149,6 +1275,11 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
     const csv = await download
     expect(csv.suggestedFilename()).toBe('profit-and-loss-2026-01-16-2026-01-25.csv')
     expect(readFileSync((await csv.path())!, 'utf8')).toContain('"4001","商品收入","收入",-150,150,-300')
+    const pdfDownload = page.waitForEvent('download')
+    await report.getByRole('link', { name: '下载报表 PDF' }).click()
+    const pdfFile = await pdfDownload
+    expect(pdfFile.suggestedFilename()).toBe('profit-and-loss-2026-01-16-2026-01-25.pdf')
+    expect(readFileSync((await pdfFile.path())!).subarray(0, 4).toString()).toBe('%PDF')
 
     await page.emulateMedia({ media: 'print' })
     await page.evaluate(() => {
@@ -1186,6 +1317,28 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
     expect(cashReport.totals).toContainEqual({ key: 'cash-closing', amount: '1015', previous: null, difference: null })
     const investmentDetail = await ok(api(page, reports + '/cash-flow/rows/manual-investing' + january + '&watermark=' + cashReport.watermark))
     expect(investmentDetail.postings).toContainEqual(expect.objectContaining({ journalId: investment.id, reportAmount: '-25' }))
+    for (const reportKind of ['trial-balance', 'balance-sheet', 'cash-flow']) {
+      const downloaded = await page.evaluate(async path => {
+        const response = await fetch(path)
+        const file = await response.blob()
+        return { status: response.status, type: file.type, signature: await file.slice(0, 4).text() }
+      }, reports + '/' + reportKind + '/pdf' + january)
+      expect(downloaded).toEqual({ status: 200, type: 'application/pdf', signature: '%PDF' })
+    }
+    const partnershipPath = root + '/partnerships/2026'
+    for (const code of ['3101', '3102', '3201', '3202'])
+      await ok(post(page, chart + '/accounts', { expectedRevision: (await getChart()).revision,
+        account: { code, name: '合伙人科目 ' + code, category: 'equity', purpose: 'posting' } }))
+    const equityAccounts = (await getChart()).accounts as { id: string; code: string }[]
+    const equityId = (code: string) => equityAccounts.find(x => x.code === code)!.id
+    const partnerDraft = [
+      { code: 'A', name: '合伙人 A', capitalAccountId: equityId('3101'), drawingsAccountId: equityId('3201'), share: '0.6' },
+      { code: 'B', name: '合伙人 B', capitalAccountId: equityId('3102'), drawingsAccountId: equityId('3202'), share: '0.4' },
+    ]
+    const configurePartners = (partners: typeof partnerDraft, expectedVersion = 0) =>
+      write(page, partnershipPath, 'PUT', { operationId: crypto.randomUUID(), expectedVersion, partners })
+    expect((await configurePartners([{ ...partnerDraft[0]!, share: '0.8' }, partnerDraft[1]!])).status).toBe(400)
+    expect(await ok(configurePartners(partnerDraft))).toMatchObject({ version: 1, partners: partnerDraft })
     for (let month = 1; month <= 12; month++) {
       const monthPath = root + '/periods/2026-' + String(month).padStart(2, '0') + '-01'
       const readMonth = await api(reviewer, monthPath)
@@ -1195,26 +1348,37 @@ test('Opening, journal approval, period races, reversal and P5 accrual reports p
       const checking = await ok(post(reviewer, monthPath, { action: 'begin-close', expectedVersion: prior.version, reason: '年度验收' }))
       await ok(post(reviewer, monthPath, { action: 'close', expectedVersion: checking.version, reason: '年度验收' }))
     }
-    expect(await ok(api(reviewer, closePreview))).toMatchObject({ netProfit: '40', openMonths: [] })
+    expect(await ok(api(reviewer, closePreview))).toMatchObject({ netProfit: '40', openMonths: [], partnerAllocations: [
+      { code: 'A', capital: { balance: '24' } }, { code: 'B', capital: { balance: '16' } },
+    ] })
     const closingPlan = await ok(post(page, yearPath, { year: 2026, equityAccountId: equity }))
     const yearDecision = (actor: Page, v: number, decision: string, operationId = crypto.randomUUID()) =>
       post(actor, yearPath + '/' + closingPlan.id + '/decision', { expectedVersion: v, decision, reason: '年结验收', operationId })
     expect((await yearDecision(page, closingPlan.version, 'close')).status).toBe(403)
     const yearCloseKey = crypto.randomUUID()
     const yearClosed = await ok(yearDecision(reviewer, closingPlan.version, 'close', yearCloseKey))
-    expect(yearClosed).toMatchObject({ state: 'closed', closingJournals: [expect.any(String)] })
+    expect(yearClosed).toMatchObject({ state: 'closed', closingJournals: [expect.any(String), expect.any(String)] })
+    expect((await configurePartners(partnerDraft, 1)).status).toBe(409)
     expect(await ok(yearDecision(reviewer, closingPlan.version, 'close', yearCloseKey))).toEqual(yearClosed)
     const yearFilter = '?from=2026-01-01&through=2026-12-31'
     expect((await ok(api(page, reports + '/profit-and-loss' + yearFilter))).totals).toContainEqual(
       { key: 'profit', amount: '40', previous: null, difference: null })
     const afterCloseSheet = await ok(api(page, reports + '/balance-sheet' + yearFilter))
     expect(afterCloseSheet.lines).toContainEqual(expect.objectContaining({ row: expect.objectContaining({ key: 'earnings', amount: '0' }) }))
-    expect(afterCloseSheet.lines).toContainEqual(expect.objectContaining({ row: expect.objectContaining({ key: equity, amount: '1040' }) }))
+    expect(afterCloseSheet.lines).toEqual(expect.arrayContaining([
+      expect.objectContaining({ row: expect.objectContaining({ key: equity, amount: '1000' }) }),
+      expect.objectContaining({ row: expect.objectContaining({ key: equityId('3101'), amount: '24' }) }),
+      expect.objectContaining({ row: expect.objectContaining({ key: equityId('3102'), amount: '16' }) }),
+    ]))
+    const equityChanges = await ok(api(page, reports + '/equity-changes' + yearFilter))
+    expect(equityChanges.partners).toMatchObject([{ code: 'A', closing: '24', profitShare: '24' },
+      { code: 'B', closing: '16', profitShare: '16' }])
+    expect(equityChanges.totals).toContainEqual({ key: 'equity-closing', amount: '1040', previous: null, difference: null })
     const december = root + '/periods/2026-12-01'
     const decemberVersion = (await ok(api(reviewer, december))).period.version
     expect((await post(reviewer, december, { action: 'reopen', expectedVersion: decemberVersion, reason: '绕过年度门禁' })).status).toBe(409)
     const yearReopened = await ok(yearDecision(reviewer, yearClosed.version, 'reopen'))
-    expect(yearReopened).toMatchObject({ state: 'reopened', reopeningJournals: [expect.any(String)] })
+    expect(yearReopened).toMatchObject({ state: 'reopened', reopeningJournals: [expect.any(String), expect.any(String)] })
     expect((await ok(api(page, reports + '/balance-sheet' + yearFilter))).lines).toContainEqual(
       expect.objectContaining({ row: expect.objectContaining({ key: 'earnings', amount: '40' }) }))
     await ok(post(reviewer, december, { action: 'reopen', expectedVersion: decemberVersion, reason: '年度已重开' }))
@@ -1230,9 +1394,9 @@ test('Purchase orders require current scoped references and independent approval
     const reviewer = await second.newPage()
     await Promise.all([login(page, 'alice'), login(reviewer, 'bob')])
     const post = (actor: Page, path: string, body: object) => write(actor, path, 'POST', { operationId: crypto.randomUUID(), ...body })
-    const ok = async (pending: Promise<{ status: number; text: string }>, status = 200) => {
+    const ok = async (pending: Promise<{ status: number; text: string; expectedSuccess?: number }>, status?: number) => {
       const response = await pending
-      expect(response.status, response.text).toBe(status)
+      expect(response.status, response.text).toBe(status ?? response.expectedSuccess ?? 200)
       return JSON.parse(response.text)
     }
     const name = `采购订单验收 ${Date.now()}`
@@ -1358,8 +1522,10 @@ test('Purchase orders require current scoped references and independent approval
     const permitInput = { expectedVersion: 6, lineId: approved.lines[0].id, warehouseId: warehouse.id, quantity: '3.125' }
     expect((await post(page, permitPath, permitInput)).status).toBe(403)
     const [one, two] = await Promise.all([post(reviewer, permitPath, permitInput), post(reviewer, permitPath, permitInput)])
-    expect([one.status, two.status].sort()).toEqual([200, 409])
-    const permit = JSON.parse((one.status === 200 ? one : two).text)
+    expect([one.status, two.status].sort()).toEqual([202, 409])
+    const accepted = one.status === 202 ? one : two
+    expect(accepted.location).toBe(permitPath)
+    const permit = JSON.parse(accepted.text)
     await expect.poll(async () => (await permits()).permits.find((x: { id: string }) => x.id === permit.permitId)?.state).toBe('issued')
     const receive = `${inventory}/receipts/${permit.permitId}/receive`
     const receiptOperation = crypto.randomUUID()
@@ -1507,8 +1673,11 @@ test('Purchase orders require current scoped references and independent approval
     const preview = async (text: string) => ok(post(page, `${trade}/imports/preview`, { bankId: bank.id, file: text, mapping }))
     const bad = await preview(file + '\nR4,2026-01-06,INVALID,坏数据')
     expect(bad.previewId).toBeNull()
-    const batch = await preview(file)
+    const batchResponse = await post(page, `${trade}/imports/preview`, { bankId: bank.id, file, mapping })
+    const batch = await ok(Promise.resolve(batchResponse), 201)
     expect(batch.errors).toEqual([])
+    expect(batchResponse.location).toBe(`${trade}/imports/${batch.previewId}`)
+    expect(await ok(api(page, batchResponse.location!))).toMatchObject({ id: batch.previewId, state: 'ready' })
     const commit = (id: string, operationId = crypto.randomUUID()) => post(page, `${trade}/imports/${id}/commit`, { operationId })
     const importKey = crypto.randomUUID()
     const committed = await ok(commit(batch.previewId, importKey))
@@ -1545,7 +1714,10 @@ test('Purchase orders require current scoped references and independent approval
     expect((await approve(voidMatched.id)).status).toBe(409)
     expect(await findDoc(bill.id)).toMatchObject({ outstanding: '2.44' })
 
-    const donor = await ok(post(page, `${master}/partners`, { code: 'DONOR', profile: { name: '样例捐赠人', roles: ['donor'], contacts: [] } }))
+    const donorEmail = `donor-${Date.now()}@example.test`
+    const donor = await ok(post(page, `${master}/partners`, { code: 'DONOR', profile: {
+      name: '样例捐赠人', roles: ['donor'], contacts: [{ name: '捐赠联系人', email: donorEmail }],
+    } }))
     const donation = await ok(submitTrade(6, 'DON-01', '200', { on: '2026-01-07', bankId: bank.id, partnerId: donor.id, method: 'transfer' }))
     const donationPath = trade + '/documents/' + donation.id + '/donation-receipt'
     expect((await api(page, donationPath)).status).toBe(404)
@@ -1556,6 +1728,77 @@ test('Purchase orders require current scoped references and independent approval
     const donationPdf = await api(page, donationPath + '/pdf')
     expect(donationPdf.status, donationPdf.text.slice(0, 180)).toBe(200)
     expect(donationPdf.text.startsWith('%PDF-')).toBe(true)
+
+    const ticketPath = donationPath + '/fiscal-tickets'
+    const ticket = { code: '0000123401', number: '0000005678', issuedOn: '2026-01-07' }
+    expect((await post(page, ticketPath, ticket)).status).toBe(403)
+    expect((await post(reviewer, ticketPath, { ...ticket, issuedOn: '2026-01-06' })).status).toBe(400)
+    expect((await api(reviewer, ticketPath.replace(work.id, other.id))).status).toBe(404)
+    await reviewer.goto('/?workspace=' + work.id)
+    await reviewer.getByTestId('module-book').click()
+    await reviewer.getByRole('button', { name: '打开账簿设置' }).click()
+    await reviewer.getByRole('button', { name: '打开资金工作台' }).click()
+    await reviewer.getByRole('button', { name: '捐赠票据与邮件', exact: true }).click()
+    const panel = reviewer.getByRole('region', { name: '捐赠票据与邮件' })
+    await panel.getByLabel('票据代码').fill(ticket.code)
+    await panel.getByLabel('票据号码').fill(ticket.number)
+    await panel.getByLabel('票据开具日期').fill(ticket.issuedOn)
+    const postedTo = (path: string) => reviewer.waitForResponse(response =>
+      response.request().method() === 'POST' && new URL(response.url()).pathname === path)
+    const [ticketResponse] = await Promise.all([postedTo(ticketPath), panel.getByRole('button', { name: '关联正式票据' }).click()])
+    expect(ticketResponse.status(), await ticketResponse.text()).toBe(201)
+    const savedTicket = await ticketResponse.json()
+    const ticketLocation = ticketResponse.headers()['location']!
+    expect(ticketLocation).toBe(ticketPath + '/' + savedTicket.id)
+    expect(await ok(api(page, ticketLocation))).toMatchObject({ donationId: donation.id, ...ticket })
+    expect(await ok(write(reviewer, ticketPath, 'POST', ticketResponse.request().postDataJSON()))).toEqual(savedTicket)
+    expect((await post(reviewer, ticketPath, ticket)).status).toBe(409)
+    await expect(panel.getByText(/已关联正式票据 · 代码 0000123401/)).toBeVisible()
+
+    const mailPath = donationPath + '/dispatches'
+    expect((await post(page, mailPath, { recipient: donorEmail })).status).toBe(403)
+    expect((await post(reviewer, mailPath, { recipient: 'unregistered@example.test' })).status).toBe(403)
+    if (process.env.NEXORA_TEST_F36_MAILPIT === '1') {
+      expect(await ok(api(reviewer, finance + '/capabilities'))).toMatchObject({ invoiceMail: 'local-only', statutoryDonationReceipt: false })
+      await panel.getByLabel('捐赠人档案联系人邮箱').fill(donorEmail)
+      const [mailResponse] = await Promise.all([postedTo(mailPath), panel.getByRole('button', { name: '发送确认单' }).click()])
+      expect(mailResponse.status(), await mailResponse.text()).toBe(201)
+      const delivery = await mailResponse.json()
+      const deliveryPath = mailResponse.headers()['location']!
+      expect(deliveryPath).toBe(mailPath + '/' + delivery.id)
+      await expect.poll(async () => (await ok(api(reviewer, deliveryPath))).state).toBe('sent')
+      const delivered = await api(reviewer, deliveryPath)
+      expect(delivered.etag).toBe('"' + JSON.parse(delivered.text).version + '"')
+      expect((await write(reviewer, deliveryPath + '/decision', 'POST', { decision: 'resend' }, {
+        'Idempotency-Key': crypto.randomUUID(), 'If-Match': '"' + delivery.version + '"',
+      })).status).toBe(412)
+      expect((await post(reviewer, finance + '/receivables/dispatches/' + delivery.id + '/decision', {
+        decision: 'resend', expectedVersion: (await ok(api(reviewer, deliveryPath))).version,
+      })).status).toBe(404)
+      await panel.getByRole('button', { name: '刷新票据与投递记录' }).click()
+      await panel.getByRole('button', { name: '补发确认单' }).click()
+      const [resendResponse] = await Promise.all([postedTo(deliveryPath + '/decision'), reviewer.getByRole('button', { name: '确认补发' }).click()])
+      expect(resendResponse.status(), await resendResponse.text()).toBe(200)
+      const replacement = await resendResponse.json()
+      expect(replacement).toMatchObject({ previousId: delivery.id, recipient: donorEmail })
+      await expect.poll(async () => (await ok(api(reviewer, mailPath + '/' + replacement.id))).state).toBe('sent')
+      expect(await ok(api(reviewer, deliveryPath))).toMatchObject({ resentAsId: replacement.id })
+      expect(await ok(write(reviewer, deliveryPath + '/decision', 'POST', resendResponse.request().postDataJSON())))
+        .toMatchObject({ id: replacement.id })
+      expect(await ok(api(reviewer, mailPath))).toHaveLength(2)
+      const mailpit = 'http://localhost:8025/api/v1'
+      const messages = async () => (await (await fetch(mailpit + '/search?' + new URLSearchParams({ query: 'to:' + donorEmail }))).json())
+        .messages as { ID: string }[]
+      await expect.poll(async () => (await messages()).length).toBe(2)
+      for (const { ID } of await messages()) {
+        const message = await (await fetch(mailpit + '/message/' + ID)).json()
+        expect(message.Subject).toBe('捐赠收款确认单 ' + donationReceipt.number)
+        expect(message.Attachments).toEqual([expect.objectContaining({ ContentType: 'application/pdf', FileName: donationReceipt.number + '.pdf' })])
+        const part = await fetch(mailpit + '/message/' + ID + '/part/' + message.Attachments[0].PartID)
+        expect(part.ok).toBe(true)
+        expect(Buffer.from(await part.arrayBuffer()).subarray(0, 5).toString()).toBe('%PDF-')
+      }
+    }
     const transfer = await ok(submitTrade(5, 'TRANSFER-01', '25', { on: '2026-01-07', bankId: bank.id, otherBankId: cash.id }))
     await ok(approve(transfer.id))
     const reversal = await ok(submitTrade(7, 'VOID-TRANSFER', '0', { on: '2026-01-08', sourceId: transfer.id }))
@@ -1571,9 +1814,22 @@ test('Purchase orders require current scoped references and independent approval
     expect(accountBalance(accounts.accrualAccountId)).toBe('-2.12')
     expect(accountBalance(accounts.payableAccountId)).toBe('-2.44')
     expect(accountBalance(accounts.inputTaxAccountId)).toBe('0.51')
+    const taxSummary = await ok(api(page, `${finance}/tax/periods/2026-01-01`))
+    expect(taxSummary.current).toMatchObject({ input: '0.51', output: '0', netPayable: '-0.51',
+      codes: [{ code: 'SAMPLE', input: '0.51', output: '0', netPayable: '-0.51' }],
+      sources: expect.arrayContaining([
+        expect.objectContaining({ kind: 'supplier-bill', direction: 'input', code: 'SAMPLE' }),
+        expect.objectContaining({ kind: 'supplier-credit', direction: 'input', code: 'SAMPLE' }),
+      ]),
+    })
     expect(accountBalance(accounts.donationIncomeAccountId)).toBe('-200')
     expect(accountBalance(bankAccountId)).toBe('1498')
     expect((await api(reviewer, `/bff/api/finance/workspaces/${other.id}/trade`)).status).toBe(404)
+    await ok(write(page, tax + '/calendar', 'PUT', {
+      operationId: crypto.randomUUID(), expectedVersion: 0, cycle: 'monthly', basis: 'cash',
+    }))
+    const cashTaxPeriod = tax + '/periods/2026-01-01'
+    expect((await ok(api(page, cashTaxPeriod))).current).toMatchObject({ basis: 'cash', input: '0.23' })
 
     const finalPayment = await ok(submitTrade(2, 'PAY-FINAL', '2.44', { on: '2026-01-08', bankId: bank.id, sourceId: bill.id }))
     await ok(approve(finalPayment.id))
@@ -1593,6 +1849,11 @@ test('Purchase orders require current scoped references and independent approval
     expect(settled.accounts.find((x: { accountId: string }) => x.accountId === accounts.supplierRecoveryAccountId).balance).toBe('0')
     const paidNet = await ok(api(page, finance + '/reports/profit-and-loss?basis=cash&from=2026-01-01&through=2026-01-31'))
     expect(paidNet.lines).toContainEqual(expect.objectContaining({ row: expect.objectContaining({ key: 'cash-purchases', amount: '3.27' }) }))
+    expect((await ok(api(page, cashTaxPeriod))).current).toMatchObject({ input: '0.42', output: '0',
+      sources: expect.arrayContaining([expect.objectContaining({
+        kind: 'supplier-refund', documentId: refund.id, taxDocumentId: paidCredit.id, amount: '-0.09',
+      })]),
+    })
 
     await page.reload()
     await page.getByRole('button', { name: new RegExp(name) }).click()
@@ -1652,6 +1913,18 @@ test('Purchase orders require current scoped references and independent approval
     const apAging = await ok(api(page, finance + '/reporting/aging/payables?through=2026-01-31'))
     expect(apAging.total).toBe('4.54')
     expect(apAging.items.every((item: { bucket: string }) => item.bucket !== 'current')).toBe(true)
+    const supplierLedger = finance + '/reporting/partner-ledgers/payables/' + supplier.id
+    const supplierDates = '?from=2026-01-06&through=2026-01-31'
+    const payableLedger = await ok(api(page, supplierLedger + supplierDates))
+    expect(payableLedger).toMatchObject({ open: { opening: '4.44', closing: apAging.total }, hasMore: false })
+    expect(payableLedger.items).toContainEqual(expect.objectContaining({
+      id: payment.id, relatedDocumentId: bill.id, openDelta: '-2', journalId: expect.any(String),
+    }))
+    const supplierFirstPage = await ok(api(page, supplierLedger + supplierDates + '&pageSize=1'))
+    const supplierSecondPage = await ok(api(page, supplierLedger + supplierDates + '&pageSize=1&page=2&watermark=' + supplierFirstPage.watermark))
+    expect(supplierFirstPage).toMatchObject({ open: payableLedger.open, hasMore: true, items: payableLedger.items.slice(0, 1) })
+    expect(supplierSecondPage).toMatchObject({ open: payableLedger.open, items: payableLedger.items.slice(1, 2) })
+    expect((await api(reviewer, (supplierLedger + supplierDates).replace(work.id, other.id))).status).toBe(404)
 
     const main = (await ok(api(page, warehousePath + '/positions')))[0]
     const stockOperations = warehousePath + '/stock-operations'
@@ -1696,6 +1969,8 @@ test('Purchase orders require current scoped references and independent approval
     const voidDonation = await ok(submitTrade(7, 'VOID-DON-01', '0', { sourceId: donation.id, on: '2026-01-09' }))
     await ok(approve(voidDonation.id))
     expect(await ok(api(page, donationPath))).toMatchObject({ number: donationReceipt.number, reversedById: voidDonation.id })
+    expect(await ok(api(page, ticketLocation))).toMatchObject({ id: savedTicket.id, ...ticket })
+    expect((await post(reviewer, mailPath, { recipient: donorEmail })).status).toBe(409)
 
     await ok(changeRole(reviewer, bob, 'revoke'))
     await grant(reviewer, page, bob, 'PurchasingOperator')
@@ -1711,7 +1986,199 @@ test('Purchase orders require current scoped references and independent approval
 
 
 
-test('P4 sales, inventory, invoicing, settlement and communication reconcile', async ({ page, browser, playwright }) => {
+test('P6 opening subledger batch reconciles stock, open items, bank and general ledger', async ({ page, browser }) => {
+  test.setTimeout(240_000)
+  const second = await browser.newContext({ baseURL: 'https://localhost:7443' })
+  const reviewer = await second.newPage()
+  try {
+    await Promise.all([login(page, 'alice'), login(reviewer, 'bob')])
+    const post = (actor: Page, path: string, body: object) => write(actor, path, 'POST', { operationId: crypto.randomUUID(), ...body })
+    const ok = async (pending: ReturnType<typeof post> | ReturnType<typeof api>, status?: number) => {
+      const result = await pending
+      expect(result.status, result.text).toBe(status ?? ('expectedSuccess' in result ? result.expectedSuccess : 200))
+      return JSON.parse(result.text)
+    }
+    const add = (path: string, body: object) => ok(post(page, path, body))
+    const read = (path: string, actor = page) => ok(api(actor, path))
+    const work = await add('/bff/api/workspaces', { name: 'P6 期初子账 ' + Date.now() })
+    const outside = await add('/bff/api/workspaces', { name: 'P6 期初隔离 ' + Date.now() })
+    const scope = '/workspaces/' + work.id
+    const org = '/bff/api' + scope
+    const finance = '/bff/api/finance' + scope
+    const ledger = finance + '/ledger'
+    const trade = finance + '/trade'
+    const ar = finance + '/receivables'
+    const stock = '/bff/api/inventory' + scope
+    const master = '/bff/api/masterdata' + scope
+    const version = async (actor: Page) => (await read(org + '/access', actor)).authorizationVersion
+    const invite = await add(org + '/invitations', { email: 'bob@nexora.invalid', role: 'WorkspaceOwner', expectedVersion: await version(page) })
+    await ok(post(reviewer, '/bff/api/invitations/' + invite.invitation.id + '/redeem', { token: invite.token }))
+    const members = await read(org + '/members') as { id: string; email: string }[]
+    const alice = members.find(x => x.email === 'alice@nexora.invalid')!.id
+    const bob = members.find(x => x.email === 'bob@nexora.invalid')!.id
+    const grant = async (member: string, role: string, maker: Page, checker: Page) => {
+      const path = org + '/members/' + member + '/finance-role'
+      await ok(post(maker, path, { expectedVersion: await version(maker), action: 'propose', role }))
+      await ok(post(checker, path, { expectedVersion: await version(checker), action: 'approve' }))
+    }
+    await grant(alice, 'Accountant', page, reviewer)
+    await grant(bob, 'FinanceReviewer', reviewer, page)
+    const start = '2026-01-01'
+    await add(finance + '/book', { baseCurrency: 'CNY', startsOn: start, fiscalYearStartMonth: 1 })
+    await ok(post(reviewer, ledger + '/periods/' + start, { expectedVersion: 0, action: 'open', reason: '子账期初验收' }))
+    const chart = finance + '/chart'
+    const account = async (code: string, category: string, purpose = 'posting') => {
+      await add(chart + '/accounts', { expectedRevision: (await read(chart)).revision, account: { code, name: code, category, purpose } })
+      return (await read(chart)).accounts.find((x: { code: string }) => x.code === code).id as string
+    }
+    const balanceAccount = (await read(chart)).accounts.find((x: { code: string }) => x.code === '3001')
+    const cashPosting = (await read(chart)).accounts.find((x: { code: string }) => x.code === '1001')
+    const gl = await add(ledger + '/journals', { kind: 'opening', draft: { on: start, memo: '总账期初先行', lines: [
+      { accountId: cashPosting.id, debit: '10', credit: '0' },
+      { accountId: balanceAccount.id, debit: '0', credit: '10' },
+    ] } })
+    const submittedGl = await add(ledger + '/journals/' + gl.id + '/decision', { expectedVersion: gl.version, decision: 'submit' })
+    await ok(post(reviewer, ledger + '/journals/' + gl.id + '/decision', { expectedVersion: submittedGl.version, decision: 'post' }))
+    const inventoryAccountId = await account('OP-INV', 'asset', 'control')
+    const payableAccountId = await account('OP-AP', 'liability', 'control')
+    const receivableAccountId = await account('OP-AR', 'asset', 'control')
+    const bankAccount = await account('OP-BANK', 'asset', 'control')
+    const cashAccount = await account('OP-CASH', 'asset', 'control')
+    await add(trade + '/setup', { accounts: { inventoryAccountId, payableAccountId,
+      accrualAccountId: await account('OP-GRNI', 'liability', 'control'), inputTaxAccountId: await account('OP-IT', 'asset'),
+      varianceAccountId: await account('OP-VAR', 'expense'), donationIncomeAccountId: await account('OP-DON', 'income'),
+    } })
+    await add(ar + '/setup', { accounts: { receivableAccountId, advanceAccountId: await account('OP-ADV', 'liability', 'control'),
+      revenueAccountId: await account('OP-REV', 'income'), outputTaxAccountId: await account('OP-OT', 'liability', 'control'),
+      costOfGoodsAccountId: await account('OP-COGS', 'expense'),
+    } })
+    const bank = await add(trade + '/banks', { code: 'BANK', name: '基本户', kind: 'bank', accountId: bankAccount })
+    const cash = await add(trade + '/banks', { code: 'CASH', name: '库存现金', kind: 'cash', accountId: cashAccount })
+    const warehouse = await add(stock + '/warehouses', { code: 'START', name: '期初主仓' })
+    const warehousePath = stock + '/warehouses/' + warehouse.id
+    await ok(write(page, warehousePath + '/receiver', 'PUT', { operationId: crypto.randomUUID(), expectedVersion: warehouse.version, memberId: alice }))
+    const category = await add(master + '/definitions', { kind: 'category', code: 'OP', name: '期初商品' })
+    const unit = await add(master + '/definitions', { kind: 'unit', code: 'PCS', name: '件' })
+    const item = (code: string) => add(master + '/items', {
+      code, name: code, kind: 'product', tracksInventory: true, categoryId: category.id, unitId: unit.id,
+    })
+    const sku = await item('OP-SKU')
+    const zero = await item('OP-ZERO')
+    const customer = await add(master + '/partners', { code: 'CUS', profile: { name: '期初客户', roles: ['customer'], contacts: [] } })
+    const supplier = await add(master + '/partners', { code: 'SUP', profile: { name: '期初供应商', roles: ['supplier'], contacts: [] } })
+    const csv = [
+      'Kind,Reference,ResourceId,WarehouseId,Quantity,Amount,DueOn',
+      `stock,OLD-STOCK,${sku.id},${warehouse.id},10,120,`,
+      `stock,OLD-ZERO,${zero.id},${warehouse.id},2,0,`,
+      `receivable,OLD-AR-A,${customer.id},,,75,2025-12-15`,
+      `receivable,OLD-AR-B,${customer.id},,,25,2026-02-01`,
+      `payable,OLD-AP,${supplier.id},,,40,2025-12-28`,
+      `bank,OLD-BANK,${bank.id},,,200,`,
+      `bank,OLD-CASH,${cash.id},,,30,`,
+    ].join('\n')
+    const base = ledger + '/opening-subledgers'
+    const invalid = await ok(post(page, base + '/preview', { equityAccountId: balanceAccount.id, file: csv + '\n' + csv.split('\n')[1] }))
+    expect(invalid.errors).toHaveLength(1)
+    const outsider = await ok(post(page, base + '/preview', {
+      equityAccountId: balanceAccount.id, file: csv.replaceAll(warehouse.id, outside.id),
+    }))
+    expect(outsider.errors).toHaveLength(2)
+
+    const openPanel = async (actor: Page) => {
+      await actor.goto('/?workspace=' + work.id)
+      await actor.getByTestId('module-book').click()
+      await actor.getByRole('button', { name: '打开账簿设置' }).click()
+      await actor.getByRole('button', { name: '打开总账', exact: true }).click()
+      await actor.getByRole('button', { name: '打开期初子账导入' }).click()
+      return actor.getByRole('region', { name: '期初子账批量导入' })
+    }
+    const maker = await openPanel(page)
+    await maker.getByLabel('期初权益对方科目').click()
+    await page.getByRole('option', { name: /3001/ }).click()
+    await maker.getByLabel('期初子账 CSV').fill(csv)
+    await maker.getByRole('button', { name: '预览期初子账' }).click()
+    const submitted = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === base)
+    await maker.getByRole('button', { name: '提交期初批次' }).click()
+    const response = await submitted
+    expect(response.status(), await response.text()).toBe(201)
+    const queued = await response.json()
+    const detail = base + '/' + queued.id
+    expect(response.headers()['location']).toBe(detail)
+    expect(queued).toMatchObject({ state: 'submitted', rows: expect.arrayContaining([expect.objectContaining({ reference: 'OLD-AR-A', dueOn: '2025-12-15' })]) })
+    expect(await ok(post(page, base, response.request().postDataJSON()), 201)).toMatchObject({ id: queued.id })
+    expect((await post(page, base, { ...response.request().postDataJSON(), operationId: crypto.randomUUID() })).status).toBe(409)
+    expect((await api(reviewer, detail.replace(work.id, outside.id))).status).toBe(404)
+    expect((await post(page, detail + '/decision', { expectedVersion: queued.version, decision: 'approve' })).status).toBe(403)
+    expect((await write(reviewer, detail + '/decision', 'POST', { decision: 'approve' }, {
+      'If-Match': '"999"', 'Idempotency-Key': crypto.randomUUID(),
+    })).status).toBe(412)
+    expect(await read(warehousePath + '/positions')).toEqual([])
+
+    const checker = await openPanel(reviewer)
+    await checker.getByRole('button', { name: '复核并过账期初批次' }).click()
+    await expect.poll(async () => (await read(detail)).state).toBe('posted')
+    await checker.getByRole('button', { name: '刷新期初批次' }).click()
+    await expect(checker.getByRole('heading', { name: '批次对账' })).toBeVisible()
+    const reconciled = await read(detail)
+    expect(reconciled.checks.map((entry: { matched: boolean }) => entry.matched)).toEqual(Array(7).fill(true))
+    expect(reconciled.postings.filter((x: { journalId: string }) => x.journalId)).toHaveLength(6)
+    const copies = reconciled.postings
+    expect((await read(warehousePath + '/positions'))).toEqual(expect.arrayContaining([
+      expect.objectContaining({ itemId: sku.id, quantity: '10', value: '120', sequence: 1 }),
+      expect.objectContaining({ itemId: zero.id, quantity: '2', value: '0', sequence: 1 }),
+    ]))
+    expect(await read(warehousePath + '/movements')).toHaveLength(2)
+    const trial = async () => read(ledger + '/trial-balance/2026-01-31')
+    const firstTrial = await trial()
+    const balance = (report: { accounts: { accountId: string; balance: string }[] }, id: string) =>
+      report.accounts.find(x => x.accountId === id)?.balance
+    expect(firstTrial.debit).toBe(firstTrial.credit)
+    expect([inventoryAccountId, payableAccountId, receivableAccountId, bankAccount, cashAccount, balanceAccount.id]
+      .map(id => balance(firstTrial, id))).toEqual(['120', '-40', '100', '200', '30', '-420'])
+    const bankRows = await read(trade + '/banks/' + bank.id + '/movements')
+    expect(bankRows).toHaveLength(1)
+    expect(bankRows[0]).toMatchObject({ id: copies[5].subledgerId, amount: '200' })
+    const firstAr = copies[2].subledgerId
+    const firstAp = copies[4].subledgerId
+    expect((await api(page, ar + '/documents/' + firstAr + '/pdf')).status).toBe(404)
+    const debt = await read(finance + '/reporting/aging/receivables?through=2026-01-01')
+    expect(debt).toMatchObject({ total: '100', items: expect.arrayContaining([
+      expect.objectContaining({ id: firstAr, bucket: '1-30', outstanding: '75' }),
+    ]) })
+    const on = '2026-01-02'
+    const payment = await add(trade + '/documents', { terms: {
+      kind: 2, number: 'OP-PAYMENT', memo: '核销期初应付', on, bankId: bank.id, sourceId: firstAp, amount: '15', quantity: '1',
+    } })
+    await ok(post(reviewer, trade + '/documents/' + payment.id + '/decision', { decision: 'approve', expectedVersion: payment.version }))
+    const receive = await add(ar + '/documents', { draft: { kind: 'receipt', number: 'OP-CASH-IN', on, customerId: customer.id, amount: '25', bankId: bank.id } })
+    await ok(post(reviewer, ar + '/documents/' + receive.id + '/decision', { expectedVersion: receive.version, approve: true }))
+    const applied = await add(ar + '/documents', { draft: { kind: 'allocation', number: 'OP-ALLOC', on, invoiceId: firstAr, fundsId: receive.id, amount: '25' } })
+    await ok(post(reviewer, ar + '/documents/' + applied.id + '/decision', { expectedVersion: applied.version, approve: true }))
+    const closing = await trial()
+    expect([payableAccountId, receivableAccountId, bankAccount].map(id => balance(closing, id))).toEqual(['-25', '75', '210'])
+    expect((await read(detail)).checks.every((entry: { matched: boolean }) => entry.matched)).toBe(true)
+    const dateRange = '?from=2026-01-01&through=2026-01-31'
+    expect((await read(finance + '/reports/cash-flow' + dateRange)).totals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'cash-opening', amount: '240' }),
+      expect.objectContaining({ key: 'cash-closing', amount: '250' }),
+    ]))
+    expect((await read(finance + '/reports/profit-and-loss' + dateRange + '&basis=cash')).totals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'income', amount: '0' }),
+      expect.objectContaining({ key: 'expense', amount: '0' }),
+    ]))
+    const count = await add(warehousePath + '/stock-operations', {
+      itemId: sku.id, expectedSequence: 1, on, quantity: '9', reason: '复测期初成本序列',
+    })
+    await ok(post(reviewer, stock + '/stock-operations/' + count.id + '/decision', { expectedVersion: 1, confirm: true }))
+    await expect.poll(async () => balance(await trial(), inventoryAccountId)).toBe('108')
+    expect((await read(detail)).checks.every((entry: { matched: boolean }) => entry.matched)).toBe(true)
+  } finally {
+    await second.close()
+  }
+})
+
+const taxBases = ['accrual', 'cash'] as const
+taxBases.forEach(taxBasis => test(`P4 sales, inventory, invoicing, settlement and communication reconcile (${taxBasis})`, async ({ page, browser, playwright }) => {
   test.setTimeout(360_000)
   const origin = 'https://localhost:7443'
   const reviewerContext = await browser.newContext({ baseURL: origin })
@@ -1725,9 +2192,9 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     await Promise.all([login(page, 'alice'), login(reviewer, 'bob')])
     const post = (actor: Page, path: string, body: object) => write(actor, path, 'POST', { operationId: crypto.randomUUID(), ...body })
     const put = (actor: Page, path: string, body: object) => write(actor, path, 'PUT', { operationId: crypto.randomUUID(), ...body })
-    const ok = async (pending: Promise<{ status: number; text: string }>, status = 200) => {
+    const ok = async (pending: Promise<{ status: number; text: string; expectedSuccess?: number }>, status?: number) => {
       const result = await pending
-      expect(result.status, result.text).toBe(status)
+      expect(result.status, result.text).toBe(status ?? result.expectedSuccess ?? 200)
       return JSON.parse(result.text)
     }
     const read = (actor: Page, path: string) => ok(api(actor, path))
@@ -1743,9 +2210,14 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     const sales = '/bff/api/sales' + scope + '/orders'
     const purchase = '/bff/api/purchasing' + scope + '/orders'
     const version = async (actor: Page) => (await read(actor, org + '/access')).authorizationVersion
-    const invite = await ok(post(page, org + '/invitations', { expectedVersion: await version(page), email: 'bob@nexora.invalid', role: 'WorkspaceOwner' }))
+    const inviteResponse = await write(page, org + '/invitations', 'POST', { email: 'bob@nexora.invalid', role: 'WorkspaceOwner' },
+      { 'If-Match': `"${await version(page)}"`, 'Idempotency-Key': crypto.randomUUID() })
+    const invite = await ok(Promise.resolve(inviteResponse), 201)
+    expect(inviteResponse.location).toBe(org + '/invitations/' + invite.invitation.id)
+    expect((await api(page, inviteResponse.location!)).status).toBe(200)
     await ok(post(reviewer, '/bff/api/invitations/' + invite.invitation.id + '/redeem', { token: invite.token }))
     const members = await read(page, org + '/members') as { id: string; email: string }[]
+    expect(await read(page, org + '/members?pageSize=1')).toHaveLength(1)
     const alice = members.find(x => x.email === 'alice@nexora.invalid')!.id
     const bob = members.find(x => x.email === 'bob@nexora.invalid')!.id
     const grant = async (maker: Page, approver: Page, member: string, area: string, role: string) => {
@@ -1801,21 +2273,46 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     await add(tax + '/rates', { code: 'SAMPLE', name: '验收税率', effectiveOn: '2026-01-01', rate: '0.13' })
     await add(tax + '/groups', { code: 'OUTPUT', name: '验收销项', expectedVersion: 0, rateCodes: ['SAMPLE'] })
     await add(tax + '/classifications', { kind: 'partner', resourceId: customer.id, groupCode: 'OUTPUT', expectedVersion: 0 })
-    const warehouse = await add(inventory + '/warehouses', { code: 'MAIN', name: '销售主仓' })
+    const calendar = tax + '/calendar'
+    const taxPeriod = tax + '/periods/2026-01-01'
+    const taxFilings = taxPeriod + '/filings'
+    expect(await read(page, calendar)).toMatchObject({ cycle: 'monthly', version: 0, basis: 'accrual', canChangeCalendar: true })
+    expect(await read(page, taxPeriod)).toMatchObject({ current: { period: { from: '2026-01-01', through: '2026-01-31' } } })
+    const cashTax = taxBasis === 'cash'
+    expect(await ok(put(page, calendar, { expectedVersion: 0, cycle: 'quarterly', ...(cashTax ? { basis: taxBasis } : {}) })))
+      .toMatchObject({ cycle: 'quarterly', version: 1, basis: taxBasis })
+    const warehouseInput = { code: 'MAIN', name: '销售主仓' }
+    const warehouseKey = crypto.randomUUID()
+    const warehouseResponse = await write(page, inventory + '/warehouses', 'POST', warehouseInput, { 'Idempotency-Key': warehouseKey })
+    const warehouse = await ok(Promise.resolve(warehouseResponse), 201)
     const warehousePath = inventory + '/warehouses/' + warehouse.id
+    expect(warehouseResponse.location).toBe(warehousePath)
+    expect((await api(page, warehousePath)).status).toBe(200)
+    expect(await ok(post(page, inventory + '/warehouses', { ...warehouseInput, operationId: warehouseKey }))).toEqual(warehouse)
+    const outdatedWarehouse = await write(page, warehousePath + '/receiver', 'PUT', { memberId: alice },
+      { 'If-Match': `"${warehouse.version + 1}"`, 'Idempotency-Key': crypto.randomUUID() })
+    expect(outdatedWarehouse.status).toBe(412)
     await ok(put(page, warehousePath + '/receiver', { expectedVersion: warehouse.version, memberId: alice }))
     const on = '2026-01-08'
-    const po = await add(purchase, { number: 'P4-PURCHASE', draft: { on, supplierId: supplier.id,
-      lines: [{ itemId: product.id, quantity: '10', unitPrice: '60' }] } })
+    const purchaseKey = crypto.randomUUID()
+    const purchaseDraft = { number: 'P4-PURCHASE', draft: { on, supplierId: supplier.id,
+      lines: [{ itemId: product.id, quantity: '10', unitPrice: '60' }] } }
+    const purchaseResponse = await write(page, purchase, 'POST', purchaseDraft, { 'Idempotency-Key': purchaseKey })
+    const po = await ok(Promise.resolve(purchaseResponse), 201)
     const poPath = purchase + '/' + po.id
+    expect(purchaseResponse.location).toBe(poPath)
+    expect(await ok(post(page, purchase, { ...purchaseDraft, operationId: purchaseKey }), 201)).toEqual(po)
     const decideOrder = (actor: Page, path: string, expectedVersion: number, decision: string) =>
       post(actor, path + '/decision', { expectedVersion, decision })
-    await ok(decideOrder(page, poPath, 1, 'submit'))
+    await ok(write(page, poPath + '/decision', 'POST', { decision: 'submit' },
+      { 'If-Match': `"${po.version}"`, 'Idempotency-Key': crypto.randomUUID() }))
     await ok(decideOrder(reviewer, poPath, 2, 'approve'))
     const poDetails = await read(page, poPath)
-    const permit = await ok(post(reviewer, poPath + '/receipts', {
+    const permitResponse = await post(reviewer, poPath + '/receipts', {
       expectedVersion: 3, lineId: poDetails.lines[0].id, warehouseId: warehouse.id, quantity: '10',
-    }))
+    })
+    const permit = await ok(Promise.resolve(permitResponse), 202)
+    expect(permitResponse.location).toBe(poPath + '/receipts')
     await expect.poll(async () => (await read(reviewer, poPath + '/receipts')).permits[0]?.state).toBe('issued')
     const received = await add(inventory + '/receipts/' + permit.permitId + '/receive', { expectedRevision: 1, on, quantity: '10' })
     await expect.poll(async () => (await read(reviewer, trade + '/receipts')).find((row: { fact: { id: string } }) => row.fact.id === received.id)?.posted).toBe(true)
@@ -1910,6 +2407,7 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     }
     expect(await stock()).toMatchObject({ quantity: '10', reserved: '0', available: '10', value: '600' })
     const secondOrder = await ok(post(page, sales, { number: 'SALES-COMPETING', draft: { ...draft, lines: [saleLine] } }), 201)
+    expect(await read(page, sales + '?pageSize=1')).toMatchObject({ orders: [expect.any(Object)], hasMore: true })
     const secondPath = sales + '/' + secondOrder.id
     await ok(decideOrder(page, secondPath, 1, 'submit'))
     await ok(decideOrder(reviewer, secondPath, 2, 'approve'))
@@ -1943,8 +2441,8 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     const drafts = await Promise.all([
       submit('invoice', 'INV-A', { lines: invoiced }), submit('invoice', 'INV-B', { lines: invoiced }),
     ])
-    expect(drafts.map(x => x.status).sort()).toEqual([200, 409])
-    let invoice = JSON.parse(drafts.find(x => x.status === 200)!.text)
+    expect(drafts.map(x => x.status).sort()).toEqual([201, 409])
+    let invoice = JSON.parse(drafts.find(x => x.status === 201)!.text)
     const invoicePath = ar + '/documents/' + invoice.id
     expect((await approve(invoice, page)).status).toBe(403)
     const fetchPdf = (actor: Page, path: string) => actor.evaluate(async (url) => {
@@ -1961,6 +2459,19 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     expect((await approve({ id: invoice.id, version: originalVersion })).status).toBe(409)
     await ok(approve(invoice))
     expect(await doc(invoice.id)).toMatchObject({ openBalance: '1130', state: 'posted', terms: { total: '1130', dueOn: '2026-01-31' } })
+    const beforeCredits = (await read(page, taxPeriod)).current
+    const originalOutput = cashTax ? '0' : '130'
+    expect(beforeCredits).toMatchObject({ output: originalOutput, input: '0', netPayable: originalOutput, basis: taxBasis,
+      period: { from: '2026-01-01', through: '2026-03-31' },
+      sources: cashTax ? [] : [expect.objectContaining({ documentId: invoice.id, kind: 'sales-invoice', amount: '130' })],
+    })
+    const firstTax = { expectedVersion: 0, expectedFingerprint: beforeCredits.fingerprint, reference: 'Q1-ORIGINAL', lockBooks: false }
+    expect((await post(page, taxFilings, { ...firstTax, lockBooks: true })).status).toBe(403)
+    const initialTaxResponse = await post(page, taxFilings, firstTax)
+    const initialTaxFiling = await ok(Promise.resolve(initialTaxResponse), 201)
+    expect(initialTaxResponse.location).toBe(tax + '/filings/' + initialTaxFiling.filing.id)
+    expect(initialTaxFiling.snapshot.output).toBe(originalOutput)
+    expect(await read(page, calendar)).toMatchObject({ canChangeCalendar: false })
     const pdf = await fetchPdf(page, invoicePath + '/pdf')
     expect(pdf.status).toBe(200)
     const pdfBytes = Buffer.from(pdf.bytes)
@@ -1987,12 +2498,14 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
 
     const receipt = await ok(submit('receipt', 'REC-500', { customerId: customer.id, amount: '500', bankId: bank.id }))
     await ok(approve(receipt))
+    if (cashTax) expect((await read(page, taxPeriod)).current.output).toBe('0')
     const firstAllocation = await ok(submit('allocation', 'ALLOC-500A', { invoiceId: invoice.id, fundsId: receipt.id, amount: '500' }))
     const competingAllocation = await ok(submit('allocation', 'ALLOC-500B', { invoiceId: invoice.id, fundsId: receipt.id, amount: '500' }))
     const allocations = await Promise.all([approve(firstAllocation), approve(competingAllocation)])
     expect(allocations.map(x => x.status).sort()).toEqual([200, 409])
     expect(await doc(invoice.id)).toMatchObject({ openBalance: '630' })
     expect(await doc(receipt.id)).toMatchObject({ openBalance: '0' })
+    if (cashTax) expect((await read(page, taxPeriod)).current.output).toBe('57.52')
     const reportPeriod = '?from=2026-01-01&through=2026-01-31'
     const cashProfit = finance + '/reports/profit-and-loss' + reportPeriod + '&basis=cash'
     const firstCash = await read(page, cashProfit)
@@ -2037,6 +2550,29 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
       { key: 'income', amount: '442.48', previous: null, difference: null })
     expect((await read(page, agingPath)).total).toBe('0')
     expect((await read(page, agingPath + '&watermark=' + firstCash.watermark)).total).toBe('630')
+    const customerLedger = finance + '/reporting/partner-ledgers/receivables/' + customer.id + '?from=2026-01-01&through=2026-02-01'
+    const customerStatement = await read(page, customerLedger)
+    expect(customerStatement).toMatchObject({ open: { opening: '0', closing: '0' }, funds: { opening: '0', closing: '0' } })
+    expect(customerStatement.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: invoice.id, kind: 'invoice', openDelta: '1130' }),
+      expect.objectContaining({ id: closeReceipt.id, kind: 'receipt', fundsDelta: '517' }),
+      expect.objectContaining({ number: 'ALLOC-517', kind: 'allocation', openDelta: '-517', fundsDelta: '-517' }),
+      expect.objectContaining({ number: 'REFUND-113', kind: 'refund', fundsDelta: '-113' }),
+    ]))
+    expect(await read(page, customerLedger + '&watermark=' + firstCash.watermark)).toMatchObject({
+      watermark: firstCash.watermark, open: { closing: '630' },
+    })
+    await page.goto('/?workspace=' + work.id)
+    await page.getByTestId('module-aging').click()
+    await page.getByRole('button', { name: '打开往来台账' }).click()
+    const ledgerPanel = page.getByRole('region', { name: '往来台账' })
+    await ledgerPanel.getByRole('combobox', { name: '往来单位' }).click()
+    await page.getByRole('option', { name: /华东客户/ }).click()
+    await ledgerPanel.getByLabel('台账截止日期').fill('2026-02-01')
+    await ledgerPanel.getByRole('button', { name: '查询往来台账' }).click()
+    const receiptRow = ledgerPanel.getByRole('row', { name: /REC-517/ })
+    await receiptRow.getByRole('button', { name: '查看台账凭证' }).click()
+    await expect(ledgerPanel.getByText(/REC-517 · 2026/)).toBeVisible()
     const cashFlow = await read(page, finance + '/reports/cash-flow' + reportPeriod)
     expect(cashFlow).toMatchObject({ basis: 'cash', totals: expect.arrayContaining([
       { key: 'cash-closing', amount: '904', previous: null, difference: null },
@@ -2066,7 +2602,12 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     const exportPath = finance + '/report-exports'
     const exportRequest = { operationId: crypto.randomUUID(), kind: 'cash-flow', basis: 'cash', from: '2026-01-01',
       through: '2026-01-31', compare: true, watermark: cashFlow.watermark }
-    const exportJob = await ok(write(page, exportPath, 'POST', exportRequest))
+    const { operationId: exportKey, ...exportInput } = exportRequest
+    const exportResponse = await write(page, exportPath, 'POST', exportInput, { 'Idempotency-Key': exportKey })
+    const exportJob = await ok(Promise.resolve(exportResponse), 201)
+    expect(exportResponse.location).toBe(exportPath + '/' + exportJob.id)
+    expect((await api(page, exportResponse.location!)).status).toBe(200)
+    expect((await api(reviewer, exportResponse.location!)).status).toBe(404)
     expect(await ok(write(page, exportPath, 'POST', exportRequest))).toMatchObject({ id: exportJob.id })
     const file = exportPath + '/' + exportJob.id + '/file'
     await expect.poll(async () => (await api(page, file)).status).toBe(200)
@@ -2153,6 +2694,12 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     expect((await post(reviewer, outsideInvoice + '/dispatches', { recipient: contactEmail })).status).toBe(403)
     expect((await post(reviewer, mailPath, { recipient: 'outside@example.test' })).status).toBe(403)
     const sink = process.env.NEXORA_TEST_P4_SMTP_SINK
+    if (process.env.NEXORA_TEST_P4_MAILPIT === '1' && !sink) {
+      const queued = await post(reviewer, mailPath, { recipient: contactEmail })
+      const dispatch = await ok(Promise.resolve(queued), 201)
+      expect(queued.location).toBe(mailPath + '/' + dispatch.id)
+      await expect.poll(async () => (await read(reviewer, queued.location!)).state).toBe('sent')
+    }
     if (sink) {
       const control = (data: object) => visitor.post(sink, { data })
       const deliveries = () => read(reviewer, mailPath)
@@ -2190,13 +2737,242 @@ test('P4 sales, inventory, invoicing, settlement and communication reconcile', a
     await expect(page.getByRole('heading', { name: '销售报价与订单' })).toBeVisible()
     await page.getByTestId('module-receivables').click()
     await expect(page.getByRole('button', { name: /INV-[AB].*客户发票.*已过账/ })).toBeVisible()
+
+    const inputTax = await add(tax + '/assessments', {
+      on, groupCode: 'OUTPUT', partnerId: supplier.id, unitPrice: '60', quantity: '1', discount: '0', includesTax: false,
+    })
+    const taxedBill = await add(trade + '/documents', {
+      terms: {
+        kind: 1, on, number: 'Q1-TAX-BILL', memo: '进项申报样例', amount: '60', sourceId: received.id,
+        partnerId: supplier.id, quantity: '1', taxAssessmentId: inputTax.id,
+      },
+    })
+    await ok(post(reviewer, trade + '/documents/' + taxedBill.id + '/decision', { expectedVersion: taxedBill.version, decision: 'approve' }))
+    const currentTax = await read(page, taxPeriod)
+    const periodInput = cashTax ? '0' : '7.8'
+    const periodNet = cashTax ? '104' : '96.2'
+    expect(currentTax).toMatchObject({ changedSinceFiling: true, current: {
+      input: periodInput, output: '104', netPayable: periodNet, sources: expect.arrayContaining(cashTax ? [
+        expect.objectContaining({ kind: 'customer-refund', taxDocumentId: refundCredit.id, amount: '-13' }),
+        expect.objectContaining({ kind: 'customer-allocation', taxDocumentId: invoice.id, amount: '57.52' }),
+      ] : [
+        expect.objectContaining({ kind: 'supplier-bill', documentId: taxedBill.id, amount: '7.8' }),
+        expect.objectContaining({ kind: 'sales-credit', documentId: credit.id, amount: '-13' }),
+      ]),
+    } })
+    expect((await post(reviewer, taxFilings, { ...firstTax, expectedVersion: 1, reason: '旧汇总' })).status).toBe(409)
+
+    const chart = (await read(page, finance + '/chart')).accounts as { code: string; id: string }[]
+    const journal = (date: string, sourceNumber: string) => post(page, finance + '/ledger/journals', {
+      kind: 'manual', sourceNumber, draft: { on: date, memo: sourceNumber, lines: [
+        { accountId: chart.find(x => x.code === '1001')!.id, debit: '1', credit: '0' },
+        { accountId: chart.find(x => x.code === '3001')!.id, debit: '0', credit: '1' },
+      ] },
+    })
+    const pending = await ok(journal(on, 'Q1-PENDING'), 201)
+    const journalDecision = finance + '/ledger/journals/' + pending.id + '/decision'
+    const submitted = await ok(post(page, journalDecision, { expectedVersion: pending.version, decision: 'submit' }))
+    const correction = { expectedFingerprint: currentTax.current.fingerprint, reason: '补记采购进项并扣除销售贷项', lockBooks: true }
+    const attemptsToFile = ['Q1-AMEND-A', 'Q1-AMEND-B'].map(reference => ({
+      body: { ...correction, reference },
+      headers: { 'If-Match': '"1"', 'Idempotency-Key': crypto.randomUUID() },
+    }))
+    const amendments = await Promise.all(attemptsToFile.map(attempt => write(reviewer, taxFilings, 'POST', attempt.body, attempt.headers)))
+    expect(amendments.map(x => x.status).sort()).toEqual([201, 412])
+    const winnerIndex = amendments.findIndex(x => x.status === 201)
+    const amended = JSON.parse(amendments[winnerIndex]!.text)
+    expect(amended).toMatchObject({ filing: { version: 2, correctsId: initialTaxFiling.filing.id, lockBooks: true },
+      snapshot: { input: periodInput, output: '104', netPayable: periodNet, basis: taxBasis } })
+    const winnerRequest = attemptsToFile[winnerIndex]!
+    expect(await ok(write(reviewer, taxFilings, 'POST', winnerRequest.body, winnerRequest.headers), 201)).toEqual(amended)
+    expect(await read(page, taxPeriod)).toMatchObject({ changedSinceFiling: false, lockedThrough: '2026-03-31' })
+    expect(await read(page, initialTaxResponse.location!)).toMatchObject({ snapshot: { output: originalOutput, input: '0', basis: taxBasis } })
+    await ok(post(reviewer, finance.replace(work.id, outside.id) + '/book', {
+      baseCurrency: 'CNY', startsOn: '2026-01-01', fiscalYearStartMonth: 1,
+    }))
+    expect((await api(reviewer, initialTaxResponse.location!.replace(work.id, outside.id))).status).toBe(404)
+    expect((await put(page, calendar, { expectedVersion: 1, cycle: 'monthly' })).status).toBe(409)
+    expect((await put(page, calendar, { expectedVersion: 1, cycle: 'quarterly', basis: cashTax ? 'accrual' : 'cash' })).status).toBe(409)
+    const lockedPending = await post(reviewer, journalDecision, { expectedVersion: submitted.version, decision: 'post' })
+    expect(lockedPending.status).toBe(409)
+    expect(JSON.parse(lockedPending.text).code).toBe('finance.tax_period_locked')
+    expect((await journal(on, 'Q1-BACKDATED')).status).toBe(409)
+    await ok(post(reviewer, finance + '/ledger/periods/2026-04-01', { expectedVersion: 0, action: 'open', reason: '期后继续记账' }))
+    const later = await ok(journal('2026-04-01', 'Q2-ENTRY'), 201)
+    const laterDecision = finance + '/ledger/journals/' + later.id + '/decision'
+    const ready = await ok(post(page, laterDecision, { expectedVersion: later.version, decision: 'submit' }))
+    await ok(post(reviewer, laterDecision, { expectedVersion: ready.version, decision: 'post' }))
+    if (cashTax) {
+      const settleSupplier = async (terms: object) => {
+        const document = await add(trade + '/documents', { terms })
+        await ok(post(reviewer, trade + '/documents/' + document.id + '/decision', { expectedVersion: document.version, decision: 'approve' }))
+        return document.id as string
+      }
+      const april = tax + '/periods/2026-04-01'
+      const payment = { kind: 2, on: '2026-04-01', memo: '跨期付款', bankId: bank.id, sourceId: taxedBill.id }
+      const partial = await settleSupplier({ ...payment, number: 'Q2-PARTIAL', amount: '30' })
+      expect((await read(page, april)).current).toMatchObject({ input: '3.45', sources: [
+        expect.objectContaining({ documentId: partial, taxDocumentId: taxedBill.id, amount: '3.45' }),
+      ] })
+      await settleSupplier({ ...payment, number: 'Q2-FINAL', amount: '37.8' })
+      expect((await read(page, april)).current.input).toBe('7.8')
+      await settleSupplier({ kind: 7, on: '2026-04-02', number: 'Q2-VOID', memo: '冲销部分付款', sourceId: partial })
+      expect((await read(page, april)).current).toMatchObject({ input: '4.35',
+        sources: expect.arrayContaining([expect.objectContaining({ kind: 'supplier-payment-void', amount: '-3.45' })]),
+      })
+      expect(await read(page, taxPeriod)).toMatchObject({ changedSinceFiling: false, current: { input: '0', output: '104' } })
+    }
+
+    await page.getByTestId('module-book').click()
+    await page.getByRole('button', { name: '打开纳税申报' }).click()
+    await page.getByLabel('纳税期间月份').fill('2026-01')
+    await page.getByRole('button', { name: '查看进销项汇总' }).click()
+    await expect(page.getByTestId('tax-locked-through')).toHaveText('账簿已锁定至 2026-03-31')
+    await expect(page.getByTestId('tax-filing-totals')).toContainText('净额 ' + periodNet)
+    await page.getByRole('button', { name: '查看 Q1-ORIGINAL · v1' }).click()
+    await expect(page.getByTestId('tax-filing-totals')).toContainText('销项 ' + originalOutput)
+    await expect(page.getByRole('heading', { name: /申报快照 v1/ })).toContainText(cashTax ? '收付实现制' : '权责发生制')
+    if (!cashTax) {
+      const numbering = ar + '/invoice-numbering'
+      await page.getByTestId('module-receivables').click()
+      await page.getByRole('button', { name: '发票编号设置' }).click()
+      await page.getByLabel('财年编号格式').fill('INV-{FY}-{####}')
+      await page.getByLabel('起始号').fill('25')
+      await page.getByRole('button', { name: '保存编号设置' }).click()
+      await expect.poll(() => read(page, numbering)).toMatchObject({ startingNumber: 25, version: 1 })
+      const preview = (date: string) => read(page, numbering + '/preview?on=' + date)
+      expect(await preview('2026-04-03')).toMatchObject({ fiscalYear: 2026, number: 'INV-2026-0025' })
+      const date = '2026-04-03'
+      const drafts = []
+      for (const price of ['10', '20']) {
+        const scheduled = await add(schedules, { expectedVersion: 0,
+          input: { ...template, unitPrice: price, nextOn: date, endsOn: date } })
+        const entry = await add(schedules + '/' + scheduled.id + '/run', { on: date })
+        drafts.push(await doc(entry.invoiceId))
+      }
+      expect(drafts).toEqual(drafts.map(() => expect.objectContaining({ awaitsFiscalNumber: true,
+        terms: expect.objectContaining({ number: '' }) })))
+      const confirm = (draft: typeof drafts[number], expectedNumber: string) =>
+        post(reviewer, ar + '/documents/' + draft.id + '/decision', { approve: true, expectedVersion: draft.version, expectedNumber })
+      const approvals = await Promise.all(drafts.map(draft => confirm(draft, 'INV-2026-0025')))
+      expect(approvals.map(x => x.status).sort()).toEqual([200, 409])
+      const stale = approvals.findIndex(result => result.status === 409)
+      expect(JSON.parse(approvals[stale]!.text).code).toBe('finance.invoice_number_changed')
+      expect(await doc(drafts[stale].id)).toMatchObject({ awaitsFiscalNumber: true, state: 'submitted' })
+      expect(await preview(date)).toMatchObject({ number: 'INV-2026-0026' })
+      await ok(confirm(drafts[stale], 'INV-2026-0026'))
+      expect(await doc(drafts[stale].id)).toMatchObject({ awaitsFiscalNumber: false, terms: { number: 'INV-2026-0026' } })
+      expect(await preview('2027-01-01')).toMatchObject({ number: 'INV-2027-0025' })
+      expect((await put(page, numbering, { expectedVersion: 1, startingNumber: 24, pattern: 'INV-{FY}-{####}' })).status).toBe(409)
+
+      const journalPath = finance + '/ledger/journals'
+      const imported = journalPath + '/imported'
+      const importDraft = { on: '2026-04-03', memo: '外部凭证导入', lines: [
+        { accountId: chart.find(x => x.code === '1001')!.id, debit: '2', credit: '0' },
+        { accountId: chart.find(x => x.code === '3001')!.id, debit: '0', credit: '2' },
+      ] }
+      const input = { provider: 'external-test', externalId: 'source-001', draft: importDraft }
+      const importIdempotency = { 'Idempotency-Key': crypto.randomUUID() }
+      const importedA = await ok(write(page, imported, 'POST', input, importIdempotency), 201)
+      expect(await ok(write(page, imported, 'POST', input, importIdempotency), 201)).toEqual(importedA)
+      expect((await post(page, imported, input)).status).toBe(409)
+      expect((await put(page, journalPath + '/' + importedA.id, { expectedVersion: 1, draft: importDraft })).status).toBe(409)
+      const importedB = await ok(post(page, imported, { ...input, externalId: 'source-002' }), 201)
+      const discarded = await ok(post(page, imported, { ...input, externalId: 'source-003' }), 201)
+      const batch = (actor: Page, decision: string, rows: { id: string; version: number }[]) =>
+        post(actor, imported + '/batch-decision', { decision, journals: rows })
+      await ok(batch(page, 'cancel', [discarded]))
+      expect((await post(page, imported, { ...input, externalId: 'source-003' })).status).toBe(409)
+      const reviewed = await ok(batch(page, 'submit', [importedA, importedB]))
+      expect((await batch(page, 'post', reviewed)).status).toBe(403)
+      expect((await batch(reviewer, 'post', [reviewed[0], importedB])).status).toBe(409)
+      expect((await read(page, journalPath + '/' + importedA.id)).journal.state).toBe('submitted')
+      const command = { decision: 'post', journals: reviewed }
+      const keys = { 'Idempotency-Key': crypto.randomUUID() }
+      const booked = await ok(write(reviewer, imported + '/batch-decision', 'POST', command, keys))
+      expect(await ok(write(reviewer, imported + '/batch-decision', 'POST', command, keys))).toEqual(booked)
+      expect((await read(page, journalPath + '/' + importedA.id)).journal)
+        .toMatchObject({ state: 'posted', kind: 'imported', importProvider: 'external-test', externalId: 'source-001' })
+      expect((await read(page, journalPath + '/' + importedB.id)).journal.state).toBe('posted')
+
+      const future = { ...template, nextOn: '2091-01-31', endsOn: '2091-03-31' }
+      const skipped = await add(schedules, { expectedVersion: 0, input: future })
+      const skipPath = schedules + '/' + skipped.id
+      await ok(post(page, skipPath + '/skip', { expectedVersion: skipped.version, on: future.nextOn }))
+      expect(await read(page, skipPath + '/occurrences')).toEqual([
+        expect.objectContaining({ on: future.nextOn, documentId: null }),
+      ])
+      expect((await read(page, schedules)).find((x: { id: string }) => x.id === skipped.id))
+        .toMatchObject({ nextOn: '2091-02-28', paused: false })
+
+      const wise = [
+        'activity_id,created_on,currency,status,direction,amount,signed_amount,description',
+        'WISE-OWNER-IN,2026-04-04T11:00:00Z,CNY,completed,in,50,50,业主出资',
+        'WISE-OWNER-OUT,2026-04-04T12:00:00Z,CNY,completed,out,10,-10,业主提款',
+        'WISE-NEUTRAL,2026-04-04T12:00:00Z,CNY,completed,neutral,100,100,内部换汇',
+        'WISE-FOREIGN,2026-04-04T12:00:00Z,USD,completed,out,100,-100,其他币种',
+        'WISE-PENDING,2026-04-04T12:00:00Z,CNY,pending,in,100,100,未完成',
+      ].join('\n')
+      const importWise = await ok(post(page, trade + '/imports/preview', { bankId: bank.id, file: wise,
+        mapping: { externalId: 'Reference', date: 'Date', amount: 'Amount', description: 'Description' } }))
+      expect(importWise.rows.map((row: { entry: { externalId: string } }) => row.entry.externalId)).toEqual(['WISE-OWNER-IN', 'WISE-OWNER-OUT'])
+      expect(importWise.skipped).toHaveLength(3)
+      await ok(post(page, trade + '/imports/' + importWise.previewId + '/commit', {}))
+      const statementPath = trade + '/banks/' + bank.id + '/statement'
+      const statement = () => read(page, statementPath)
+      const ownerLine = (await statement()).find((x: { externalId: string }) => x.externalId === 'WISE-OWNER-IN')
+      const drawingLine = (await statement()).find((x: { externalId: string }) => x.externalId === 'WISE-OWNER-OUT')
+      const owner = async (kind: number, number: string, amount: string, fields: object) => {
+        const change = await add(trade + '/documents', { terms: { kind, on: '2026-04-04', number, memo: number, amount, ...fields } })
+        await ok(post(reviewer, trade + '/documents/' + change.id + '/decision', { expectedVersion: change.version, decision: 'approve' }))
+        return change.id as string
+      }
+      const equityAccount = chart.find(x => x.code === '3001')!.id
+      await owner(11, 'OWNER-IN', '50', { bankId: bank.id, counterAccountId: equityAccount, statementLineId: ownerLine.id })
+      const drawing = await owner(12, 'OWNER-OUT', '10', { bankId: bank.id, counterAccountId: equityAccount, statementLineId: drawingLine.id })
+      const equityReport = finance + '/reports/equity-changes?from=2026-04-01&through=2026-04-30'
+      expect((await read(page, equityReport)).totals).toEqual(expect.arrayContaining([
+        expect.objectContaining({ key: 'owner-contribution', amount: '50' }),
+        expect.objectContaining({ key: 'owner-drawing', amount: '10' }),
+        expect.objectContaining({ key: 'balance-difference', amount: '0' }),
+      ]))
+      await owner(7, 'OWNER-OUT-VOID', '0', { sourceId: drawing })
+      expect((await statement()).find((x: { id: string }) => x.id === drawingLine.id).matched).toBe('0')
+      expect((await read(page, equityReport)).totals).toContainEqual(expect.objectContaining({ key: 'owner-drawing', amount: '0' }))
+      const workspaces = await read(page, '/bff/api/workspaces') as { id: string; isPersonal: boolean }[]
+      const personal = workspaces.find(x => x.isPersonal)
+        ?? await ok(post(page, '/bff/api/workspaces/personal', { name: '个人对账验收' }), 201)
+      const link = org + '/personal-links/' + personal.id
+      await page.getByTestId('module-book').click()
+      await page.getByRole('button', { name: '打开资金工作台' }).click()
+      await page.getByLabel('查看银行流水和对账单').click()
+      await page.getByRole('option', { name: '基本户', exact: true }).click()
+      const reloadStatement = page.getByRole('button', { name: '读取银行流水与待审核行' })
+      await reloadStatement.click()
+      await page.getByLabel('待审核对账单行').click()
+      await page.getByRole('option', { name: /WISE-OWNER-OUT/ }).click()
+      const personalDrawing = page.getByRole('button', { name: '登记从公司转入个人账本的提款' })
+      await expect(personalDrawing).toHaveCount(0)
+      await ok(put(page, link, { isLinked: true }))
+      await reloadStatement.click()
+      await expect(personalDrawing).toBeVisible()
+      await expect(page.getByRole('button', { name: '打开关联个人账本' })).toBeVisible()
+      await ok(put(page, link, { isLinked: false }))
+      await reloadStatement.click()
+      await expect(personalDrawing).toHaveCount(0)
+      expect(await read(page, ar + '/invoices')).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: invoice.id, state: 'posted', terms: expect.objectContaining({ kind: 1 }) }),
+      ]))
+      expect(await read(page, trade + '/bills')).toEqual([expect.objectContaining({ id: taxedBill.id, state: 'posted' })])
+      expect(await read(page, trade + '/banks')).toEqual([expect.objectContaining({ id: bank.id })])
+    }
   } finally {
     await visitor.dispose()
     await guestContext.close()
     await reviewerContext.close()
   }
-}
-)
+}))
+
 test('Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping', async ({ page }) => {
   await login(page, 'alice')
   const stamp = Date.now()
@@ -2457,7 +3233,7 @@ test('Business data exports download CSV and print from list panels', async ({ p
   const inviteResponse = await write(page, orgPath + '/invitations', 'POST', {
     operationId: crypto.randomUUID(), expectedVersion: await version(page), email: 'bob@nexora.invalid', role: 'WorkspaceOwner',
   })
-  expect(inviteResponse.status).toBe(200)
+  expect(inviteResponse.status).toBe(201)
   const invite = JSON.parse(inviteResponse.text) as { invitation: { id: string }; token: string }
   const redeemResponse = await write(bobPage, '/bff/api/invitations/' + invite.invitation.id + '/redeem', 'POST', { operationId: crypto.randomUUID(), token: invite.token })
   expect(redeemResponse.status).toBe(200)
@@ -2525,7 +3301,7 @@ test('Business data exports download CSV and print from list panels', async ({ p
         operationId: crypto.randomUUID(), kind: 'profit-and-loss', from: today, through: today,
         compare: false, watermark: report.watermark, basis: 'accrual',
       })
-      if (queued.status === 200) return
+      if (queued.status === 201) return
       expect(queued.status).toBe(409)
       await page.waitForTimeout(500)
     }
@@ -2724,6 +3500,8 @@ test('Finance MCP lists read-only tools, answers scoped calls and rejects other 
   expect(toolNames).toContain('finance_trial_balance')
   expect(toolNames).toContain('finance_financial_report')
   expect(toolNames).toContain('finance_list_journals')
+  expect(toolNames).toEqual(expect.arrayContaining(['finance_list_banks', 'finance_list_customers', 'finance_list_suppliers',
+    'finance_list_invoices', 'finance_list_bills']))
 
   const accounts = await mcpCall({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'finance_list_accounts', arguments: { workspaceId } } })
   expect(accounts.body.result?.isError).toBe(false)
@@ -2736,6 +3514,26 @@ test('Finance MCP lists read-only tools, answers scoped calls and rejects other 
   expect(directChart.status).toBe(200)
   const directCodes = (JSON.parse(directChart.text) as { accounts: { code: string }[] }).accounts.map(account => account.code)
   expect(chartCodes).toEqual(directCodes)
+  const partnerPath = `/bff/api/masterdata/workspaces/${workspaceId}/partners`
+  for (const role of ['customer', 'supplier']) {
+    expect((await write(page, partnerPath, 'POST', { operationId: crypto.randomUUID(), code: role.toUpperCase(),
+      profile: { name: 'MCP ' + role, roles: [role], contacts: [] } })).status).toBe(201)
+    const query = await mcpCall({ jsonrpc: '2.0', id: 20, method: 'tools/call',
+      params: { name: role === 'customer' ? 'finance_list_customers' : 'finance_list_suppliers', arguments: { workspaceId } } })
+    expect(query.body.result?.isError).toBe(false)
+    expect(query.body.result?.structuredContent).toMatchObject({ items: [{ code: role.toUpperCase(), roles: [role] }] })
+  }
+  for (const name of ['finance_list_banks', 'finance_list_invoices', 'finance_list_bills']) {
+    const query = await mcpCall({ jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name, arguments: { workspaceId, page: 1 } } })
+    expect(query.body.result?.isError).toBe(false)
+    expect(query.body.result?.structuredContent).toEqual([])
+  }
+  const invalidPage = await mcpCall({ jsonrpc: '2.0', id: 23, method: 'tools/call',
+    params: { name: 'finance_list_suppliers', arguments: { workspaceId, page: 0 } } })
+  expect(invalidPage.body.error?.code).toBe(-32602)
+  const deniedSuppliers = await mcpCall({ jsonrpc: '2.0', id: 24, method: 'tools/call',
+    params: { name: 'finance_list_suppliers', arguments: { workspaceId: crypto.randomUUID() } } })
+  expect(deniedSuppliers.body.result?.isError).toBe(true)
 
   const foreign = await mcpCall({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'finance_list_accounts', arguments: { workspaceId: crypto.randomUUID() } } })
   expect(foreign.status).toBe(200)
@@ -2894,6 +3692,13 @@ test('Billing plans enforce quotas, gate modules, record manual payments and dow
   // 本地默认套餐为专业版：AI 助手模块可用，计费视图按生效套餐展示。
   expect((await api(page, assistantSessions)).status).toBe(200)
   expect((await readBilling()).subscription.planCode).toBe('pro')
+  const usageBeforeReplay = (await readEntitlements()).usage.documentsThisMonth
+  const reservationKey = crypto.randomUUID()
+  const reservation = billing + '/usage/documents'
+  const firstReservation = await write(page, reservation, 'POST', { count: 1 }, { 'Idempotency-Key': reservationKey })
+  expect(firstReservation.status, firstReservation.text).toBe(200)
+  expect((await write(page, reservation, 'POST', { count: 1, operationId: reservationKey })).status).toBe(200)
+  expect((await readEntitlements()).usage.documentsThisMonth).toBe(usageBeforeReplay + 1)
 
   // 账单页展示当前套餐与配额，并可通过界面降级到免费版。
   await page.goto('/companies/' + workspace.id + '/billing')
@@ -2932,8 +3737,8 @@ test('Billing plans enforce quotas, gate modules, record manual payments and dow
   const invite = async (email: string) => write(page, org + '/invitations', 'POST', {
     operationId: crypto.randomUUID(), expectedVersion: await version(), email, role: 'WorkspaceReader',
   })
-  expect((await invite('seat1-' + stamp + '@example.com')).status).toBe(200)
-  expect((await invite('seat2-' + stamp + '@example.com')).status).toBe(200)
+  expect((await invite('seat1-' + stamp + '@example.com')).status).toBe(201)
+  expect((await invite('seat2-' + stamp + '@example.com')).status).toBe(201)
   expect((await invite('seat3-' + stamp + '@example.com')).status).toBe(409)
 
   // 免费版每月 500 张单据：预留到上限后，订单写入在 BFF 入口被拒绝。
@@ -2945,7 +3750,9 @@ test('Billing plans enforce quotas, gate modules, record manual payments and dow
     expect(reserved.status).toBe(200)
     remaining -= count
   }
-  expect((await write(page, billing + '/usage/documents', 'POST', { operationId: crypto.randomUUID(), count: 1 })).status).toBe(409)
+  const overQuota = await write(page, reservation, 'POST', { operationId: crypto.randomUUID(), count: 1 })
+  expect(overQuota.status).toBe(409)
+  expect(JSON.parse(overQuota.text)).toMatchObject({ code: 'billing.quota_exceeded', traceId: expect.any(String) })
   const blockedOrder = await write(page, salesOrders, 'POST', {
     operationId: crypto.randomUUID(), number: 'QUOTA-' + stamp, draft: {},
   })
@@ -3034,6 +3841,53 @@ test('Billing plans enforce quotas, gate modules, record manual payments and dow
   expect((await api(page, secondSessions)).status).toBe(200)
 })
 
+test('Local checkout resumes payment, protects callbacks and confirms the saved test card', async ({ page }) => {
+  await login(page, 'alice')
+  const created = await write(page, '/bff/api/workspaces', 'POST', { operationId: crypto.randomUUID(), name: '本地结账 ' + Date.now() })
+  expect(created.status).toBe(201)
+  const { id } = JSON.parse(created.text)
+  const billing = '/bff/api/workspaces/' + id + '/billing'
+  const checkout = billing + '/local-checkout'
+  const read = async (path: string) => {
+    const result = await api(page, path)
+    expect(result.status, result.text).toBe(200)
+    return JSON.parse(result.text)
+  }
+  const plan = (await read(billing)).subscription.planCode === 'standard' ? 'pro' : 'standard'
+  const amountFor = async (code: string) => (await read(billing + '/plan-quote?planCode=' + code)).amountDueCents as number
+  const amount = await amountFor(plan)
+  const begin = (planCode: string, expectedAmountCents: number, useSavedCard: boolean, key = crypto.randomUUID()) =>
+    write(page, checkout, 'POST', { planCode, expectedAmountCents, useSavedCard }, { 'Idempotency-Key': key })
+  expect((await begin(plan, amount + 1, false)).status).toBe(409)
+  const startKey = crypto.randomUUID()
+  const started = await begin(plan, amount, false, startKey)
+  expect(started.status, started.text).toBe(200)
+  const intent = JSON.parse(started.text) as { invoiceId: string; ticket: string }
+  expect(JSON.parse((await begin(plan, amount, false, startKey)).text)).toEqual(intent)
+  const callback = checkout + '/' + intent.invoiceId + '/callback'
+  expect((await write(page, callback, 'POST', { ticket: '0'.repeat(64), saveCard: true })).status).toBe(403)
+  await page.goto('/companies/' + id + '/billing')
+  await page.getByRole('button', { name: '打开或恢复测试结账' }).click()
+  await expect(page.getByText(/待付款 ·/)).toBeVisible()
+  const state = await read(checkout)
+  expect(state.pending.invoiceId).toBe(intent.invoiceId)
+  if (!state.hasSavedCard) await page.getByRole('checkbox', { name: '保存测试卡' }).check()
+  await page.getByRole('button', { name: '确认测试付款' }).click()
+  await expect(page.getByText('测试付款完成。', { exact: true })).toBeVisible()
+  expect((await write(page, callback, 'POST', { ticket: intent.ticket, saveCard: true })).status).toBe(200)
+  expect(await read(checkout)).toEqual({ hasSavedCard: true, pending: null })
+  expect((await read(billing)).invoices.filter((invoice: { id: string }) => invoice.id === intent.invoiceId))
+    .toMatchObject([{ status: 'paid' }])
+  const saved = await begin('pro', await amountFor('pro'), true)
+  expect(saved.status, saved.text).toBe(200)
+  expect(JSON.parse(saved.text).usesSavedCard).toBe(true)
+  await page.reload()
+  await page.getByRole('button', { name: '打开或恢复测试结账' }).click()
+  await page.getByRole('button', { name: '确认用已保存测试卡支付' }).click()
+  await expect(page.getByText('测试付款完成。', { exact: true })).toBeVisible()
+  expect((await read(billing)).subscription.planCode).toBe('pro')
+})
+
 test('Journal links connect posted entries, scan integrity and isolate workspaces', async ({ page, browser }) => {
   test.setTimeout(240_000)
   const checker = await browser.newContext({ baseURL: 'https://localhost:7443' })
@@ -3042,9 +3896,9 @@ test('Journal links connect posted entries, scan integrity and isolate workspace
     await Promise.all([login(page, 'bob'), login(reviewer, 'alice')])
     const name = `关联分录 ${Date.now()}`
     const post = (actor: Page, path: string, body: object) => write(actor, path, 'POST', { operationId: crypto.randomUUID(), ...body })
-    const ok = async (promise: Promise<{ status: number; text: string }>, status = 200) => {
+    const ok = async (promise: Promise<{ status: number; text: string; expectedSuccess?: number }>, status?: number) => {
       const response = await promise
-      expect(response.status, response.text).toBe(status)
+      expect(response.status, response.text).toBe(status ?? response.expectedSuccess ?? 200)
       return JSON.parse(response.text)
     }
     const workspace = await ok(post(page, '/bff/api/workspaces', { name }), 201)

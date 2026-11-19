@@ -10,6 +10,7 @@ export const productEditSchema = z.object({
   sku: z.string().trim().regex(/^SKU-\d{4}$/, 'SKU 格式为 SKU-1001'),
   category: z.string().trim().min(1, '请填写分类'),
   unit: z.string().trim().min(1, '请填写单位'),
+  kind: z.enum(['goods', 'service']).default('goods'),
   price: z.number().min(0, '单价不能为负数'),
   stock: z.number().int('库存必须是整数').min(0, '库存不能为负数'),
   status: productStatusSchema,

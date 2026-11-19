@@ -23,7 +23,7 @@ public sealed class CompanySettingsUseCases(IWorkspaceRepository workspaces, IWo
         await authorization.DemandAsync(command.Actor, scope, WorkspacePermissions.Manage, ct);
         var preferences = await repository.FindAsync(scope, ct);
         if ((preferences?.Version ?? 0) != command.ExpectedVersion)
-            throw new BusinessConflictException("Company settings have changed.");
+            throw new RevisionConflictException("Company settings have changed.");
         if (preferences is null)
         {
             preferences = new(workspace.Id, workspace.TenantId);

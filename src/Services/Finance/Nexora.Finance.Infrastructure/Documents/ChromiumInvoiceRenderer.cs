@@ -9,7 +9,7 @@ using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Infrastructure;
 
-public sealed partial class ChromiumInvoiceRenderer(IConfiguration configuration) : IInvoiceRenderer, IReconciliationRenderer, IDonationReceiptRenderer
+public sealed partial class ChromiumInvoiceRenderer(IConfiguration configuration) : IInvoiceRenderer, IReconciliationRenderer, IDonationReceiptRenderer, IFinancialReportPdf
 {
     private const string FontHash = "641F6AF1A066A146CF09A8A7DA27EB4B1037B8B98016A052EB7E4E0A57FB425B";
     private readonly SemaphoreSlim capacity = new(2);

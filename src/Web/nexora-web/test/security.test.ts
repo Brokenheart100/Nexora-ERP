@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { evaluateMfaGate, isSensitiveRequest, securityCapabilities, type MfaPolicy } from '../server/utils/bff-mfa'
+import { evaluateMfaGate, isSensitiveRequest, securityCapabilities, type MfaPolicy } from '../server/utils/auth/bff-mfa'
 
 const policy: MfaPolicy = { enabled: true, required: true, stepUpSeconds: 300 }
 const now = 1_800_000_000_000
@@ -29,6 +29,7 @@ describe('isSensitiveRequest', () => {
     expect(isSensitiveRequest('POST', '/api/finance/workspaces/ws/trade/banks')).toBe(true)
     expect(isSensitiveRequest('POST', '/api/finance/workspaces/ws/ledger/journals/j1/decision')).toBe(true)
     expect(isSensitiveRequest('POST', '/api/finance/workspaces/ws/ledger/journals/j1/reversal')).toBe(true)
+    expect(isSensitiveRequest('POST', '/api/finance/workspaces/ws/ledger/opening-subledgers/b1/decision')).toBe(true)
   })
 
   it('ignores reads and ordinary business writes', () => {
@@ -48,6 +49,15 @@ describe('evaluateMfaGate', () => {
   it('requires enrollment when no factor was used', () => {
     expect(evaluateMfaGate(policy, {}, 'POST', '/api/finance/workspaces/ws/trade/banks', now))
       .toEqual({ allowed: false, code: 'mfa_enrollment_required' })
+  })
+
+  it('does not accept email authentication or legacy single-OTP sessions as independent verification', () => {
+    for (const mfaMethods of [['email'], ['otp']]) {
+      const session = { mfaAt: now, mfaMethods }
+      expect(securityCapabilities(policy, session).enrolled).toBe(false)
+      expect(evaluateMfaGate(policy, session, 'PUT', '/api/workspaces/ws/settings', now))
+        .toEqual({ allowed: false, code: 'mfa_enrollment_required' })
+    }
   })
 
   it('stays out of the way for reads and when the deployment disables MFA', () => {

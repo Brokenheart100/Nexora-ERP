@@ -4,7 +4,7 @@ import {
   workspaceLabel,
   workspaceNameSchema,
   type Workspace,
-} from '../app/utils/workspace'
+} from '../app/utils/workspace/workspace'
 
 const workspace: Workspace = {
   id: 'ws-1',

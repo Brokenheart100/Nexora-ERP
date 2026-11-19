@@ -1,9 +1,9 @@
 import { createError, defineEventHandler, getHeader, proxyRequest, readRawBody, setResponseHeader } from 'h3'
 import type { H3Event } from 'h3'
-import { bffConfig } from '../../../utils/bff-config'
-import { requireCsrf } from '../../../utils/bff-csrf'
-import { requireFreshBffSession } from '../../../utils/bff-oidc'
-import { evaluateMfaGate } from '../../../utils/bff-mfa'
+import { bffConfig } from '../../../utils/runtime/bff-config'
+import { requireCsrf } from '../../../utils/auth/bff-csrf'
+import { requireFreshBffSession } from '../../../utils/auth/bff-oidc'
+import { evaluateMfaGate } from '../../../utils/auth/bff-mfa'
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])
 const documentOrderPath = /^\/api\/(?:sales|purchasing)\/workspaces\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/orders$/i

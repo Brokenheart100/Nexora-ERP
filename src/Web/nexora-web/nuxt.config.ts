@@ -4,8 +4,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   // Run `pnpm typecheck` explicitly in CI. The Vite checker splits paths containing spaces on Windows.
   typescript: { strict: true },
+  components: [{ path: '~/components', pathPrefix: false }],
+  imports: { dirs: ['~/composables/**', '~/utils/**'] },
   runtimeConfig: {
-    bff: { issuer: '', clientSecret: '', sessionKey: '', redisUrl: '', gatewayUrl: '', mfaEnabled: true, mfaRequired: true, mfaStepUpSeconds: 300, cliClientId: 'nexora-cli', cliScopes: 'openid nexora.cli', mcpClientId: 'nexora-mcp', mcpScopes: 'openid nexora.mcp' },
+    bff: { issuer: '', clientSecret: '', sessionKey: '', previousSessionKey: '', redisUrl: '', gatewayUrl: '', mfaEnabled: true, mfaRequired: true, mfaStepUpSeconds: 300, cliClientId: 'nexora-cli', cliScopes: 'openid nexora.cli', mcpClientId: 'nexora-mcp', mcpScopes: 'openid nexora.mcp' },
     public: { bffOrigin: '', statusPollMs: 10000, versionPollMs: 60000 },
   },
   modules: ['@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt', '@nuxtjs/i18n', '@nuxtjs/color-mode', '@nuxt/test-utils/module'],

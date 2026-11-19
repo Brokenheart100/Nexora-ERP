@@ -32,6 +32,7 @@ internal static class RabbitAccessExtensions
         {
             (Exchange: "nexora.organization.events", Queue: "nexora.reporting.workspaces.v1", DeadLetter: true),
             (Exchange: "nexora.inventory.receipt.commands", Queue: "nexora.inventory.receipts.v1", DeadLetter: false),
+            (Exchange: "nexora.inventory.opening.commands", Queue: "nexora.inventory.opening.v1", DeadLetter: false),
             (Exchange: "nexora.purchasing.receipt.events", Queue: "nexora.purchasing.receipts.v1", DeadLetter: false),
             (Exchange: "nexora.inventory.fulfillment.commands", Queue: "nexora.inventory.fulfillments.v1", DeadLetter: false),
             (Exchange: "nexora.sales.fulfillment.events", Queue: "nexora.sales.fulfillments.v1", DeadLetter: false),
@@ -95,11 +96,11 @@ internal static class RabbitAccessExtensions
                     configure = @"^(nexora\.inventory\.fulfillment\.commands|nexora\.sales\.fulfillments\.v1)$",
                     write = @"^nexora\.inventory\.fulfillment\.commands$", read = @"^nexora\.sales\.fulfillments\.v1$" },
                 new { user = "nexora-inventory", vhost = "/",
-                    configure = @"^(nexora\.purchasing\.receipt\.events|nexora\.sales\.fulfillment\.events|nexora\.inventory\.(receipts\.v1|fulfillments\.v1|cost\.events))$",
+                    configure = @"^(nexora\.purchasing\.receipt\.events|nexora\.sales\.fulfillment\.events|nexora\.inventory\.(receipts\.v1|opening\.v1|fulfillments\.v1|cost\.events))$",
                     write = @"^(nexora\.purchasing\.receipt\.events|nexora\.sales\.fulfillment\.events|nexora\.inventory\.cost\.events)$",
-                    read = @"^nexora\.inventory\.(receipts|fulfillments)\.v1$" },
-                new { user = "nexora-finance", vhost = "/", configure = @"^(nexora\.finance\.inventory-cost\.v1|nexora\.inventory\.receipt\.commands)$",
-                    write = @"^nexora\.inventory\.receipt\.commands$", read = @"^nexora\.finance\.inventory-cost\.v1$" }
+                    read = @"^nexora\.inventory\.(receipts|opening|fulfillments)\.v1$" },
+                new { user = "nexora-finance", vhost = "/", configure = @"^(nexora\.finance\.inventory-cost\.v1|nexora\.inventory\.(receipt|opening)\.commands)$",
+                    write = @"^nexora\.inventory\.(receipt|opening)\.commands$", read = @"^nexora\.finance\.inventory-cost\.v1$" }
             }
         };
         broker.WithContainerFiles("/etc/nexora", [new ContainerFile { Name = "definitions.json", Contents = JsonSerializer.Serialize(definitions) }])

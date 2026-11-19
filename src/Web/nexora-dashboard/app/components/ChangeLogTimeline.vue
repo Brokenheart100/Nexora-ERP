@@ -39,11 +39,7 @@ function actionIcon(action: string): string {
   <div data-testid="change-log-timeline">
     <div v-if="!props.entries.length" data-testid="change-log-empty">
       <slot name="empty">
-        <UEmpty
-          icon="i-carbon-time"
-          :title="props.emptyTitle"
-          :description="props.emptyDescription"
-        />
+        <UEmpty icon="i-carbon-time" :title="props.emptyTitle" :description="props.emptyDescription" />
       </slot>
     </div>
     <ol v-else class="space-y-0">
@@ -54,13 +50,12 @@ function actionIcon(action: string): string {
         data-testid="change-log-entry"
       >
         <div class="flex flex-col items-center" aria-hidden="true">
-          <span class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-default bg-elevated text-muted">
+          <span
+            class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border border-default bg-elevated text-muted"
+          >
             <UIcon :name="actionIcon(entry.action)" class="size-3.5" />
           </span>
-          <span
-            v-if="index < props.entries.length - 1"
-            class="mt-1 flex-1 border-l border-default"
-          />
+          <span v-if="index < props.entries.length - 1" class="mt-1 flex-1 border-l border-default" />
         </div>
         <div class="min-w-0 flex-1" :class="props.compact ? 'pb-3' : 'pb-5'">
           <div class="flex flex-wrap items-center gap-x-2 gap-y-1">

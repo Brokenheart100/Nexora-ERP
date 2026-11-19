@@ -6,12 +6,14 @@ using Nexora.BuildingBlocks.Grpc;
 using Nexora.BuildingBlocks.Application;
 using Nexora.BuildingBlocks.Infrastructure;
 using Nexora.Finance.Contracts.Grpc;
+using Nexora.Inventory.Contracts.Grpc;
 using Nexora.Organization.Contracts.Grpc;
 using Nexora.MasterData.Contracts.Grpc;
 using FluentValidation;
 using JasperFx;
 using JasperFx.Resources;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
 using Nexora.Finance.Application;
 using Nexora.Finance.Infrastructure;
 using Wolverine;
@@ -28,6 +30,7 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.AddServiceDefaults();
+        builder.Services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(ReportExports.MeterName));
         builder.AddNexoraBearer();
         var connection = builder.Configuration.GetConnectionString("financedb")
             ?? throw new InvalidOperationException("financedb connection is required.");
@@ -45,15 +48,24 @@ public partial class Program
         builder.Services.AddScoped<ITaxStore, TaxStore>();
         builder.Services.AddScoped<ITaxReferenceAuthority, MasterDataTaxReference>();
         builder.Services.AddScoped<TaxUseCases>();
+        builder.Services.AddScoped<ITaxFilingStore, TaxFilingStore>();
+        builder.Services.AddScoped<TaxFilings>();
         builder.Services.AddScoped<ILedgerStore, LedgerStore>();
         builder.Services.AddScoped<LedgerUseCases>();
+        builder.Services.AddScoped<OpeningSubledgers>();
+        builder.Services.AddScoped<IOpeningSubledgerStore, OpeningSubledgerStore>();
+        builder.Services.AddScoped<IOpeningReferences, OpeningReferences>();
         builder.Services.AddScoped<IFiscalYearStore, FiscalYearStore>();
+        builder.Services.AddScoped<IPartnershipStore, PartnershipStore>();
+        builder.Services.AddScoped<Partnerships>();
         builder.Services.AddScoped<FiscalYearCloses>();
         builder.Services.AddScoped<IFinancialReportReader, FinancialReportReader>();
         builder.Services.AddScoped<FinancialReports>();
         builder.Services.AddScoped<IReportExportStore, ReportExportStore>();
         builder.Services.AddScoped<ReportExports>();
         builder.Services.AddScoped<OpenItemReports>();
+        builder.Services.AddScoped<PartnerLedgers>();
+        builder.Services.AddScoped<IPartnerLedgerReader, PartnerLedgerReader>();
         builder.Services.AddScoped<IFinanceAuditReader, FinanceAuditReader>();
         builder.Services.AddScoped<FinanceAuditQueries>();
         builder.Services.AddScoped<RecordChangeQueries>();
@@ -70,6 +82,9 @@ public partial class Program
         builder.Services.AddScoped<IReadinessStore, ReadinessStore>();
         builder.Services.AddScoped<ReadinessUseCases>();
         builder.Services.AddScoped<DonationReceipts>();
+        builder.Services.AddScoped<DonationReceiptMail>();
+        builder.Services.AddScoped<DonationFiscalTickets>();
+        builder.Services.AddScoped<IDonationFiscalTickets, DonationFiscalTicketStore>();
         builder.Services.AddScoped<IReceivableStore, ReceivableStore>();
         builder.Services.AddScoped<IInvoiceReference, InvoiceReference>();
         builder.Services.AddScoped<ReceivableUseCases>();
@@ -81,6 +96,7 @@ public partial class Program
         builder.Services.AddSingleton<IInvoiceRenderer>(services => services.GetRequiredService<ChromiumInvoiceRenderer>());
         builder.Services.AddSingleton<IDonationReceiptRenderer>(services => services.GetRequiredService<ChromiumInvoiceRenderer>());
         builder.Services.AddSingleton<IReconciliationRenderer>(services => services.GetRequiredService<ChromiumInvoiceRenderer>());
+        builder.Services.AddSingleton<IFinancialReportPdf>(services => services.GetRequiredService<ChromiumInvoiceRenderer>());
         builder.Services.AddScoped<BankImportUseCases>();
         builder.Services.AddScoped<StatementAllocation>();
         builder.Services.AddSingleton(TimeProvider.System);
@@ -95,7 +111,7 @@ public partial class Program
         builder.Services.AddWolverineHttp();
         builder.Services.ConfigureSystemTextJsonForWolverineOrMinimalApi(options =>
             options.SerializerOptions.Converters.Add(new DecimalStringConverter()));
-        builder.Services.AddBusinessOpenApi();
+        builder.Services.AddBusinessOpenApi(options => options.AddSchemaTransformer<FinanceOpenApi>());
         builder.Services.AddNexoraProblemDetails();
         builder.Services.AddHealthChecks().AddWolverine(tags: ["ready"]).AddRabbitReadiness(broker)
             .AddDependency("finance-database", async (services, ct) =>
@@ -116,6 +132,7 @@ builder.Services.AddWolverineGrpc(grpc =>
 });
 builder.Services.AddNexoraGrpcClient<IOrganizationGrpc>("organization");
 builder.Services.AddNexoraGrpcClient<IMasterDataGrpc>("masterdata");
+builder.Services.AddNexoraGrpcClient<IInventoryGrpc>("inventory");
 
 var app = builder.Build();
 app.UseApiStatusProblems();

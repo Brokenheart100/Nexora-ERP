@@ -8,7 +8,7 @@
 
 - 现有能力是手工“期初单”：财务账簿以 `kind=opening` 的凭证录入期初余额，制单后由另一位用户复核 / 过账；`TradePosting` 以 `source="opening"` 作为首笔业务门禁，`ReadinessUseCases` / `ReadinessPolicy` 检查期初 `missing / pending / posted`。
 - 聚焦 e2e：`pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts --grep "Opening, journal approval" --reporter=line` → 1 / 1 通过（36.6 s）。覆盖期初单保存 / 提交、制单人与复核人分离、重复期初 409、非资产 / 负债 / 权益科目与不平衡 409、过账后试算平衡、跨工作区 404、已用科目不可改用途。
-- 没有 CSV / 批量期初导入接口；期初库存、未结 AR / AP、银行现金与总账期初的批量导入和批次对账仍需后续实现。当前 P6-05 只能按“手工期初单可演练”记录，不能宣称完整期初切账已验收。
+- 2026-11-17 补充完成 [总账期初 CSV](p6-opening-balance-csv.md) 和 [期初库存、未结应收应付及银行现金子账批量导入与总账对账](p6-opening-subledger-cutover.md) 的本地验收。
 
 ## 2. 发布迁移演练
 
@@ -41,7 +41,6 @@
 ## 5. 限制与缺口
 
 - 没有生产部署目标、应用镜像、迁移作业、反向代理 / TLS 终止、蓝绿或滚动发布。
-- 期初批量导入、批次对账、期初库存 / AR / AP / 银行现金的完整切账未实现。
 - 迁移演练没有覆盖大数据量、长事务、锁等待、并发写入和失败中断。
 - 没有备份 / 恢复自动化、WAL / PITR、异地存储、监控告警和演练排期。
 - 无应用镜像回退、数据库版本兼容矩阵和发布回滚决策记录。
@@ -55,4 +54,4 @@ pnpm --dir src/Web/nexora-web exec playwright test e2e/workspace.spec.ts --grep 
 
 迁移演练需要本地 PostgreSQL 容器与 `dotnet ef`；脚本自动读取容器凭据，输出 `artifacts/p6/migration-scripts/` 与 `artifacts/p6/migration-drill.*`。
 
-**结论：本地迁移回退和手工期初切账演练通过；生产迁移、批量期初、镜像回退与故障切换未验收，P6-05 保持未勾选。**
+本记录的本地迁移回退和手工期初演练已通过。生产迁移、镜像回退和故障切换仍待验证。

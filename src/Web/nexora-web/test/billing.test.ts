@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   billingStatusLabel, billingWarningLabel, canSelectPlan, formatBillingAmount, invoiceStatusLabel,
   isCurrentPlan, moduleAllowed, planLabel, publicPlans, quoteIsZeroDue, signupPlanCode, usageRatio,
-} from '../app/utils/billing'
-import type { BillingEntitlements, BillingPlanQuote, BillingSubscription } from '../app/utils/billing'
+} from '../app/utils/billing/billing'
+import type { BillingEntitlements, BillingPlanQuote, BillingSubscription } from '../app/utils/billing/billing'
 
 const subscription: BillingSubscription = {
   workspaceId: 'w1', planCode: 'free', status: 'active', effectivePlanCode: 'free',

@@ -36,8 +36,9 @@ const tableUi = computed(() => ui.tableDensity === 'compact'
   ? { th: 'py-1.5', td: 'py-2' }
   : { th: 'py-2.5', td: 'py-3' })
 
-const canCreate = computed(() => can('purchase.create'))
-const canApprove = computed(() => can('purchase.approve'))
+const { actor: demoActor, isMaker, isApprover, setActorRole } = useDemoActor()
+const canCreate = computed(() => can('purchase.create') && isMaker.value)
+const canApprove = computed(() => can('purchase.approve') && isApprover.value)
 const showSkeleton = computed(() => loading.value || stateLoading.value)
 
 /**
@@ -276,11 +277,28 @@ const receivedRate = computed(() => {
   return Math.round(received / quantity * 100)
 })
 
+function orderMaker(order: PurchaseOrder) {
+  return order.maker ?? order.approvals?.find(step => step.action === 'submitted')?.actor ?? '张明远'
+}
+
+const selectedMaker = computed(() => selected.value ? orderMaker(selected.value) : '')
+const selfApprovalBlocked = computed(() => Boolean(
+  selected.value && isApprover.value && selectedMaker.value === demoActor.value.name
+))
 const canEditSelected = computed(() => Boolean(
-  selected.value && canCreate.value && ['draft', 'pending'].includes(selected.value.status)
+  selected.value && canCreate.value && selected.value.status === 'draft'
+))
+const canWithdrawSelected = computed(() => Boolean(
+  selected.value && canCreate.value && selected.value.status === 'pending' && selectedMaker.value === demoActor.value.name
+))
+const canCancelSelected = computed(() => Boolean(
+  selected.value && canCreate.value && selected.value.status === 'draft'
+))
+const canResubmitSelected = computed(() => Boolean(
+  selected.value && canCreate.value && selected.value.status === 'draft' && selectedMaker.value === demoActor.value.name
 ))
 const canApproveSelected = computed(() => Boolean(
-  selected.value && canApprove.value && selected.value.status === 'pending'
+  selected.value && canApprove.value && selected.value.status === 'pending' && !selfApprovalBlocked.value
 ))
 const canReceiveSelected = computed(() => Boolean(
   selected.value && canCreate.value && ['approved', 'partial'].includes(selected.value.status)
@@ -330,8 +348,13 @@ function pushApproval(order: PurchaseOrder, action: PurchaseApprovalStep['action
 
 function approveOrder() {
   const order = selected.value
-  if (!order || !canApproveSelected.value) return
-  pushApproval(order, 'approved', '审批通过（本地演示），可继续发起收货。')
+  if (!order) return
+  if (isApprover.value && orderMaker(order) === demoActor.value.name) {
+    toast.add({ title: '不能审批自己提交的单据', description: '请由其他业务主管审批，或切换演示身份。', color: 'error', icon: 'i-carbon-warning' })
+    return
+  }
+  if (!canApproveSelected.value) return
+  pushApproval(order, 'approved', '审批通过（本地演示），可继续发起收货。', demoActor.value.name)
   order.status = 'approved'
   pushAudit(order, approvalActionLabels.approved, '审批通过，订单状态更新为已审批。')
   toast.add({
@@ -346,7 +369,7 @@ function rejectOrder() {
   const order = selected.value
   if (!order || !canApproveSelected.value) return
   const note = '预算科目缺失，请补充成本中心后重新提交。'
-  pushApproval(order, 'rejected', note)
+  pushApproval(order, 'rejected', note, demoActor.value.name)
   order.status = 'draft'
   order.note = '上次提交被驳回：' + note
   pushAudit(order, approvalActionLabels.rejected, '审批驳回，订单退回草稿，可修改后重新提交。')
@@ -355,6 +378,51 @@ function rejectOrder() {
     description: '订单状态已在本地退回「草稿」，并写入审批轨迹。',
     color: 'error',
     icon: 'i-carbon-close'
+  })
+}
+
+function withdrawOrder() {
+  const order = selected.value
+  if (!order || !canWithdrawSelected.value) return
+  order.status = 'draft'
+  order.withdrawnAt = nowStamp()
+  pushApproval(order, 'withdrawn', '制单人撤回提交，单据退回草稿。', demoActor.value.name)
+  pushAudit(order, approvalActionLabels.withdrawn, '撤回提交，订单退回草稿后可修改或重新提交。', demoActor.value.name)
+  toast.add({
+    title: '已撤回 ' + order.id,
+    description: '订单回到草稿状态，审批轨迹保留撤回记录。',
+    color: 'warning',
+    icon: 'i-carbon-undo'
+  })
+}
+
+function cancelDraft() {
+  const order = selected.value
+  if (!order || !canCancelSelected.value) return
+  order.status = 'cancelled'
+  order.cancelledAt = nowStamp()
+  order.cancelReason = '草稿取消：业务需求变更，未进入审批。'
+  pushAudit(order, '取消草稿', order.cancelReason, demoActor.value.name)
+  toast.add({
+    title: '已取消 ' + order.id,
+    description: '草稿已取消，历史记录仍保留原单与取消原因。',
+    color: 'error',
+    icon: 'i-carbon-close'
+  })
+}
+
+function resubmitOrder() {
+  const order = selected.value
+  if (!order || !canResubmitSelected.value) return
+  order.status = 'pending'
+  order.withdrawnAt = undefined
+  pushApproval(order, 'submitted', '撤回修改后重新提交审批。', demoActor.value.name)
+  pushAudit(order, approvalActionLabels.submitted, '重新提交审批，等待独立审批人处理。', demoActor.value.name)
+  toast.add({
+    title: '已重新提交 ' + order.id,
+    description: '订单状态更新为待审批，审批人不能与制单人相同。',
+    color: 'success',
+    icon: 'i-carbon-send'
   })
 }
 
@@ -446,7 +514,7 @@ function editOrder() {
     return
   }
   if (!canEditSelected.value) {
-    toast.add({ title: '当前状态不可编辑', description: '只有草稿或待审批的采购单可以修改。', color: 'warning' })
+    toast.add({ title: '当前状态不可编辑', description: '只有草稿可以修改；待审批单据请先撤回提交。', color: 'warning' })
     return
   }
   editingOrder.value = selected.value
@@ -459,7 +527,7 @@ function nextOrderId() {
 }
 
 function handleSave(payload: { mode: 'draft' | 'submit', data: OrderFormData }) {
-  const actor = session.user.name
+  const actor = demoActor.value.name
   const orderLinesPayload = payload.data.lines.map((line, index) => ({
     lineNo: index + 1,
     sku: line.sku,
@@ -505,6 +573,7 @@ function handleSave(payload: { mode: 'draft' | 'submit', data: OrderFormData }) 
     expectedAt: payload.data.expectedAt,
     note: payload.data.note,
     lines: orderLinesPayload,
+    maker: actor,
     approvals: [],
     receipts: [],
     audit: []
@@ -608,6 +677,27 @@ async function copyOrderId() {
 
           <template #right>
             <NotificationButton />
+            <div
+              class="flex items-center gap-1 rounded-lg border border-default p-0.5"
+              data-testid="orders-actor-switch"
+            >
+              <UButton
+                label="张明远 · 经办"
+                size="xs"
+                :color="isMaker ? 'primary' : 'neutral'"
+                :variant="isMaker ? 'solid' : 'ghost'"
+                data-testid="orders-actor-maker"
+                @click="setActorRole('maker')"
+              />
+              <UButton
+                label="陈立 · 主管"
+                size="xs"
+                :color="isApprover ? 'primary' : 'neutral'"
+                :variant="isApprover ? 'solid' : 'ghost'"
+                data-testid="orders-actor-approver"
+                @click="setActorRole('approver')"
+              />
+            </div>
             <UButton
               label="新建采购单"
               icon="i-carbon-add"
@@ -900,6 +990,24 @@ async function copyOrderId() {
             :description="rejectedStep.actor + ' 于 ' + rejectedStep.at + ' 驳回：' + rejectedStep.note"
             data-testid="order-rejected-alert"
           />
+          <UAlert
+            v-if="selected.withdrawnAt"
+            color="warning"
+            variant="soft"
+            icon="i-carbon-undo"
+            title="已撤回提交"
+            :description="'制单人 ' + orderMaker(selected) + ' 于 ' + selected.withdrawnAt + ' 撤回，当前为草稿，可修改后重新提交。'"
+            data-testid="order-withdraw-notice"
+          />
+          <UAlert
+            v-if="selected.cancelledAt"
+            color="error"
+            variant="soft"
+            icon="i-carbon-close-outline"
+            title="草稿已取消"
+            :description="selected.cancelReason"
+            data-testid="order-cancel-notice"
+          />
 
           <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-4">
             <div>
@@ -908,6 +1016,14 @@ async function copyOrderId() {
               </dt>
               <dd class="mt-0.5 text-default">
                 {{ selected.orderedAt }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">
+                制单人
+              </dt>
+              <dd class="mt-0.5 text-default" data-testid="order-maker">
+                {{ orderMaker(selected) }}
               </dd>
             </div>
             <div>
@@ -1086,6 +1202,13 @@ async function copyOrderId() {
             >
               当前身份无审批权限
             </p>
+            <p
+              v-if="selfApprovalBlocked"
+              class="text-xs text-error"
+              data-testid="order-self-approval"
+            >
+              不能审批自己提交的单据
+            </p>
             <UButton
               v-if="canEditSelected"
               label="编辑单据"
@@ -1094,6 +1217,31 @@ async function copyOrderId() {
               variant="outline"
               data-testid="order-edit"
               @click="editOrder"
+            />
+            <UButton
+              v-if="canWithdrawSelected"
+              label="撤回提交"
+              icon="i-carbon-undo"
+              color="warning"
+              variant="outline"
+              data-testid="order-withdraw"
+              @click="withdrawOrder"
+            />
+            <UButton
+              v-if="canCancelSelected"
+              label="取消草稿"
+              icon="i-carbon-close"
+              color="error"
+              variant="ghost"
+              data-testid="order-cancel-draft"
+              @click="cancelDraft"
+            />
+            <UButton
+              v-if="canResubmitSelected"
+              label="重新提交"
+              icon="i-carbon-send"
+              data-testid="order-resubmit"
+              @click="resubmitOrder"
             />
             <UButton
               v-if="canApproveSelected"

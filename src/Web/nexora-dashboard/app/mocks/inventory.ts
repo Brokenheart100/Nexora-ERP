@@ -110,8 +110,9 @@ const positionSkus = [
 /** 固定的低库存 / 零库存样例（覆盖生成数量），保证 ?state= 正常时也有可演示的数据。 */
 const positionOverrides: Record<number, Partial<InventoryPosition>> = {
   2: { quantity: 0, reserved: 0, available: 0 },
-  5: { quantity: 12, reserved: 12, available: 0 },
+  5: { quantity: 100, reserved: 0, available: 100 },
   8: { quantity: 40, reserved: 10, available: 30 },
+  9: { quantity: 100, reserved: 0, available: 100 },
   12: { quantity: 24, reserved: 12, available: 12 },
   19: { quantity: 0, reserved: 0, available: 0 },
   22: { quantity: 0, reserved: 0, available: 0 },
@@ -159,7 +160,7 @@ const movementPlan: { type: InventoryMovementType, reference: string }[] = [
   { type: 'outbound', reference: 'SO-2026-9002' }
 ]
 
-export const inventoryMovements: InventoryMovement[] = Array.from({ length: 20 }, (_, i) => {
+const generatedMovements: InventoryMovement[] = Array.from({ length: 20 }, (_, i) => {
   const plan = movementPlan[i]!
   const sku = positionSkus[(i * 3) % positionSkus.length]!
   const product = inventoryProducts[sku]!
@@ -174,6 +175,40 @@ export const inventoryMovements: InventoryMovement[] = Array.from({ length: 20 }
     at: '2026-11-' + String(17 - (i % 12)).padStart(2, '0') + ' ' + String(9 + (i % 8)).padStart(2, '0') + ':' + String((i * 7) % 60).padStart(2, '0')
   }, 8100 + i)
 })
+
+/**
+ * C6：两张已确认退货单的历史流水，让退货详情、库存位置与流水在首次加载时即可对照。
+ * 位置结存已包含这两笔退货（采购出库、销售入库各 5/1 件），流水只补历史记录。
+ */
+export const inventoryMovements: InventoryMovement[] = [
+  ...generatedMovements,
+  {
+    id: 'mv-4021',
+    type: 'outbound',
+    warehouseId: 'wh-east',
+    sku: 'SKU-1016',
+    name: inventoryProducts['SKU-1016']!.name,
+    quantity: 5,
+    reference: 'PR-2026-1201',
+    at: '2026-11-16 10:05',
+    returnId: 'PR-2026-1201',
+    executionId: 'EXE-RC-2026-0511-02',
+    balanceAfter: 100
+  },
+  {
+    id: 'mv-4022',
+    type: 'inbound',
+    warehouseId: 'wh-east',
+    sku: 'SKU-1010',
+    name: inventoryProducts['SKU-1010']!.name,
+    quantity: 1,
+    reference: 'SR-2026-1201',
+    at: '2026-11-16 11:00',
+    returnId: 'SR-2026-1201',
+    executionId: 'EXE-FUL-9001-01',
+    balanceAfter: 100
+  }
+]
 
 function stocktakeLine(index: number, lineNo: number, countedDelta: number): StocktakeLine {
   const position = inventoryPositions[index]!

@@ -5,7 +5,7 @@ using Nexora.Finance.Domain;
 namespace Nexora.Finance.Application;
 
 public sealed class FiscalYearCloses(TradeAccess access, IFiscalYearStore years, ILedgerStore ledger, IFinancialReportReader balances,
-    FinanceMutation mutations, TimeProvider clock)
+    IPartnershipStore partnerships, FinanceMutation mutations, TimeProvider clock)
 {
     public async Task<FiscalYearView[]> ListAsync(Guid workspaceId, CancellationToken ct)
     {
@@ -65,13 +65,28 @@ public sealed class FiscalYearCloses(TradeAccess access, IFiscalYearStore years,
                     Math.Max(0, -x.Balance), Math.Max(0, x.Balance))).ToList();
                 var sum = batch.Sum(x => x.Balance);
                 if (sum != 0) lines.Add(new(equity.Id, equity.Code, equity.Name, Math.Max(0, sum), Math.Max(0, -sum)));
-                var sequence = journalIds.Count + 1;
-                var journal = Journal.Start(book, JournalKind.FiscalClosing, $"CLOSE-{row.First:yyyyMMdd}-{sequence}", $"fiscal:{row.Id:N}:{sequence}",
-                    row.Last, "Fiscal year closing", new(row.MakerIssuer, row.MakerSubject), lines, clock.GetUtcNow());
-                journal.Submit(new(row.MakerIssuer, row.MakerSubject));
-                journal.Post(actor, book.NextPostingNumber(), clock.GetUtcNow());
-                ledger.Add(journal);
-                journalIds.Add(journal.Id);
+                BookClosing(lines, "Fiscal year closing");
+            }
+            if (report.PartnerAllocations is { Length: > 0 } allocations)
+            {
+                var lines = new List<JournalLineSnapshot>();
+                Add(equity.Id, equity.Code, equity.Name, report.NetProfit);
+                foreach (var partner in allocations)
+                {
+                    Add(partner.Capital.AccountId, partner.Capital.Code, partner.Capital.Name, partner.Drawings.Balance - partner.Capital.Balance);
+                    Add(partner.Drawings.AccountId, partner.Drawings.Code, partner.Drawings.Name, -partner.Drawings.Balance);
+                }
+                if (lines.Count > 0)
+                {
+                    BookClosing(lines, "Partnership profit and drawings closing");
+                    var assigned = await ledger.AccountsAsync(current.Scope, lines.Select(x => x.AccountId).Distinct().ToArray(), ct);
+                    if (assigned.Any(x => !x.IsUsed)) book.AdvanceChart();
+                    foreach (var account in assigned) account.MarkUsed();
+                }
+                void Add(Guid id, string code, string name, decimal amount)
+                {
+                    if (amount != 0) lines.Add(new(id, code, name, Math.Max(0, amount), Math.Max(0, -amount)));
+                }
             }
             if (journalIds.Count > 0 && !equity.IsUsed)
             {
@@ -79,6 +94,17 @@ public sealed class FiscalYearCloses(TradeAccess access, IFiscalYearStore years,
                 book.AdvanceChart();
             }
             row.Complete(journalIds.ToArray());
+
+            void BookClosing(IReadOnlyList<JournalLineSnapshot> lines, string memo)
+            {
+                var sequence = journalIds.Count + 1;
+                var journal = Journal.Start(book, JournalKind.FiscalClosing, $"CLOSE-{row.First:yyyyMMdd}-{sequence}", $"fiscal:{row.Id:N}:{sequence}",
+                    row.Last, memo, new(row.MakerIssuer, row.MakerSubject), lines, clock.GetUtcNow());
+                journal.Submit(new(row.MakerIssuer, row.MakerSubject));
+                journal.Post(actor, book.NextPostingNumber(), clock.GetUtcNow());
+                ledger.Add(journal);
+                journalIds.Add(journal.Id);
+            }
         }
         else
         {
@@ -107,11 +133,31 @@ public sealed class FiscalYearCloses(TradeAccess access, IFiscalYearStore years,
         var open = new List<DateOnly>();
         for (var month = FiscalPeriod.MonthOf(period.From); month <= period.Through; month = month.AddMonths(1))
             if (months.GetValueOrDefault(month)?.State != PeriodState.Closed) open.Add(month);
-        var rows = (await balances.TotalsAsync(scope, period, book.LastPostingNumber, ct))
+        var accountTotals = await balances.TotalsAsync(scope, period, book.LastPostingNumber, ct);
+        var rows = accountTotals
             .Where(x => AccrualStatement.IsProfitAndLoss(x.Category) && x.Debit != x.Credit)
             .OrderBy(x => x.Code, StringComparer.Ordinal).Select(x => new FiscalClosingLine(x.Id, x.Code, x.Name, x.Debit - x.Credit)).ToArray();
         var pending = await years.PendingDocumentsAsync(scope, period.From, period.Through, ct);
-        return new(period, equity, -rows.Sum(x => x.Balance), rows, open.ToArray(), pending);
+        var profit = -rows.Sum(x => x.Balance);
+        var fiscalYear = FiscalInvoiceNumber.Year(period.From, book.FiscalYearStartMonth);
+        var configuration = await partnerships.FindAsync(scope, fiscalYear, ct);
+        FiscalPartnerClosing[]? allocations = null;
+        if (configuration is not null)
+        {
+            var partners = configuration.Partners;
+            var ids = partners.SelectMany(x => new[] { x.CapitalAccountId, x.DrawingsAccountId }).ToArray();
+            var accounts = (await ledger.AccountsAsync(scope, ids, ct)).ToDictionary(x => x.Id);
+            if (ids.Contains(equity) || accounts.Count != ids.Length
+                || accounts.Values.Any(x => x.IsArchived || x.Category != AccountCategory.Equity || x.Purpose != AccountPurpose.Posting))
+                throw new LedgerRuleException("Choose active partner accounts and a distinct retained earnings account.");
+            var shares = configuration.Allocate(profit, book.MinorUnits);
+            var totals = accountTotals.ToDictionary(x => x.Id);
+            allocations = partners.Select((partner, i) => new FiscalPartnerClosing(partner.Code, partner.Name, partner.Share,
+                Row(partner.CapitalAccountId, shares[i]), Row(partner.DrawingsAccountId, totals.GetValueOrDefault(partner.DrawingsAccountId)?.Closing ?? 0)))
+                .ToArray();
+            FiscalClosingLine Row(Guid id, decimal amount) => new(id, accounts[id].Code, accounts[id].Name, amount);
+        }
+        return new(period, equity, profit, rows, open.ToArray(), pending, allocations);
     }
 
     private static void DemandReady(FiscalYearPreview report)

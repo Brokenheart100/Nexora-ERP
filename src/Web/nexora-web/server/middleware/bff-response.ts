@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, getHeader, setResponseHeader } from 'h3'
-import { bffConfig } from '../utils/bff-config'
+import { bffConfig } from '../utils/runtime/bff-config'
 
 export default defineEventHandler((event) => {
   const path = event.path.split('?')[0]

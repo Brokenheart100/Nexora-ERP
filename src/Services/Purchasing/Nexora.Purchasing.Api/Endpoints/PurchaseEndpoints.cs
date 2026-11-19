@@ -22,7 +22,7 @@ public static partial class PurchaseEndpoints
     public static Task<PurchaseDetail> Detail(Guid workspaceId, Guid id, PurchaseQueries queries, CancellationToken ct) =>
         queries.DetailAsync(workspaceId, id, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Orders)]
     public static async Task<Created<PurchaseChange>> Create(Guid workspaceId, CreateRequest request, IMessageBus bus, CancellationToken ct)
     {
@@ -30,12 +30,12 @@ public static partial class PurchaseEndpoints
         return TypedResults.Created($"/api/purchasing/workspaces/{workspaceId}/orders/{result.Id}", result);
     }
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePut(Order)]
     public static Task<PurchaseChange> Edit(Guid workspaceId, Guid id, EditRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<PurchaseChange>(new EditPurchase(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Draft), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Order + "/decision")]
     public static Task<PurchaseChange> Decide(Guid workspaceId, Guid id, DecisionRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<PurchaseChange>(new DecidePurchase(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Decision, request.Reason), ct);

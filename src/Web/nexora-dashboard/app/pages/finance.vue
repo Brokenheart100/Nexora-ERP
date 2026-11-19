@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {
   AgingBucket,
-  BankAccount,
   BankTransaction,
   FinanceAccount,
   FinancePeriod,
@@ -12,8 +11,6 @@ import type {
 } from '~/mocks'
 import {
   agingBuckets,
-  bankAccounts,
-  bankTransactions,
   financeAccounts,
   financePeriods,
   financePeriodStatusColors,
@@ -29,28 +26,38 @@ import {
 } from '~/mocks'
 import FinanceSupplierPayables from '~/components/finance/SupplierPayables.vue'
 import FinanceOpening from '~/components/finance/Opening.vue'
+import FinanceImportedJournals from '~/components/finance/ImportedJournals.vue'
+import FinanceDonations from '~/components/finance/Donations.vue'
+import FinanceTradeDocuments from '~/components/finance/TradeDocuments.vue'
+import FinanceTreasury from '~/components/finance/Treasury.vue'
+import FinanceClosing from '~/components/finance/Closing.vue'
+import FinanceTaxCenter from '~/components/finance/TaxCenter.vue'
 
-type FinanceTab = 'workbench' | 'accounts' | 'journals' | 'reports' | 'aging' | 'payables' | 'opening' | 'bank'
+type FinanceTab = 'workbench' | 'accounts' | 'journals' | 'imported' | 'reports' | 'reporting' | 'aging' | 'payables' | 'documents' | 'donations' | 'opening' | 'bank' | 'treasury' | 'closing' | 'tax-center'
 
 const toast = useToast()
 const route = useRoute()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
 const permissions = useMockPermissions()
 const receivables = useReceivablesStore()
+const bankRecon = useBankReconStore()
+const externalJournals = useExternalJournalsStore()
+const donations = useDonationsStore()
+const tradeDocs = useTradeDocumentsStore()
 const { workspace } = useMockWorkspace()
 
 const activeTab = ref<FinanceTab>('workbench')
 const accounts = ref<FinanceAccount[]>([])
 const journals = ref<JournalEntry[]>([])
+const ledgerJournals = computed<JournalEntry[]>(() => [...externalJournals.postedJournals, ...journals.value])
 const periods = ref<FinancePeriod[]>([])
 const taxPeriodList = ref<TaxPeriod[]>([])
 const filings = ref<TaxFiling[]>([])
-const bankAccountList = ref<BankAccount[]>([])
-const bankTxList = ref<BankTransaction[]>([])
+const bankAccountList = computed(() => bankRecon.accounts)
+const bankTxList = computed(() => bankRecon.transactions)
 const agingRows = ref<AgingBucket[]>([])
 const ledgerRows = ref<PartnerLedgerEntry[]>([])
-const excludedBankIds = ref<string[]>([])
-const reconciledAccountIds = ref<string[]>([])
+const excludedBankIds = computed(() => bankRecon.excludedIds)
 const booksReady = ref(true)
 
 const receivableBuckets = computed(() => receivables.agingBucketsFor(workspace.value.id))
@@ -62,11 +69,18 @@ const tabItems = [
   { label: '财务工作台', value: 'workbench' },
   { label: '科目表', value: 'accounts' },
   { label: '凭证', value: 'journals' },
+  { label: '外部凭证', value: 'imported' },
   { label: '报表', value: 'reports' },
+  { label: '报表中心', value: 'reporting' },
   { label: '账龄与税务', value: 'aging' },
   { label: '采购应付', value: 'payables' },
+  { label: '单据流转', value: 'documents' },
+  { label: '捐赠管理', value: 'donations' },
   { label: '期初导入', value: 'opening' },
-  { label: '银行对账', value: 'bank' }
+  { label: '银行对账', value: 'bank' },
+  { label: '资金管理', value: 'treasury' },
+  { label: '关账与年结', value: 'closing' },
+  { label: '税务中心', value: 'tax-center' }
 ]
 
 function normalizeTab(value: unknown): FinanceTab {
@@ -88,12 +102,8 @@ const { loading, run: loadFinance } = useMockAsync(async () => {
   periods.value = structuredClone(financePeriods)
   taxPeriodList.value = structuredClone(taxPeriods)
   filings.value = structuredClone(taxFilings)
-  bankAccountList.value = structuredClone(bankAccounts)
-  bankTxList.value = structuredClone(bankTransactions)
   agingRows.value = structuredClone(agingBuckets)
   ledgerRows.value = structuredClone(partnerLedgers)
-  excludedBankIds.value = []
-  reconciledAccountIds.value = []
   booksReady.value = true
 }, { delay: 480, immediate: true })
 
@@ -117,6 +127,10 @@ function reloadPage() {
 
 async function refreshPage() {
   await runRefresh(() => loadFinance())
+  bankRecon.reset()
+  externalJournals.reset()
+  donations.reset()
+  tradeDocs.reset()
   notify('财务数据已刷新', '已恢复为初始演示数据，之前在本页做的修改已丢弃。', 'success', 'i-carbon-renew')
 }
 
@@ -182,34 +196,38 @@ function handleFileTax(id: string) {
 }
 
 function handleMatchTransaction(transactionId: string, journalId: string) {
-  bankTxList.value = bankTxList.value.map(transaction => (transaction.id === transactionId
-    ? { ...transaction, matched: true, matchedJournalId: journalId }
-    : transaction))
-  notify('流水已匹配', transactionId + ' 已匹配到凭证 ' + journalId + '；仅本次预览，刷新后恢复。')
+  const result = bankRecon.match(transactionId, journalId)
+  notify(result.ok ? '流水已匹配' : '流水未匹配', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
+}
+
+function handleUnmatchTransaction(transactionId: string) {
+  const result = bankRecon.unmatch(transactionId)
+  notify(result.ok ? '已解除匹配' : '未解除匹配', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-unlink' : 'i-carbon-warning-alt')
 }
 
 function handleExcludeTransaction(transactionId: string) {
-  if (!excludedBankIds.value.includes(transactionId)) {
-    excludedBankIds.value = [...excludedBankIds.value, transactionId]
-  }
-  notify('流水已排除', transactionId + ' 本轮不再参与对账；仅本次预览，刷新后恢复。', 'neutral', 'i-carbon-subtract')
+  const result = bankRecon.exclude(transactionId)
+  notify(result.ok ? '流水已排除' : '流水未排除', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-subtract' : 'i-carbon-warning-alt')
 }
 
 function handleIncludeTransaction(transactionId: string) {
-  excludedBankIds.value = excludedBankIds.value.filter(id => id !== transactionId)
-  notify('流水已恢复', transactionId + ' 已重新纳入对账范围；仅本次预览，刷新后恢复。', 'neutral', 'i-carbon-add')
+  const result = bankRecon.include(transactionId)
+  notify(result.ok ? '流水已恢复' : '流水未恢复', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-add' : 'i-carbon-warning-alt')
 }
 
 function handleImportTransactions(rows: BankTransaction[]) {
-  bankTxList.value = [...bankTxList.value, ...rows]
-  notify('流水导入完成（本地演示）', '已导入 ' + rows.length + ' 笔示例流水；仅本次预览，刷新后恢复。')
+  const result = bankRecon.importRows(rows)
+  notify(result.ok ? '流水导入完成（本地演示）' : '流水未导入', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
 }
 
 function handleReconcileAccount(accountId: string) {
-  if (!reconciledAccountIds.value.includes(accountId)) {
-    reconciledAccountIds.value = [...reconciledAccountIds.value, accountId]
-  }
-  notify('对账已完成（本地演示）', accountId + ' 已标记为对账完成；仅本次预览，刷新后恢复。')
+  const result = bankRecon.completeReconciliation(accountId)
+  notify(result.ok ? '对账已完成' : '对账未完成', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
+}
+
+function handleUndoReconciliation(recordId: string, reason: string) {
+  const result = bankRecon.undoReconciliation(recordId, reason)
+  notify(result.ok ? '对账已撤销' : '对账未撤销', result.message, result.ok ? 'warning' : 'error', result.ok ? 'i-carbon-undo' : 'i-carbon-warning-alt')
 }
 
 function handleExportAging() {
@@ -352,11 +370,16 @@ function handleExportAging() {
 
           <FinanceJournalPanel
             v-else-if="activeTab === 'journals'"
-            :journals="journals"
+            :journals="ledgerJournals"
             :accounts="accounts"
             :can-post="canPost"
             @create="handleCreateJournal"
             @post="handlePostJournal"
+          />
+
+          <FinanceImportedJournals
+            v-else-if="activeTab === 'imported'"
+            :accounts="accounts"
           />
 
           <FinanceReports
@@ -389,6 +412,15 @@ function handleExportAging() {
             :initial-bill-id="initialBillId"
           />
 
+          <FinanceTradeDocuments
+            v-else-if="activeTab === 'documents'"
+            :can-post="canPost"
+          />
+
+          <FinanceDonations
+            v-else-if="activeTab === 'donations'"
+          />
+
           <FinanceOpening
             v-else-if="activeTab === 'opening'"
             :can-post="canPost"
@@ -400,13 +432,36 @@ function handleExportAging() {
             :bank-transactions="bankTxList"
             :journals="journals"
             :excluded-ids="excludedBankIds"
-            :reconciled-account-ids="reconciledAccountIds"
+            :reconciliations="bankRecon.reconciliations"
             :can-post="canPost"
             @match="handleMatchTransaction"
+            @unmatch="handleUnmatchTransaction"
             @exclude="handleExcludeTransaction"
             @include="handleIncludeTransaction"
             @import="handleImportTransactions"
             @reconcile="handleReconcileAccount"
+            @undo="handleUndoReconciliation"
+          />
+
+          <FinanceTreasury
+            v-else-if="activeTab === 'treasury'"
+            :can-post="canPost"
+          />
+
+          <FinanceClosing
+            v-else-if="activeTab === 'closing'"
+            :accounts="accounts"
+            :periods="periods"
+            :journals="journals"
+            :can-post="canPost"
+          />
+
+          <FinanceTaxCenter
+            v-else-if="activeTab === 'tax-center'"
+          />
+
+          <FinanceReportingCenter
+            v-else-if="activeTab === 'reporting'"
           />
         </div>
       </template>

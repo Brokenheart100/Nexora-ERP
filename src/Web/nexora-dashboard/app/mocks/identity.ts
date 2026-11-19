@@ -20,7 +20,11 @@ export const demoSessions: DemoSession[] = [
     device: 'MacBook Pro 14"',
     browser: 'Edge 143 · macOS 15',
     location: '上海 · 210.22.18.44',
+    loginAt: '2026-11-17 09:41',
     lastActiveAt: '当前会话',
+    expiresAt: '2026-11-19 18:08',
+    expiresInMinutes: 18,
+    status: 'expiring',
     current: true
   },
   {
@@ -28,7 +32,11 @@ export const demoSessions: DemoSession[] = [
     device: 'iPhone 16 Pro',
     browser: 'Safari · iOS 19',
     location: '上海 · 117.136.0.18',
+    loginAt: '2026-11-16 20:12',
     lastActiveAt: '2026-11-17 21:08',
+    expiresAt: '2026-11-23 20:12',
+    expiresInMinutes: 7205,
+    status: 'active',
     current: false
   },
   {
@@ -36,7 +44,11 @@ export const demoSessions: DemoSession[] = [
     device: 'Windows 11 工作站',
     browser: 'Chrome 142 · Windows 11',
     location: '杭州 · 122.224.67.9',
-    lastActiveAt: '2026-11-15 09:26',
+    loginAt: '2026-11-15 09:10',
+    lastActiveAt: '2026-11-17 09:26',
+    expiresAt: '2026-11-22 09:10',
+    expiresInMinutes: 5419,
+    status: 'active',
     current: false
   }
 ]

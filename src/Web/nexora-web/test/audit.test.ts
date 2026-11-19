@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { auditIsoDate, auditQueryParams, mergeAuditEntries } from '../app/utils/audit'
-import type { AuditEntry, AuditFilters } from '../app/utils/audit'
+import { auditIsoDate, auditQueryParams, mergeAuditEntries } from '../app/utils/audit/audit'
+import type { AuditEntry, AuditFilters } from '../app/utils/audit/audit'
 
 const filters: AuditFilters = { from: '', through: '', actor: '', action: '', targetId: '', source: '' }
 

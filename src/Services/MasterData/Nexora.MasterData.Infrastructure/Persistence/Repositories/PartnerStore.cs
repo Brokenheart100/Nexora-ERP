@@ -16,9 +16,12 @@ public sealed class PartnerStore(CatalogDbContext db) : IPartnerRepository, IPar
 
     public void Add(BusinessPartner partner) => db.Partners.Add(partner);
 
-    public async Task<(IReadOnlyList<PartnerSummary> Items, bool HasMore)> ListAsync(ResourceScope scope, PageWindow page, CancellationToken ct)
+    public async Task<(IReadOnlyList<PartnerSummary> Items, bool HasMore)> ListAsync(ResourceScope scope, PageWindow page,
+        CancellationToken ct, PartnerRoles? role = null)
     {
-        var items = await Scoped(scope).AsNoTracking().OrderBy(partner => partner.Code).ThenBy(partner => partner.Id)
+        var query = Scoped(scope).AsNoTracking();
+        if (role is { } filter) query = query.Where(partner => (partner.Roles & filter) == filter);
+        var items = await query.OrderBy(partner => partner.Code).ThenBy(partner => partner.Id)
             .Skip(page.Offset).Take(page.Size + 1).Select(ProjectSummary).ToListAsync(ct);
         return (items.Take(page.Size).ToArray(), items.Count > page.Size);
     }

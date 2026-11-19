@@ -4,13 +4,14 @@ public sealed class CustomerDocument
 {
     private CustomerDocument() { }
 
-    public CustomerDocument(AccountingBook book, CustomerTerms terms, JournalActor maker, DateTimeOffset now)
+    public CustomerDocument(AccountingBook book, CustomerTerms terms, JournalActor maker, DateTimeOffset now, bool usesFiscalNumber = false)
     {
         Id = Guid.CreateVersion7();
         TenantId = book.TenantId;
         WorkspaceId = book.WorkspaceId;
-        Terms = terms;
-        Number = terms.Number;
+        UsesFiscalNumber = usesFiscalNumber;
+        Number = usesFiscalNumber ? $"~{Id:N}" : terms.Number;
+        Terms = terms with { Number = Number };
         MakerIssuer = maker.Issuer;
         MakerSubject = maker.Subject;
         CreatedAtUtc = now;
@@ -23,8 +24,9 @@ public sealed class CustomerDocument
             || Math.Round(terms.Total, book.MinorUnits) != terms.Total)
             throw new ArgumentException("Invalid customer, document amount or precision.");
         if (terms.Currency != book.BaseCurrency || terms.On < book.StartsOn || terms.On.Year > 9998
-            || terms.DueOn is DateOnly due && (due < terms.On || due.Year > 9998))
+            || terms.DueOn is DateOnly due && (terms.OpeningSource is null && due < terms.On || due.Year > 9998))
             throw new ArgumentException("Invalid currency, document date or due date.");
+        book.DemandTaxDateOpen(terms.On);
     }
 
     public Guid Id { get; private set; }
@@ -32,6 +34,9 @@ public sealed class CustomerDocument
     public Guid WorkspaceId { get; private set; }
     public CustomerTerms Terms { get; private set; } = null!;
     public string Number { get; private set; } = "";
+    public bool UsesFiscalNumber { get; private set; }
+    public int? NumberFiscalYear { get; private set; }
+    public long? NumberSequence { get; private set; }
     public string MakerIssuer { get; private set; } = "";
     public string MakerSubject { get; private set; } = "";
     public DateTimeOffset CreatedAtUtc { get; private set; }
@@ -49,7 +54,8 @@ public sealed class CustomerDocument
 
     public void Post(Guid journal, decimal balance)
     {
-        if (State != CustomerDocumentState.Submitted || balance < 0 || balance > Terms.Total)
+        if (State != CustomerDocumentState.Submitted || balance < 0 || balance > Terms.Total
+            || UsesFiscalNumber && NumberSequence is null)
             throw new LedgerRuleException("The customer document cannot be posted.");
         JournalId = journal;
         OpenBalance = balance;
@@ -57,11 +63,23 @@ public sealed class CustomerDocument
         Version++;
     }
 
+    public void AssignFiscalNumber(string number, int year, long sequence)
+    {
+        if (!UsesFiscalNumber || Terms.Kind != CustomerDocumentKind.Invoice || State != CustomerDocumentState.Submitted
+            || NumberSequence.HasValue)
+            throw new LedgerRuleException("This invoice cannot be assigned a fiscal number.");
+        Number = number;
+        Terms = Terms with { Number = number };
+        NumberFiscalYear = year;
+        NumberSequence = sequence;
+    }
+
     public void ReviseInvoice(CustomerTerms replacement, JournalActor actor, AccountingBook book)
     {
         if (State != CustomerDocumentState.Submitted || !MadeBy(actor) || Terms.Kind != CustomerDocumentKind.Invoice
             || replacement.Kind != CustomerDocumentKind.Invoice || replacement.Number != Number)
             throw new LedgerRuleException("Only the maker may revise the submitted invoice.");
+        book.DemandTaxDateOpen(Terms.On);
         Validate(book, replacement);
         Terms = replacement;
         Version++;

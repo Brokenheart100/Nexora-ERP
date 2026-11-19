@@ -6,7 +6,7 @@ using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Application;
 
-public sealed class ChartUseCases(IBookAccess access, IChartStore store, TimeProvider clock)
+public sealed class ChartUseCases(IBookAccess access, IChartStore store, TimeProvider clock, ILedgerStore ledger)
 {
     public async Task<ChartView> ReadAsync(Guid workspaceId, CancellationToken ct)
     {
@@ -45,6 +45,7 @@ public sealed class ChartUseCases(IBookAccess access, IChartStore store, TimePro
             return new(receipt.ResultVersion);
         }
         RequireRevision(book, command.ExpectedRevision);
+        await DemandNoOpeningInProgressAsync(current.Scope, ct);
         var accounts = await store.ListAsync(current.Scope, true, ct);
         var desired = command.Account.Parse();
         var existing = accounts.SingleOrDefault(x => x.Code == desired.Code);
@@ -82,6 +83,7 @@ public sealed class ChartUseCases(IBookAccess access, IChartStore store, TimePro
         if (preview.CommittedRevision is { } committed) return new(committed);
         if (preview.ExpiresAtUtc <= clock.GetUtcNow()) throw new BusinessConflictException("The import preview expired.");
         RequireRevision(book, preview.ChartRevision);
+        await DemandNoOpeningInProgressAsync(current.Scope, ct);
         var accounts = await store.ListAsync(current.Scope, true, ct);
         var plan = Plan(book, accounts, preview.ReadRows(), preview.Mode);
         if (plan.Errors.Count != 0) throw new BusinessConflictException(plan.Errors[0].Message);
@@ -91,8 +93,23 @@ public sealed class ChartUseCases(IBookAccess access, IChartStore store, TimePro
         return new(book.ChartRevision);
     }
 
+    public async Task<ChartImportStatus> ImportStatusAsync(Guid workspaceId, Guid id, CancellationToken ct)
+    {
+        var current = await access.DemandAsync(workspaceId, false, ct);
+        current.Demand(ChartPermissions.Import);
+        var preview = await store.FindPreviewAsync(current, id, ct) ?? throw new ResourceNotFoundException();
+        var state = preview.CommittedRevision is not null ? "committed" : clock.GetUtcNow() >= preview.ExpiresAtUtc ? "expired" : "ready";
+        return new(preview.Id, state, preview.ExpiresAtUtc, preview.ChartRevision, preview.CommittedRevision);
+    }
+
     private async Task<AccountingBook> LockAsync(BookAccess current, CancellationToken ct) =>
         await store.LockBookAsync(current.Scope, ct) ?? throw new ResourceNotFoundException();
+
+    private async Task DemandNoOpeningInProgressAsync(ResourceScope scope, CancellationToken ct)
+    {
+        if (await ledger.HasApplyingOpeningSubledgersAsync(scope, ct))
+            throw new LedgerRuleException("Wait for the approved opening subledger batch to post.");
+    }
 
     private static void RequireRevision(AccountingBook book, long expected)
     {

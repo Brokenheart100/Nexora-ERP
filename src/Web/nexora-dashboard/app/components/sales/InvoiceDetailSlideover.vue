@@ -269,10 +269,10 @@ const draftColumns: TableColumn<DraftLine>[] = [{
         <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] sm:grid-cols-5">
           <div>
             <dt class="text-xs text-muted">
-              关联销售订单
+              {{ invoice.sourceScheduleId ? '关联定期开票计划' : '关联销售订单' }}
             </dt>
-            <dd class="mt-0.5 font-mono text-[12px] text-default">
-              {{ invoice.sourceOrderId }}
+            <dd class="mt-0.5 font-mono text-[12px] text-default" data-testid="invoice-source">
+              {{ invoice.sourceScheduleId ?? invoice.sourceOrderId }}
             </dd>
           </div>
           <div>
@@ -348,7 +348,12 @@ const draftColumns: TableColumn<DraftLine>[] = [{
                   编辑发票草稿（{{ draftLines.length }} 行）
                 </p>
                 <p class="mt-0.5 text-xs text-muted">
-                  来源订单 {{ invoice.sourceOrderId }} · 可开票数量取自已发货明细
+                  <template v-if="invoice.sourceScheduleId">
+                    来源计划 {{ invoice.sourceScheduleId }} · 本期服务数量可调整
+                  </template>
+                  <template v-else>
+                    来源订单 {{ invoice.sourceOrderId }} · 可开票数量取自已发货明细
+                  </template>
                 </p>
               </div>
               <UBadge
@@ -637,6 +642,7 @@ const draftColumns: TableColumn<DraftLine>[] = [{
             @click="printOpen = true"
           />
           <UButton
+            v-if="invoice?.sourceOrderId"
             label="查看关联订单"
             icon="i-carbon-arrow-right"
             color="neutral"

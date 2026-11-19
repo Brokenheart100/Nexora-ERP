@@ -17,17 +17,18 @@ public sealed class BankImportUseCases(TradeAccess access, IStatementStore state
         if (command.File is not { Length: >= 1 and <= 262144 } || command.Mapping is null)
             throw new ArgumentException("A CSV file up to 256 Ki characters and its column mapping are required.");
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(command.File)));
-        var (rows, issues) = Parse(command.File, command.Mapping, book);
+        var skipped = new List<StatementIssue>();
+        var (rows, issues) = Parse(command.File, command.Mapping, book, skipped);
         var existing = (await statements.ExistingAsync(current.Scope, command.BankId, rows.Select(x => x.ExternalId).ToArray(), ct))
             .ToDictionary(x => x.ExternalId, StringComparer.Ordinal);
         foreach (var row in rows)
             if (existing.TryGetValue(row.ExternalId, out var prior) && !prior.Matches(row))
                 issues.Add(new(row.Row, "The statement reference already exists with different content."));
         var views = rows.Select(x => new StatementPreviewRow(x, existing.ContainsKey(x.ExternalId))).ToArray();
-        if (issues.Count > 0) return new(null, hash, views, issues.ToArray());
+        if (issues.Count > 0 || rows.Length == 0) return new(null, hash, views, issues.ToArray(), skipped.ToArray());
         var preview = new BankImportPreview(current, command.BankId, hash, rows, clock.GetUtcNow().AddMinutes(20));
         statements.Add(preview);
-        return new(preview.Id, hash, views, []);
+        return new(preview.Id, hash, views, [], skipped.ToArray());
     }
 
     public async Task<BankImportResult> CommitAsync(CommitBankImport command, CancellationToken ct)
@@ -61,9 +62,17 @@ public sealed class BankImportUseCases(TradeAccess access, IStatementStore state
         return new(preview.Id, count);
     }
 
-    public async Task<StatementLine[]> ListAsync(Guid workspace, Guid bankId, int page, CancellationToken ct)
+    public async Task<BankImportStatus> StatusAsync(Guid workspace, Guid id, CancellationToken ct)
     {
-        if (page is < 1 or > 100_000) throw new ArgumentException("Invalid page.");
+        var (current, _) = await access.ReadAsync(workspace, ct);
+        current.Demand(LedgerPermissions.Draft);
+        var preview = await statements.PreviewAsync(current, id, ct) ?? throw new ResourceNotFoundException();
+        var state = preview.CommittedCount is not null ? "committed" : clock.GetUtcNow() >= preview.ExpiresAtUtc ? "expired" : "ready";
+        return new(preview.Id, preview.BankId, state, preview.ExpiresAtUtc, preview.CommittedCount);
+    }
+
+    public async Task<StatementLine[]> ListAsync(Guid workspace, Guid bankId, PageWindow page, CancellationToken ct)
+    {
         var (current, _) = await access.ReadAsync(workspace, ct);
         await DemandBankAsync(current.Scope, bankId, ct);
         return await statements.ListAsync(current.Scope, bankId, page, ct);
@@ -132,7 +141,8 @@ public sealed class BankImportUseCases(TradeAccess access, IStatementStore state
         if (await trade.BankAsync(scope, id, ct) is null) throw new ResourceNotFoundException();
     }
 
-    private static (StatementEntry[], List<StatementIssue>) Parse(string text, BankCsvMapping mapping, AccountingBook book)
+    private static (StatementEntry[], List<StatementIssue>) Parse(string text, BankCsvMapping mapping, AccountingBook book,
+        List<StatementIssue> skipped)
     {
         var rows = new List<StatementEntry>();
         var issues = new List<StatementIssue>();
@@ -143,10 +153,11 @@ public sealed class BankImportUseCases(TradeAccess access, IStatementStore state
         try
         {
             var header = csv.ReadFields() ?? [];
+            var wise = WiseActivityImport.Detect(header);
             var mapped = new[] { mapping.ExternalId, mapping.Date, mapping.Amount, mapping.Description };
             var indices = mapped.Select(x => Array.IndexOf(header, x)).ToArray();
             if (header.Length is < 4 or > 40 || header.Distinct(StringComparer.Ordinal).Count() != header.Length
-                || indices.Any(x => x < 0) || indices.Distinct().Count() != 4)
+                || wise is null && (indices.Any(x => x < 0) || indices.Distinct().Count() != 4))
                 return ([], [new(1, "CSV headers do not match the four distinct mapped columns.")]);
             var count = 0;
             while (!csv.EndOfData)
@@ -155,10 +166,10 @@ public sealed class BankImportUseCases(TradeAccess access, IStatementStore state
                 if (++count > 300) { issues.Add(new(number, "A batch is limited to 300 rows.")); break; }
                 var fields = csv.ReadFields() ?? [];
                 if (fields.Length != header.Length) { issues.Add(new(number, "Wrong number of columns.")); continue; }
-                var id = fields[indices[0]];
-                var date = fields[indices[1]];
-                var amount = fields[indices[2]];
-                var description = fields[indices[3]];
+                var (id, date, amount, description, skip) = wise is null
+                    ? (fields[indices[0]], fields[indices[1]], fields[indices[2]], fields[indices[3]], null)
+                    : wise.Read(fields, book.BaseCurrency);
+                if (skip is not null) { skipped.Add(new(number, skip)); continue; }
                 if (id.Length is < 1 or > 120 || description.Length > 300
                     || !DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var on)
                     || on < book.StartsOn || on.Year > 9998 || amount.Length is < 1 or > 24

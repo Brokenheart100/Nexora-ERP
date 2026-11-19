@@ -14,7 +14,7 @@ public static partial class ReadinessEndpoints
     public static Task<ReadinessView> Read(Guid workspaceId, ReadinessUseCases readiness, CancellationToken ct) =>
         readiness.ReadAsync(workspaceId, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/backfill")]
     public static Task<BackfillResult> Backfill(Guid workspaceId, BackfillRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<BackfillResult>(new BackfillReadiness(workspaceId, request.OperationId, request.Through), ct);

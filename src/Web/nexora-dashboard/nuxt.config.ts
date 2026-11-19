@@ -56,9 +56,16 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: 'zh-CN',
     strategy: 'no_prefix',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'nexora-locale',
+      redirectOn: 'root',
+      alwaysRedirect: false,
+      fallbackLocale: 'zh-CN'
+    },
     locales: [
-      { code: 'zh-CN', name: '简体中文', language: 'zh-CN' },
-      { code: 'en', name: 'English', language: 'en-US' }
+      { code: 'zh-CN', name: '简体中文', language: 'zh-CN', file: 'zh-CN.json' },
+      { code: 'en', name: 'English', language: 'en', file: 'en.json' }
     ]
   }
 })

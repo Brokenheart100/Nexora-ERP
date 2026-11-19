@@ -77,7 +77,7 @@ public sealed class DomainTests
         private readonly List<Workspace> values = [];
         public void Add(Workspace workspace) => values.Add(workspace);
         public Task<Workspace?> FindInvitationAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(values.SingleOrDefault(x => x.Invitations.Any(i => i.Id == id)));
-        public Task<IReadOnlyList<MemberView>> ListMembersAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<MemberView>>([]);
+        public Task<IReadOnlyList<MemberView>> ListMembersAsync(Guid id, CancellationToken cancellationToken, PageWindow? page = null) => Task.FromResult<IReadOnlyList<MemberView>>([]);
         public Task<Workspace?> FindAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(values.SingleOrDefault(x => x.Id == id));
         public Task<Workspace?> FindOperationAsync(IdentityReference actor, Guid id, CancellationToken cancellationToken) =>
             Task.FromResult(values.SingleOrDefault(x => x.OperationId == id && x.OwnerIssuer == actor.Issuer && x.OwnerSubject == actor.Subject));
@@ -92,6 +92,7 @@ public sealed class DomainTests
 
     private sealed class TestBilling : IBillingRepository, IBillingCounters
     {
+        public Task LockLocalCheckoutAsync(IdentityReference owner, CancellationToken ct) => Task.CompletedTask;
         public Task<WorkspaceSubscription?> FindSubscriptionAsync(IdentityReference owner, CancellationToken cancellationToken) => Task.FromResult<WorkspaceSubscription?>(null);
         public void AddSubscription(WorkspaceSubscription subscription) { }
         public Task<BillingInvoice?> FindInvoiceAsync(Guid invoiceId, CancellationToken cancellationToken) => Task.FromResult<BillingInvoice?>(null);

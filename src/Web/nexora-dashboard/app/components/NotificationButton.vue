@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { open, unread } = useNotifications()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -11,13 +12,13 @@ const { open, unread } = useNotifications()
     position="top-right"
     :inset="false"
   >
-    <UTooltip text="通知" :content="{ side: 'bottom' }">
+    <UTooltip :text="t('shell.notifications')" :content="{ side: 'bottom' }">
       <UButton
         icon="i-carbon-notification"
         color="neutral"
         variant="ghost"
         size="sm"
-        aria-label="查看通知"
+        :aria-label="t('shell.viewNotifications')"
         data-testid="notification-button"
         @click="open = true"
       />

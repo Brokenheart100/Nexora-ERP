@@ -5,14 +5,28 @@ public sealed class InvoiceDispatch
     private InvoiceDispatch() { }
 
     public InvoiceDispatch(CustomerDocument invoice, string recipient, DateTimeOffset now, Guid? previousId)
+        : this(invoice.TenantId, invoice.WorkspaceId, invoice.Id, invoice.JournalId, false, recipient, now, previousId)
     {
-        if (invoice.Terms.Kind != CustomerDocumentKind.Invoice || invoice.State != CustomerDocumentState.Posted || invoice.JournalId is null)
+        if (invoice.Terms.Kind != CustomerDocumentKind.Invoice || invoice.State != CustomerDocumentState.Posted)
             throw new LedgerRuleException("Only a posted invoice can be dispatched.");
+    }
+
+    public InvoiceDispatch(TradeDocument donation, string recipient, DateTimeOffset now, Guid? previousId)
+        : this(donation.TenantId, donation.WorkspaceId, donation.Id, donation.JournalId, true, recipient, now, previousId)
+    {
+        if (donation.Terms.Kind != TradeKind.Donation || donation.State != TradeState.Posted || donation.ReversedById is not null)
+            throw new LedgerRuleException("Only an active posted donation can be dispatched.");
+    }
+
+    private InvoiceDispatch(Guid tenantId, Guid workspaceId, Guid documentId, Guid? journalId, bool isDonation,
+        string recipient, DateTimeOffset now, Guid? previousId)
+    {
         Id = Guid.CreateVersion7();
-        TenantId = invoice.TenantId;
-        WorkspaceId = invoice.WorkspaceId;
-        InvoiceId = invoice.Id;
-        JournalId = invoice.JournalId.Value;
+        TenantId = tenantId;
+        WorkspaceId = workspaceId;
+        DocumentId = documentId;
+        JournalId = journalId ?? throw new LedgerRuleException("Only a posted document can be dispatched.");
+        IsDonation = isDonation;
         Recipient = recipient;
         PreviousId = previousId;
         UpdatedAtUtc = now;
@@ -21,7 +35,8 @@ public sealed class InvoiceDispatch
     public Guid Id { get; private set; }
     public Guid TenantId { get; private set; }
     public Guid WorkspaceId { get; private set; }
-    public Guid InvoiceId { get; private set; }
+    public Guid DocumentId { get; private set; }
+    public bool IsDonation { get; private set; }
     public Guid JournalId { get; private set; }
     public string Recipient { get; private set; } = "";
     public Guid? PreviousId { get; private set; }
@@ -45,7 +60,7 @@ public sealed class InvoiceDispatch
     {
         if (Attempt != attempt || State != DispatchState.Sending) return;
         if (state is not (DispatchState.Sent or DispatchState.Failed or DispatchState.Unknown))
-            throw new LedgerRuleException("Invalid invoice delivery outcome.");
+            throw new LedgerRuleException("Invalid mail delivery outcome.");
         Move(state, now, detail);
     }
 

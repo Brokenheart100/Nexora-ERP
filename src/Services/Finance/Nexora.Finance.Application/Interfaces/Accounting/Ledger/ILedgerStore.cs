@@ -5,6 +5,7 @@ namespace Nexora.Finance.Application;
 
 public interface ILedgerStore
 {
+    Task<bool> ImportedSourceExistsAsync(ResourceScope scope, string provider, string externalId, CancellationToken ct);
     Task<FiscalPeriod?> PeriodAsync(ResourceScope scope, DateOnly month, CancellationToken ct);
     Task<FiscalPeriod[]> PeriodsAsync(ResourceScope scope, CancellationToken ct);
     Task<PeriodTransition[]> TransitionsAsync(ResourceScope scope, DateOnly month, CancellationToken ct);
@@ -13,6 +14,8 @@ public interface ILedgerStore
     Task<ChartAccount[]> AccountsAsync(ResourceScope scope, Guid[] ids, CancellationToken ct);
     Task<PeriodCheck> CheckAsync(ResourceScope scope, DateOnly month, CancellationToken ct);
     Task<bool> HasPostingsAsync(ResourceScope scope, CancellationToken ct);
+    Task<bool> HasOrdinaryPostingsAsync(ResourceScope scope, CancellationToken ct);
+    Task<bool> HasApplyingOpeningSubledgersAsync(ResourceScope scope, CancellationToken ct);
     Task<JournalSummary[]> ListAsync(ResourceScope scope, DateOnly? month, Guid? accountId, bool postedOnly, PageWindow page,
         int[]? monthKeys, CancellationToken ct);
     Task<BalanceRow[]> BalancesAsync(ResourceScope scope, DateOnly through, CancellationToken ct);

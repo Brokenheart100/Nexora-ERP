@@ -77,6 +77,23 @@ public sealed partial class ReceivableUseCases
         return (new(schedule.Id, schedule.Version, invoice, schedule.PendingReason), invoice is null ? null : Wake(schedule));
     }
 
+    public async Task<(ScheduleChange, ScheduleWake?)> SkipScheduleAsync(SkipInvoiceSchedule command, IRecurringInvoices recurring, CancellationToken ct)
+    {
+        const string action = "receivables.schedule-skipped";
+        var (current, _) = await access.LockAsync(command.WorkspaceId, LedgerPermissions.Draft, ct);
+        if (await mutations.ReplayAsync(current, command.OperationId, action, command, ct) is { } replay)
+            return (new(replay.TargetId!.Value, replay.ResultVersion), null);
+        var schedule = await FindScheduleAsync(current.Scope, command.Id, recurring, ct);
+        if (schedule.Version != command.ExpectedVersion || schedule.NextOn != command.On)
+            throw new RevisionConflictException("The scheduled occurrence has changed.");
+        var version = schedule.Version;
+        schedule.Skip(command.On);
+        recurring.Add(new InvoiceOccurrence(current.Scope.TenantId, current.Scope.WorkspaceId, schedule.Id, command.On,
+            version, null, clock.GetUtcNow()));
+        mutations.Record(current, command.OperationId, action, command, schedule.Id, schedule.Version);
+        return (new(schedule.Id, schedule.Version), Wake(schedule));
+    }
+
     public async Task<ScheduleWake?> TriggerAsync(InvoiceScheduleDue command, IChartStore chart, IRecurringInvoices recurring, CancellationToken ct)
     {
         var scope = new ResourceScope(command.TenantId, command.WorkspaceId);
@@ -101,7 +118,7 @@ public sealed partial class ReceivableUseCases
             var number = FormattableString.Invariant($"R-{schedule.Id:N}-{on:yyyyMMdd}");
             invoice = new CustomerDocument(book, new(CustomerDocumentKind.Invoice, number, on, terms.CustomerId, terms.CustomerName,
                 book.BaseCurrency, row.Net + row.Tax, [row], terms.Brand, DueOn: on.AddDays(terms.DueDays)),
-                new(schedule.MakerIssuer, schedule.MakerSubject), clock.GetUtcNow());
+                new(schedule.MakerIssuer, schedule.MakerSubject), clock.GetUtcNow(), book.InvoiceNumberPattern is not null);
         }
         catch (Exception error) when (error is LedgerRuleException or ArgumentException)
         {

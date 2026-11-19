@@ -26,7 +26,7 @@ public static partial class InventoryEndpoints
     public static Task<WarehouseView> Detail(Guid workspaceId, Guid id, InventoryUseCases service, CancellationToken ct) =>
         service.ReferenceAsync(workspaceId, id, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/warehouses")]
     public static async Task<Created<InventoryChange>> Add(Guid workspaceId, AddRequest request, IMessageBus bus, CancellationToken ct)
     {
@@ -34,7 +34,7 @@ public static partial class InventoryEndpoints
         return TypedResults.Created($"/api/inventory/workspaces/{workspaceId}/warehouses/{result.Id}", result);
     }
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePut(Warehouse + "/receiver")]
     public static Task<InventoryChange> Assign(Guid workspaceId, Guid id, AssignRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<InventoryChange>(new AssignWarehouse(workspaceId, request.OperationId, id, request.ExpectedVersion, request.MemberId), ct);
@@ -51,7 +51,7 @@ public static partial class InventoryEndpoints
     public static Task<MovementView[]> Movements(Guid workspaceId, Guid id, [FromQuery] Guid? itemId, [FromQuery] int? page, [FromQuery] int? pageSize,
         InventoryUseCases service, CancellationToken ct) => service.MovementsAsync(workspaceId, id, itemId, new PageWindow(page ?? 1, pageSize ?? PageWindow.DefaultSize), ct);
 
-    [IdempotentWrite("expectedRevision")]
+    [ApiWrite("expectedRevision")]
     [Authorize, WolverinePost(Root + "/receipts/{id:guid}/receive")]
     public static Task<InventoryChange> Receive(Guid workspaceId, Guid id, ReceiveRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<InventoryChange>(new ReceiveStock(workspaceId, request.OperationId, id, request.ExpectedRevision, request.On, request.Quantity), ct);
@@ -60,12 +60,12 @@ public static partial class InventoryEndpoints
     public static Task<StockReturnView[]> Returns(Guid workspaceId, Guid id, InventoryUseCases service, CancellationToken ct) =>
         service.ReturnsAsync(workspaceId, id, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/movements/{id:guid}/returns")]
     public static Task<InventoryChange> Return(Guid workspaceId, Guid id, ReturnRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<InventoryChange>(new AuthorizeStockReturn(workspaceId, request.OperationId, id, request.On, request.Quantity, request.Reason), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/returns/{id:guid}/decision")]
     public static Task<InventoryChange> DecideReturn(Guid workspaceId, Guid id, ReturnDecisionRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<InventoryChange>(new DecideStockReturn(workspaceId, request.OperationId, id, request.Confirm), ct);

@@ -20,6 +20,8 @@ internal static class FinanceModelConfiguration
         RecurringModelConfiguration.Configure(model);
         InvoiceShareModelConfiguration.Configure(model);
         InvoiceDispatchModelConfiguration.Configure(model);
+        DonationFiscalTicketConfiguration.Configure(model);
+        OpeningSubledgerConfiguration.Configure(model);
         var books = model.Entity<AccountingBook>();
         books.ToTable("books");
         books.HasKey(x => x.WorkspaceId);

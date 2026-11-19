@@ -4,24 +4,49 @@ using Nexora.Finance.Domain;
 namespace Nexora.Finance.Application;
 
 public sealed partial class TradeUseCases(TradeAccess access, IChartStore chart, ILedgerStore ledger, ITradeStore store,
-    ITaxStore taxes, ITradePartnerAuthority partners, FinanceMutation mutations, TradePosting posting, TimeProvider clock, IReceivableStore receivables, IInvoiceReference presentation)
+    ITaxStore taxes, ITradePartnerAuthority partners, FinanceMutation mutations, TradePosting posting, TimeProvider clock,
+    IReceivableStore receivables, IInvoiceReference presentation, IPartnershipStore partnerships)
 {
     public async Task<TradeHome> HomeAsync(Guid workspace, CancellationToken ct)
     {
         var (current, book) = await access.ReadAsync(workspace, ct);
         return new(book.BaseCurrency, book.MinorUnits, current.Allows(ChartPermissions.Manage), current.Allows(LedgerPermissions.Draft),
             current.Allows(LedgerPermissions.Post), await store.SetupAsync(current.Scope, ct),
-            (await store.BanksAsync(current.Scope, ct)).Select(x => new BankView(x.Id, x.Code, x.Name, x.Kind, x.AccountId, x.IsDefault, x.Balance, x.Version)).ToArray());
+            (await store.BanksAsync(current.Scope, ct)).Select(BankViewOf).ToArray());
     }
 
-    public async Task<TradeDocumentView[]> DocumentsAsync(Guid workspace, int page, CancellationToken ct)
+    public async Task<TradeDocumentView[]> DocumentsAsync(Guid workspace, int page, CancellationToken ct, bool postedBillsOnly = false)
     {
         RequirePage(page);
         var (current, _) = await access.ReadAsync(workspace, ct);
-        return (await store.DocumentsAsync(current.Scope, page, ct)).Select(x => new TradeDocumentView(x.Id, x.Terms,
-            x.State.ToString().ToLowerInvariant(), x.Version, x.JournalId, x.ReversedById, x.Total, x.Outstanding, x.Recoverable,
-            x.MadeBy(Actor(current)), x.BillMatches?.ToArray())).ToArray();
+        return (await store.DocumentsAsync(current.Scope, page, ct, postedBillsOnly)).Select(x => TradeView(x, current)).ToArray();
     }
+
+    public async Task<BankView[]> BanksAsync(Guid workspace, int page, CancellationToken ct)
+    {
+        RequirePage(page);
+        var (current, _) = await access.ReadAsync(workspace, ct);
+        return (await store.BanksAsync(current.Scope, ct)).Skip((page - 1) * 50).Take(50).Select(BankViewOf).ToArray();
+    }
+
+    public async Task<TradeDocumentView> DetailAsync(Guid workspace, Guid id, CancellationToken ct)
+    {
+        var (current, _) = await access.ReadAsync(workspace, ct);
+        return TradeView(await DocumentAsync(current.Scope, id, ct), current);
+    }
+
+    public async Task<BankView> BankDetailAsync(Guid workspace, Guid id, CancellationToken ct)
+    {
+        var (current, _) = await access.ReadAsync(workspace, ct);
+        return BankViewOf(await BankAsync(current.Scope, id, ct));
+    }
+
+    private static TradeDocumentView TradeView(TradeDocument document, BookAccess current) => new(document.Id, document.Terms,
+        document.State.ToString().ToLowerInvariant(), document.Version, document.JournalId, document.ReversedById,
+        document.Total, document.Outstanding, document.Recoverable, document.MadeBy(Actor(current)), document.BillMatches?.ToArray());
+
+    private static BankView BankViewOf(BankAccount account) => new(account.Id, account.Code, account.Name, account.Kind, account.AccountId,
+        account.IsDefault, account.Balance, account.Version);
 
     public async Task<AccrualView[]> ReceiptsAsync(Guid workspace, int page, CancellationToken ct)
     {
@@ -105,9 +130,11 @@ public sealed partial class TradeUseCases(TradeAccess access, IChartStore chart,
         var (current, book) = await access.LockAsync(command.WorkspaceId, LedgerPermissions.Draft, ct);
         var replay = await mutations.ReplayAsync(current, command.OperationId, action, command, ct);
         if (replay is not null) return Replay(replay);
-        if (command.Terms is null || !Enum.IsDefined(command.Terms.Kind) || command.Terms.DonationIdentity is not null) throw new ArgumentException("A financial document is required.");
+        if (command.Terms is null || !Enum.IsDefined(command.Terms.Kind) || command.Terms.DonationIdentity is not null
+            || command.Terms.OpeningSource is not null) throw new ArgumentException("A financial document is required.");
         var terms = command.Terms with { Number = NormalizeNumber(command.Terms.Number, 60), Memo = command.Terms.Memo?.Trim() ?? "" };
-        if (terms.StatementLineId is not null && terms.Kind is not (TradeKind.Payment or TradeKind.Income or TradeKind.Expense or TradeKind.Donation or TradeKind.SupplierRefund))
+        if (terms.StatementLineId is not null && terms.Kind is not (TradeKind.Payment or TradeKind.Income or TradeKind.Expense
+            or TradeKind.Donation or TradeKind.SupplierRefund or TradeKind.OwnerContribution or TradeKind.OwnerDrawing))
             throw new ArgumentException("This document kind cannot consume a statement line.");
         long? donorVersion = null;
         if (terms.Kind == TradeKind.Donation)

@@ -43,7 +43,7 @@ export const stockReturnSeeds: StockReturn[] = [{
   createdAt: '2026-11-16 09:40',
   confirmedAt: '2026-11-16 10:05',
   creditId: 'CR-2026-1101',
-  lines: [{ lineNo: 3, sku: 'SKU-1016', name: 'Type-C 转 HDMI 4K 扩展坞（含 PD 100W）', quantity: 5, unitPrice: 259 }]
+  lines: [{ lineNo: 3, sku: 'SKU-1016', name: 'Type-C 转 HDMI 4K 扩展坞（含 PD 100W）', quantity: 5, unitPrice: 259, invoicedQuantity: 5, uninvoicedQuantity: 0 }]
 }, {
   id: 'SR-2026-1201',
   workspaceId: 'ws-hq',
@@ -59,5 +59,5 @@ export const stockReturnSeeds: StockReturn[] = [{
   createdAt: '2026-11-16 10:20',
   confirmedAt: '2026-11-16 11:00',
   creditId: 'CR-2026-1201',
-  lines: [{ lineNo: 1, sku: 'SKU-1010', name: '人体工学网椅（带腰托/可躺 135°）', quantity: 1, unitPrice: 1288 }]
+  lines: [{ lineNo: 1, sku: 'SKU-1010', name: '人体工学网椅（带腰托/可躺 135°）', quantity: 1, unitPrice: 1288, invoicedQuantity: 1, uninvoicedQuantity: 0 }]
 }]

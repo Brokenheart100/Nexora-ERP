@@ -19,6 +19,10 @@ internal static class ReceivableModelConfiguration
         doc.Property(x => x.Version).IsConcurrencyToken();
         doc.Property(x => x.Number).HasMaxLength(60);
         doc.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Number }).IsUnique();
+        doc.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.NumberFiscalYear, x.NumberSequence }).IsUnique()
+            .HasFilter("\"NumberSequence\" IS NOT NULL");
+        model.Entity<AccountingBook>().Property(x => x.InvoiceNumberPattern).HasMaxLength(55);
+        model.Entity<AccountingBook>().Property(x => x.InvoiceNumberStart).HasDefaultValue(1L);
         doc.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.Id });
         doc.Property(x => x.MakerIssuer).HasMaxLength(500);
         doc.Property(x => x.MakerSubject).HasMaxLength(200);

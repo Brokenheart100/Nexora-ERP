@@ -8,6 +8,10 @@ const props = defineProps<{
   order: SalesOrder | null
   canCreate: boolean
   canApprove: boolean
+  canWithdraw?: boolean
+  canCancel?: boolean
+  canResubmit?: boolean
+  selfApprovalBlocked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -15,6 +19,9 @@ const emit = defineEmits<{
   approve: []
   reject: []
   fulfill: []
+  withdraw: []
+  cancelDraft: []
+  resubmit: []
   back: []
   openQuote: [quoteId: string]
 }>()
@@ -38,7 +45,7 @@ const shippedRate = computed(() => {
 })
 
 const canEditSelected = computed(() => Boolean(
-  props.order && props.canCreate && ['draft', 'pending'].includes(props.order.status)
+  props.order && props.canCreate && props.order.status === 'draft'
 ))
 const canApproveSelected = computed(() => Boolean(
   props.order && props.canApprove && props.order.status === 'pending'
@@ -153,8 +160,10 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           color="warning"
           variant="soft"
           icon="i-carbon-document"
-          title="草稿订单"
-          description="提交审批后才会进入销售审批队列，审批通过后方可发起履约。"
+          :title="order.withdrawnAt ? '已撤回提交' : '草稿订单'"
+          :description="order.withdrawnAt
+            ? '制单人于 ' + order.withdrawnAt + ' 撤回提交，当前为草稿，可修改后重新提交审批。'
+            : '提交审批后才会进入销售审批队列，审批通过后方可发起履约。'"
           data-testid="sales-order-draft-alert"
         />
 
@@ -354,6 +363,13 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           >
             当前身份无审批权限
           </p>
+          <p
+            v-if="selfApprovalBlocked"
+            class="text-xs text-error"
+            data-testid="sales-order-self-approval"
+          >
+            不能审批自己提交的单据
+          </p>
           <UButton
             label="打印"
             icon="i-carbon-printer"
@@ -372,6 +388,34 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
             :disabled="!canEditSelected"
             data-testid="sales-order-edit"
             @click="emit('edit')"
+          />
+          <UButton
+            v-if="canWithdraw"
+            label="撤回提交"
+            icon="i-carbon-undo"
+            color="warning"
+            variant="outline"
+            size="sm"
+            data-testid="sales-order-withdraw"
+            @click="emit('withdraw')"
+          />
+          <UButton
+            v-if="canResubmit"
+            label="重新提交"
+            icon="i-carbon-send"
+            size="sm"
+            data-testid="sales-order-resubmit"
+            @click="emit('resubmit')"
+          />
+          <UButton
+            v-if="canCancel"
+            label="取消草稿"
+            icon="i-carbon-close"
+            color="error"
+            variant="ghost"
+            size="sm"
+            data-testid="sales-order-cancel-draft"
+            @click="emit('cancelDraft')"
           />
           <UButton
             label="发起履约"

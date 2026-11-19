@@ -7,6 +7,10 @@ namespace Nexora.Finance.Infrastructure;
 public static class ReceivableHandler
 {
     [Transactional(Mode = TransactionMiddlewareMode.Eager)]
+    public static Task<InvoiceNumberingView> Handle(ConfigureInvoiceNumbering command, FinanceDbContext db, ReceivableUseCases service, CancellationToken ct) =>
+        service.ConfigureNumberingAsync(command, ct);
+
+    [Transactional(Mode = TransactionMiddlewareMode.Eager)]
     public static Task<TradeChange> Handle(ConfigureReceivables command, FinanceDbContext db, ReceivableUseCases service, CancellationToken ct) =>
         service.ConfigureAsync(command, ct);
 

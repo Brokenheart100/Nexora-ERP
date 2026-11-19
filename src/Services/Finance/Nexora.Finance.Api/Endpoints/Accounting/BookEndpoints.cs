@@ -11,7 +11,7 @@ public static class BookEndpoints
     [Authorize, WolverineGet("/api/finance/workspaces/{workspaceId:guid}/book")]
     public static Task<BookView> Get(Guid workspaceId, BookUseCases useCases, CancellationToken ct) => useCases.ReadAsync(workspaceId, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost("/api/finance/workspaces/{workspaceId:guid}/book")]
     public static Task<BookView> Initialize(Guid workspaceId, InitializeBookRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<BookView>(new InitializeBook(workspaceId, request.OperationId, request.BaseCurrency,

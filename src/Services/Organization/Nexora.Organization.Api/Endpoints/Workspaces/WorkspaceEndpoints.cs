@@ -9,7 +9,7 @@ namespace Nexora.Organization.Api;
 
 public static class WorkspaceEndpoints
 {
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost("/api/workspaces")]
     public static async Task<IResult> Open(CreateWorkspaceRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public static class WorkspaceEndpoints
     public static Task<IReadOnlyList<WorkspaceView>> List(WorkspaceQueries queries, ICurrentActor actor, CancellationToken cancellationToken) =>
         queries.ListAsync(actor.GetRequired(), cancellationToken);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost("/api/workspaces/personal")]
     public static async Task<IResult> OpenPersonal(CreateWorkspaceRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken ct)
     {

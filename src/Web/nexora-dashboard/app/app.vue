@@ -1,24 +1,29 @@
 <script setup lang="ts">
+import { en, zh_cn } from '@nuxt/ui/locale'
+
+const { locale, t } = useI18n()
 const colorMode = useColorMode()
 
 const color = computed(() => colorMode.value === 'dark' ? '#161616' : '#f4f4f4')
+const title = computed(() => t('app.title'))
+const description = computed(() => t('app.description'))
+const uiLocale = computed(() => locale.value === 'en' ? en : zh_cn)
 
-useHead({
+useHead(() => ({
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    { key: 'theme-color', name: 'theme-color', content: color }
+    { key: 'theme-color', name: 'theme-color', content: color.value }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' }
   ],
   htmlAttrs: {
-    lang: 'zh-CN'
+    lang: locale.value
   }
-})
-
-const title = 'Nexora ERP — UI 原型'
-const description = 'Nexora ERP 的 Carbon 风格 UI 原型：工作台、商品目录与采购订单，全部使用本地模拟数据。'
+}))
 
 useSeoMeta({
   title,
@@ -30,7 +35,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocale">
     <NuxtLoadingIndicator color="#0f62fe" />
 
     <NuxtLayout>

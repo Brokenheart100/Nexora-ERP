@@ -5,7 +5,7 @@ import {
   openingLabel,
   readinessSummary,
   severityLabel,
-} from '../app/utils/readiness'
+} from '../app/utils/finance/readiness'
 
 describe('readiness labels', () => {
   it('maps known check codes and falls back to the code', () => {

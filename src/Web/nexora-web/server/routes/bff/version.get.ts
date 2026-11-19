@@ -1,3 +1,3 @@
-import { buildInfo } from '../../utils/bff-runtime-info'
+import { buildInfo } from '../../utils/runtime/bff-runtime-info'
 
 export default defineEventHandler(() => buildInfo())

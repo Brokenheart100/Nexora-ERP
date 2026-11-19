@@ -46,7 +46,7 @@ public sealed partial class WorkspaceSliceTests
         await Api<object>(Alice, $"/api/workspaces/{workspace.Id}/members/{otherMembers.Single().Id}",
             new ChangeMemberRequest(1, GovernanceRoles.Reader, false), 409);
         var invitation = await Api<InvitationCreatedResult>(Alice, $"/api/workspaces/{workspace.Id}/invitations",
-            new InviteMemberRequest(Guid.NewGuid(), 1, "Bob@example.com", GovernanceRoles.Reader));
+            new InviteMemberRequest(Guid.NewGuid(), 1, "Bob@example.com", GovernanceRoles.Reader), 201);
         var inviteUrl = $"/api/invitations/{invitation.Invitation.Id}/redeem";
         var list = await Api<InvitationView[]>(Alice, $"/api/workspaces/{workspace.Id}/invitations");
         Assert.Single(list); Assert.DoesNotContain("Token", System.Text.Json.JsonSerializer.Serialize(list));
@@ -117,7 +117,7 @@ public sealed partial class WorkspaceSliceTests
 
         var eve = new Claim("sub", "eve-subject");
         var revoked = await Api<InvitationCreatedResult>(Alice, $"/api/workspaces/{workspace.Id}/invitations",
-            new InviteMemberRequest(Guid.NewGuid(), 4, "eve@example.com", GovernanceRoles.Reader));
+            new InviteMemberRequest(Guid.NewGuid(), 4, "eve@example.com", GovernanceRoles.Reader), 201);
         await Api<GovernanceMutationResult>(Alice, $"/api/workspaces/{workspace.Id}/invitations/{revoked.Invitation.Id}/revoke", new RevokeInvitationRequest(5));
         await Api<object>(eve, $"/api/invitations/{revoked.Invitation.Id}/redeem", new RedeemInvitationRequest(revoked.Token), 409, email: "eve@example.com");
         await Api<GovernanceMutationResult>(Alice, $"/api/workspaces/{workspace.Id}/members/{member.Id}", new ChangeMemberRequest(6, GovernanceRoles.Reader, false));
@@ -187,7 +187,7 @@ public sealed partial class WorkspaceSliceTests
         var originalCreation = new CreateWorkspaceRequest(Guid.NewGuid(), "并发所有者验证");
         var workspace = await Api<WorkspaceView>(Alice, "/api/workspaces", originalCreation, 201); await Create(Bob);
         var invite = await Api<InvitationCreatedResult>(Alice, $"/api/workspaces/{workspace.Id}/invitations",
-            new InviteMemberRequest(Guid.NewGuid(), 1, "bob@example.com", GovernanceRoles.Owner));
+            new InviteMemberRequest(Guid.NewGuid(), 1, "bob@example.com", GovernanceRoles.Owner), 201);
         await Api<GovernanceMutationResult>(Bob, $"/api/invitations/{invite.Invitation.Id}/redeem", new RedeemInvitationRequest(invite.Token));
         await using var left = org.Services.CreateAsyncScope(); await using var right = org.Services.CreateAsyncScope();
         var a = (await left.ServiceProvider.GetRequiredService<IWorkspaceRepository>().FindAsync(workspace.Id, default))!;

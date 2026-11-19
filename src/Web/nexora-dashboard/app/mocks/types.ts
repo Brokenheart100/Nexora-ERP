@@ -19,6 +19,8 @@ export type OrderStatus = 'draft' | 'pending' | 'approved' | 'partial' | 'receiv
 
 export type ProductTracking = 'none' | 'batch' | 'serial'
 
+export type ProductKind = 'goods' | 'service'
+
 export interface Product {
   id: string
   sku: string
@@ -27,6 +29,8 @@ export interface Product {
   unit: string
   price: number
   stock: number
+  /** 商品或服务；服务不跟踪库存，单价在交易行录入。 */
+  kind?: ProductKind
   status: ProductStatus
   updatedAt: string
   brand?: string
@@ -56,6 +60,12 @@ export interface PurchaseOrder {
   expectedAt: string
   note: string
   lines: PurchaseOrderLine[]
+  /** 制单人；未设置时回退到提交轨迹或演示身份。 */
+  maker?: string
+  /** 撤回/取消时间与原因（C12 演示）。 */
+  withdrawnAt?: string
+  cancelledAt?: string
+  cancelReason?: string
   /** 审批轨迹（B4 本地演示）。 */
   approvals?: PurchaseApprovalStep[]
   /** 收货记录（B4 本地演示）。 */
@@ -64,7 +74,7 @@ export interface PurchaseOrder {
   audit?: PurchaseAuditEntry[]
 }
 
-export type PurchaseApprovalAction = 'submitted' | 'approved' | 'rejected'
+export type PurchaseApprovalAction = 'submitted' | 'approved' | 'rejected' | 'withdrawn'
 
 export interface PurchaseApprovalStep {
   id: string
@@ -99,7 +109,7 @@ export interface PurchaseAuditEntry {
   detail: string
 }
 
-export type SupplierBillStatus = 'pending' | 'posted' | 'cancelled'
+export type SupplierBillStatus = 'draft' | 'pending' | 'provisional' | 'posted' | 'cancelled'
 
 /** 供应商账单的一行：对应某张收货单的可匹配明细。 */
 export interface SupplierBillLine {
@@ -140,6 +150,20 @@ export interface SupplierBill {
   reviewedAt?: string
 }
 
+export interface SupplierPaymentReversal {
+  id: string
+  paymentId: string
+  billId: string
+  date: string
+  amount: number
+  bankAccountId: string
+  bankName: string
+  reference: string
+  reason: string
+  bankTransactionId: string
+  createdAt: string
+}
+
 export interface SupplierPayment {
   id: string
   workspaceId: string
@@ -151,6 +175,10 @@ export interface SupplierPayment {
   method: 'transfer' | 'cheque' | 'cash'
   reference: string
   note?: string
+  status: 'completed' | 'voided'
+  voidedAt?: string
+  voidReason?: string
+  reversal?: SupplierPaymentReversal
 }
 
 export interface SupplierCredit {
@@ -273,6 +301,8 @@ export type Permission
     | 'settings.view'
     | 'settings.manage'
 
+export type DemoIdentityRole = 'owner' | 'admin' | 'finance' | 'viewer'
+
 export interface DemoUser {
   id: string
   name: string
@@ -281,6 +311,8 @@ export interface DemoUser {
   avatarIcon: string
   mfaEnabled: boolean
   lastLoginAt: string
+  role?: DemoIdentityRole
+  roleLabel?: string
 }
 
 /** 只读演示用的登录会话（真实会话与设备管理在接入阶段实现）。 */
@@ -289,7 +321,11 @@ export interface DemoSession {
   device: string
   browser: string
   location: string
+  loginAt: string
   lastActiveAt: string
+  expiresAt: string
+  expiresInMinutes: number
+  status: 'active' | 'expiring' | 'revoked'
   current: boolean
 }
 
@@ -304,6 +340,8 @@ export interface Invoice {
   amount: string
   taxAmount: string
   sourceOrderId: string
+  /** 由定期开票计划生成时记录计划编号。 */
+  sourceScheduleId?: string
   /** 明细行（B5 发票详情演示）。 */
   lines?: InvoiceLine[]
   /** 分享与寄送记录（B5 本地演示）。 */
@@ -443,6 +481,10 @@ export interface StockReturnLine {
   name: string
   quantity: number
   unitPrice: number
+  /** C6：确认时按原明细开票状态拆分的已开票数量，沿原账单或发票生成贷项。 */
+  invoicedQuantity?: number
+  /** C6：确认时未开票部分，用于冲减可匹配或可开票数量。 */
+  uninvoicedQuantity?: number
 }
 
 /** 从原收货/发货执行记录发起的退货单，确认后关联贷项。 */
@@ -464,7 +506,21 @@ export interface StockReturn {
   lines: StockReturnLine[]
 }
 export type PartnerType = 'supplier' | 'customer' | 'donor' | 'both'
+export type PartnerRole = 'supplier' | 'customer' | 'donor'
 export type PartnerStatus = 'active' | 'inactive'
+export interface PartnerContact {
+  id: string
+  name: string
+  title: string
+  phone: string
+  email: string
+}
+export interface PartnerAddress {
+  province: string
+  city: string
+  line: string
+  postalCode?: string
+}
 export interface Partner {
   id: string
   code: string
@@ -477,6 +533,10 @@ export interface Partner {
   currency: 'CNY'
   status: PartnerStatus
   updatedAt: string
+  /** 同一主体可同时承担多个业务角色（C12）。 */
+  roles?: PartnerRole[]
+  address?: PartnerAddress
+  contacts?: PartnerContact[]
 }
 
 export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'
@@ -498,6 +558,8 @@ export interface Quote {
   owner: string
   totalAmount: string
   lines: QuoteLine[]
+  /** 正式发出时间（C12 演示）。 */
+  sentAt?: string
   /** 已转换的销售单号（B5 演示）。 */
   convertedOrderId?: string
   updatedAt: string
@@ -524,6 +586,11 @@ export interface SalesOrder {
   totalAmount: string
   note: string
   lines: SalesOrderLine[]
+  /** 制单人；用于禁止审批自己提交的单据。 */
+  maker?: string
+  withdrawnAt?: string
+  cancelledAt?: string
+  cancelReason?: string
   /** 来源报价单号（B5 演示）。 */
   quoteId?: string
   /** 审批轨迹（B5 本地演示）。 */
@@ -564,6 +631,12 @@ export interface InventoryMovement {
   quantity: number
   reference: string
   at: string
+  /** C6：退货确认写入的流水保留退货单号，可由流水打开退货详情。 */
+  returnId?: string
+  /** C6：退货流水对应的原收货或发货执行记录。 */
+  executionId?: string
+  /** C6：该笔流水发生后的同仓库同商品结存数量。 */
+  balanceAfter?: number
 }
 
 export type FinanceAccountType = 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
@@ -590,7 +663,12 @@ export interface JournalEntry {
   debitTotal: string
   creditTotal: string
   lines: JournalLine[]
+  source?: 'external'
+  provider?: string
+  externalId?: string
+  postingNumber?: string
 }
+
 export interface ReportRow {
   id: string
   report: 'trial-balance' | 'income-statement' | 'balance-sheet' | 'cash-flow'
@@ -738,7 +816,7 @@ export interface WorkspaceSubscription {
 
 // ---- B5 销售与应收 ----
 
-export type SalesApprovalAction = 'submitted' | 'approved' | 'rejected'
+export type SalesApprovalAction = 'submitted' | 'approved' | 'rejected' | 'withdrawn'
 /** 销售订单审批轨迹（本地演示）。 */
 export interface SalesApprovalStep {
   id: string
@@ -784,17 +862,50 @@ export interface InvoiceDelivery {
   at: string
   error?: string
 }
-/** 定期开票计划（本地演示，不实现真实调度）。 */
+export type RecurringIntervalMonths = 1 | 3 | 6 | 12
+export type RecurringPlanStatus = 'active' | 'paused'
+
+/** 定期开票计划：模板字段与后端 ScheduleView 对齐，仅做本地模拟调度。 */
 export interface RecurringInvoicePlan {
   id: string
   workspaceId: string
   customerName: string
-  cadence: 'monthly' | 'quarterly'
-  amount: string
-  nextRunAt: string
-  lastRunAt: string
-  status: 'active' | 'paused'
+  serviceId: string
+  serviceName: string
+  quantity: number
+  unitPrice: number
+  intervalMonths: RecurringIntervalMonths
+  dueDays: number
+  firstOn: string
+  endsOn?: string
+  /** 下次执行日；计划结束或暂停且未恢复时可为空。 */
+  nextRunAt: string | null
+  lastRunAt: string | null
+  status: RecurringPlanStatus
+  /** 模板版本，编辑、暂停、恢复、执行与跳过都会递增。 */
+  version: number
   owner: string
+  /** 期间未开启等阻塞原因；保留到下次成功执行为止。 */
+  pendingReason?: string
+  /** 演示用：命中这些会计期间（YYYY-MM）时模拟期间阻断。 */
+  blockedPeriods?: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type RecurringOccurrenceStatus = 'executed' | 'skipped' | 'blocked'
+
+/** 计划执行历史：同一天同一计划最多一条执行记录。 */
+export interface RecurringInvoiceOccurrence {
+  id: string
+  planId: string
+  workspaceId: string
+  scheduledOn: string
+  status: RecurringOccurrenceStatus
+  version: number
+  invoiceId?: string
+  actedAt: string
+  note?: string
 }
 
 // ---- B6 库存作业 ----
@@ -981,6 +1092,22 @@ export interface OpeningSubledgerPreview {
   totalDifference: number
 }
 
+export type OpeningResultRecordKind = 'journal' | 'stock' | 'receivable' | 'payable' | 'bank'
+
+/** 过账结果中的一条具体模拟记录，可从批次回查来源行。 */
+export interface OpeningResultRecord {
+  id: string
+  kind: OpeningResultRecordKind
+  docNo: string
+  amount: number
+  sourceId: string
+  sourceReference: string
+  sourceLabel: string
+  detail: string
+  status: string
+  at: string
+}
+
 export interface OpeningSubledgerPostingResult {
   journalIds: string[]
   stockMovements: number
@@ -990,6 +1117,8 @@ export interface OpeningSubledgerPostingResult {
   checks: number
   passed: number
   postedAt: string
+  /** 过账生成的具体记录；各类数量由记录汇总，不再单独维护。 */
+  records: OpeningResultRecord[]
 }
 
 export interface OpeningSubledgerBatch {
@@ -1041,4 +1170,157 @@ export interface ReportExportRecord {
   basis: 'ledger' | 'management'
   rebuiltFrom?: string
   failureReason?: string
+}
+
+// C10 外部凭证：来源系统与外部编号唯一，状态与版本用于独立复核和批量并发校验。
+export type ExternalJournalStatus = 'draft' | 'submitted' | 'posted' | 'cancelled'
+
+export interface ExternalJournal {
+  id: string
+  workspaceId: string
+  provider: string
+  externalId: string
+  date: string
+  period: string
+  description: string
+  status: ExternalJournalStatus
+  version: number
+  debitTotal: string
+  creditTotal: string
+  lines: JournalLine[]
+  makerId: string
+  makerName: string
+  reviewerId?: string
+  reviewerName?: string
+  submittedAt?: string
+  postedAt?: string
+  cancelledAt?: string
+  postingNumber?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ExternalJournalBatchIssue {
+  journalId: string
+  message: string
+}
+
+// C11 捐赠收据、外部财政票据与邮件投递记录。
+export type DonationMethod = 'cash' | 'check' | 'card' | 'transfer'
+export type DonationStatus = 'draft' | 'submitted' | 'posted' | 'reversed'
+
+export interface DonationFundFlow {
+  id: string
+  accountId: string
+  accountName: string
+  direction: 'in' | 'out'
+  amount: string
+  date: string
+  reference: string
+}
+
+export interface Donation {
+  id: string
+  workspaceId: string
+  donorId: string
+  donorName: string
+  donorCode: string
+  date: string
+  method: DonationMethod
+  fundAccountId: string
+  fundAccountName: string
+  amount: string
+  purpose: string
+  note?: string
+  status: DonationStatus
+  version: number
+  receiptNumber?: string
+  journalId?: string
+  fundFlow?: DonationFundFlow
+  makerId: string
+  makerName: string
+  reviewerId?: string
+  reviewerName?: string
+  submittedAt?: string
+  postedAt?: string
+  reversedAt?: string
+  rejection?: string
+  reversalOf?: string
+  reversalId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type DonationFiscalTicketType = 'fiscal' | 'ordinary'
+export interface DonationFiscalTicket {
+  id: string
+  donationId: string
+  code: string
+  number: string
+  issuedOn: string
+  linkedAt: string
+  type: DonationFiscalTicketType
+}
+
+export type DonationMailState = 'queued' | 'sending' | 'sent' | 'failed' | 'unknown' | 'abandoned'
+export interface DonationDispatch {
+  id: string
+  donationId: string
+  recipient: string
+  state: DonationMailState
+  attempt: number
+  version: number
+  previousId?: string
+  resentAsId?: string
+  failureReason?: string
+  detail: string
+  updatedAt: string
+}
+
+/** C12-4 应付应收单据流转：账单、收款与核销分开提交、复核和过账。 */
+export type TradeDocumentKind = 'bill' | 'receipt' | 'allocation'
+export type TradeDocumentStatus = 'draft' | 'submitted' | 'reviewed' | 'posted' | 'cancelled'
+
+export interface TradeDocument {
+  id: string
+  workspaceId: string
+  kind: TradeDocumentKind
+  party: string
+  amount: number
+  sourceRef: string
+  maker: string
+  reviewer?: string
+  status: TradeDocumentStatus
+  version: number
+  submittedAt?: string
+  postedAt?: string
+  cancelledAt?: string
+  cancelReason?: string
+  note: string
+}
+
+export interface AccountMapping {
+  id: string
+  kind: 'AR' | 'AP'
+  accountCode: string
+  accountName: string
+  status: 'mapped' | 'missing'
+  note: string
+}
+
+/** 采购暂估：确认后才把暂估金额转入已过账口径。 */
+export type ProvisionalBillStatus = 'pending' | 'confirmed' | 'reversed'
+
+export interface ProvisionalBill {
+  id: string
+  workspaceId: string
+  billNo: string
+  supplier: string
+  orderId: string
+  amount: number
+  stockAmount: number
+  status: ProvisionalBillStatus
+  confirmedAt?: string
+  confirmedBy?: string
+  note: string
 }

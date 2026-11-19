@@ -10,12 +10,13 @@ public sealed partial class ReceivableUseCases
     {
         var (current, _) = await access.ReadAsync(workspace, ct);
         var doc = await FindAsync(current.Scope, id, ct);
-        if (doc.Terms.Kind != CustomerDocumentKind.Invoice || doc.State == CustomerDocumentState.Cancelled)
+        if (doc.Terms.Kind != CustomerDocumentKind.Invoice || doc.Terms.OpeningSource is not null || doc.State == CustomerDocumentState.Cancelled)
             throw new ResourceNotFoundException();
         if (doc.State != CustomerDocumentState.Posted
             && (!preview || !(doc.MadeBy(Actor(current)) || current.Allows(LedgerPermissions.Post))))
             throw new ResourceNotFoundException();
-        return await renderer.RenderAsync(doc.Terms, preview && doc.State != CustomerDocumentState.Posted, ct);
+        var terms = doc.UsesFiscalNumber && doc.NumberSequence is null ? doc.Terms with { Number = "待分配" } : doc.Terms;
+        return await renderer.RenderAsync(terms, preview && doc.State != CustomerDocumentState.Posted, ct);
     }
 
     public async Task<InvoicePdf> SharedPdfAsync(string? token, IInvoiceShares shares, IInvoiceRenderer renderer, CancellationToken ct)
@@ -23,7 +24,7 @@ public sealed partial class ReceivableUseCases
         if (token is not { Length: 64 } || !token.All(Uri.IsHexDigit)) throw new ResourceNotFoundException();
         var share = await shares.FindTokenAsync(Hash(token), ct);
         if (share is null || !share.Allows(clock.GetUtcNow())) throw new ResourceNotFoundException();
-        var doc = await InvoiceDocumentAsync(new(share.TenantId, share.WorkspaceId), share.InvoiceId, ct);
+        var doc = await DeliverableInvoiceAsync(new(share.TenantId, share.WorkspaceId), share.InvoiceId, ct);
         if (doc.JournalId != share.JournalId) throw new ResourceNotFoundException();
         return await renderer.RenderAsync(doc.Terms, false, ct);
     }
@@ -32,7 +33,7 @@ public sealed partial class ReceivableUseCases
     {
         var (current, _) = await access.ReadAsync(workspace, ct);
         current.Demand(LedgerPermissions.Post);
-        await InvoiceDocumentAsync(current.Scope, invoiceId, ct);
+        await DeliverableInvoiceAsync(current.Scope, invoiceId, ct);
         return (await shares.ListAsync(current.Scope, invoiceId, ct)).Select(x => ShareView(x)).ToArray();
     }
 
@@ -44,7 +45,7 @@ public sealed partial class ReceivableUseCases
         if (replay is not null) return ShareView(await shares.FindAsync(current.Scope, replay.TargetId!.Value, ct)
             ?? throw new ResourceNotFoundException());
         if (command.LifetimeMinutes is < 1 or > 10080) throw new ArgumentException("A share must expire within one minute to seven days.");
-        var doc = await InvoiceDocumentAsync(current.Scope, command.InvoiceId, ct);
+        var doc = await DeliverableInvoiceAsync(current.Scope, command.InvoiceId, ct);
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         var share = new InvoiceShare(doc, Hash(token), clock.GetUtcNow().AddMinutes(command.LifetimeMinutes));
         shares.Add(share);
@@ -62,6 +63,12 @@ public sealed partial class ReceivableUseCases
         share.Revoke(clock.GetUtcNow());
         mutations.Record(current, command.OperationId, action, command, share.Id, 2);
         return ShareView(share);
+    }
+
+    private async Task<CustomerDocument> DeliverableInvoiceAsync(ResourceScope scope, Guid id, CancellationToken ct)
+    {
+        var document = await InvoiceDocumentAsync(scope, id, ct);
+        return document.Terms.OpeningSource is null ? document : throw new ResourceNotFoundException();
     }
 
     private static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Convert.FromHexString(token)));

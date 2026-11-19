@@ -6,7 +6,7 @@ import {
   isStandalone,
   shouldOfferInstall,
   swEnabled,
-} from '../app/utils/pwa'
+} from '../app/utils/shell/pwa'
 
 const root = process.cwd() + '/'
 const manifest = JSON.parse(readFileSync(root + 'public/manifest.webmanifest', 'utf8')) as {

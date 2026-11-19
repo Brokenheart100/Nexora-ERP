@@ -1,0 +1,286 @@
+{
+  "c5": "opening balances and report exports",
+  "base": "http://localhost:3001",
+  "ranAt": "2026-11-18T14:19:59.829Z",
+  "passed": 54,
+  "total": 54,
+  "failures": [],
+  "checks": [
+    {
+      "name": "期初导入页签渲染",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "总账标准文件借方 3,406,040.00",
+      "ok": true,
+      "detail": "¥3,406,040.00"
+    },
+    {
+      "name": "总账标准文件贷方 3,406,040.00",
+      "ok": true,
+      "detail": "¥3,406,040.00"
+    },
+    {
+      "name": "总账标准文件无差异",
+      "ok": true,
+      "detail": "¥0.00"
+    },
+    {
+      "name": "总账标准文件标记可导入",
+      "ok": true,
+      "detail": "可导入"
+    },
+    {
+      "name": "总账标准文件 8 行",
+      "ok": true,
+      "detail": "rows=8"
+    },
+    {
+      "name": "总账标准文件可导入",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "导入生成总账期初批次",
+      "ok": true,
+      "detail": "已导入批次 OPEN-GL-2026-0001 opening-balances-2026.csv 凭证 JE-OPEN-GL-2026-0001 2026-11-18 22:19 ¥3,406,040.00 已入账"
+    },
+    {
+      "name": "导入生成开账凭证",
+      "ok": true,
+      "detail": "已导入批次 OPEN-GL-2026-0001 opening-balances-2026.csv 凭证 JE-OPEN-GL-2026-0001 2026-11-18 22:19 ¥3,406,040.00 已入账"
+    },
+    {
+      "name": "问题文件提示 3 项问题",
+      "ok": true,
+      "detail": "文件存在校验错误 3 项问题需要修正后再导入；预览不会写入账簿。"
+    },
+    {
+      "name": "问题文件列出 3 条错误",
+      "ok": true,
+      "detail": "rows=3"
+    },
+    {
+      "name": "问题文件借贷差 1,200.00",
+      "ok": true,
+      "detail": "+¥1,200.00"
+    },
+    {
+      "name": "问题文件禁止导入",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "问题文件提示重复科目",
+      "ok": true,
+      "detail": "第 2 行：科目 1001 在本文件中重复出现，请合并后再导入。 第 3 行：科目 9999 不存在于当前科目表，或已停用。 借方合计 ¥200,000.00 与贷方合计 ¥198,800.00 相差 ¥1,200.00。"
+    },
+    {
+      "name": "问题文件提示未知科目",
+      "ok": true,
+      "detail": "第 2 行：科目 1001 在本文件中重复出现，请合并后再导入。 第 3 行：科目 9999 不存在于当前科目表，或已停用。 借方合计 ¥200,000.00 与贷方合计 ¥198,800.00 相差 ¥1,200.00。"
+    },
+    {
+      "name": "子账合计 2,956,440.00",
+      "ok": true,
+      "detail": "¥2,956,440.00"
+    },
+    {
+      "name": "总账合计 2,954,440.00",
+      "ok": true,
+      "detail": "¥2,954,440.00"
+    },
+    {
+      "name": "子账差异 +2,000.00",
+      "ok": true,
+      "detail": "+¥2,000.00"
+    },
+    {
+      "name": "子账来源 8 行",
+      "ok": true,
+      "detail": "rows=8"
+    },
+    {
+      "name": "四类子账校验卡",
+      "ok": true,
+      "detail": "checks=4"
+    },
+    {
+      "name": "来源行带可回查链接",
+      "ok": true,
+      "detail": "/inventory"
+    },
+    {
+      "name": "提交后进入待独立复核",
+      "ok": true,
+      "detail": "待独立复核"
+    },
+    {
+      "name": "制单人不能自行批准",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "差异未填说明不能批准",
+      "ok": true,
+      "detail": "存在子账差异 ¥2000.00，请填写复核说明后再批准。"
+    },
+    {
+      "name": "复核人可执行批准",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "批准后进入库存入账处理中",
+      "ok": true,
+      "detail": "库存入账处理中"
+    },
+    {
+      "name": "处理中可完成过账",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "过账后状态已过账",
+      "ok": true,
+      "detail": "已过账"
+    },
+    {
+      "name": "过账生成 4 张凭证并校验 3/4",
+      "ok": true,
+      "detail": "过账完成 · 2026-11-18 22:19 校验 3/4 凭证 JE-OPEN-2026-0005、JE-OPEN-2026-0006、JE-OPEN-2026-0007、JE-OPEN-2026-0008；库存移动 2 笔，应收单据 6 张，应付单据 4 张，银行流水 2 笔。"
+    },
+    {
+      "name": "过账结果含库存/应收/应付/银行写入",
+      "ok": true,
+      "detail": "过账完成 · 2026-11-18 22:19 校验 3/4 凭证 JE-OPEN-2026-0005、JE-OPEN-2026-0006、JE-OPEN-2026-0007、JE-OPEN-2026-0008；库存移动 2 笔，应收单据 6 张，应付单据 4 张，银行流水 2 笔。"
+    },
+    {
+      "name": "批次明细保留 8 条来源",
+      "ok": true,
+      "detail": "sources=8"
+    },
+    {
+      "name": "期初批次表含种子与新建两条",
+      "ok": true,
+      "detail": "rows=2"
+    },
+    {
+      "name": "报表导出记录 3 条种子",
+      "ok": true,
+      "detail": "rows=3"
+    },
+    {
+      "name": "试算平衡借贷平衡",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "生成导出任务并进入队列",
+      "ok": true,
+      "detail": "EXP-2026-0004"
+    },
+    {
+      "name": "新导出初始状态为排队中",
+      "ok": true,
+      "detail": "排队中"
+    },
+    {
+      "name": "新导出自动完成",
+      "ok": true,
+      "detail": "已完成"
+    },
+    {
+      "name": "完成后可下载",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "下载 CSV 文件名含期间",
+      "ok": true,
+      "detail": "trial-balance-2026-11.csv"
+    },
+    {
+      "name": "导出详情固定期间快照",
+      "ok": true,
+      "detail": "snap-2026-11-live"
+    },
+    {
+      "name": "导出详情固定账面水位",
+      "ok": true,
+      "detail": "#142"
+    },
+    {
+      "name": "按原快照重建生成新记录",
+      "ok": true,
+      "detail": "EXP-2026-0005"
+    },
+    {
+      "name": "重建记录复用原快照号",
+      "ok": true,
+      "detail": "snap-2026-11-live"
+    },
+    {
+      "name": "重建记录标注来源记录",
+      "ok": true,
+      "detail": "重建自 EXP-2026-0004，复用原快照与水位。"
+    },
+    {
+      "name": "重建任务已完成",
+      "ok": true,
+      "detail": "已完成"
+    },
+    {
+      "name": "重建文件名带 rebuild 标记",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "深色主题生效",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "来源链接可回到库存子账来源页",
+      "ok": true,
+      "detail": "/inventory"
+    },
+    {
+      "name": "销售页回归正常",
+      "ok": true,
+      "detail": "http://localhost:3001/sales"
+    },
+    {
+      "name": "采购订单页回归正常",
+      "ok": true,
+      "detail": "http://localhost:3001/purchase-orders"
+    },
+    {
+      "name": "财务页回归正常",
+      "ok": true,
+      "detail": "http://localhost:3001/finance"
+    },
+    {
+      "name": "无 console error",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "无 page error",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "无 4xx/5xx 响应",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "notes": [
+    "未找到侧栏账户菜单，暗色使用本地 color-mode 设置"
+  ]
+}

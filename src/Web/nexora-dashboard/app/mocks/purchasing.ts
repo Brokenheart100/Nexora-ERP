@@ -30,13 +30,15 @@ export const statusColors: Record<OrderStatus, 'neutral' | 'warning' | 'info' | 
 export const approvalActionLabels: Record<PurchaseApprovalAction, string> = {
   submitted: '提交审批',
   approved: '审批通过',
-  rejected: '审批驳回'
+  rejected: '审批驳回',
+  withdrawn: '撤回提交'
 }
 
 export const approvalActionColors: Record<PurchaseApprovalAction, 'warning' | 'success' | 'error'> = {
   submitted: 'warning',
   approved: 'success',
-  rejected: 'error'
+  rejected: 'error',
+  withdrawn: 'warning'
 }
 
 export const purchaseOrders: PurchaseOrder[] = [
@@ -119,6 +121,7 @@ export const purchaseOrders: PurchaseOrder[] = [
     supplier: '东莞市锐驰五金制品有限公司',
     contact: '赵立 · 134-0769-8855',
     status: 'pending',
+    maker: '陈立',
     orderedAt: '2026-11-12',
     expectedAt: '2026-11-21',
     note: '年度框架协议下的补充订单，明细较多，请核对规格后再审批。',
@@ -200,7 +203,7 @@ const approvalTrail: Record<string, PurchaseApprovalStep[]> = {
     { id: 'ap-0515-02', orderId: 'PO-2026-0515', action: 'rejected', actor: '王倩', at: '2026-11-13 09:35', note: '预算科目缺失，请补充成本中心后重新提交。' }
   ],
   'PO-2026-0516': [
-    { id: 'ap-0516-01', orderId: 'PO-2026-0516', action: 'submitted', actor: '张明远', at: '2026-11-12 14:10', note: '年度框架协议补充订单提交审批，共 12 行明细。' }
+    { id: 'ap-0516-01', orderId: 'PO-2026-0516', action: 'submitted', actor: '陈立', at: '2026-11-12 14:10', note: '业务主管本人录入的补充订单，仍需其他主管独立审批。' }
   ],
   'PO-2026-0517': [
     { id: 'ap-0517-01', orderId: 'PO-2026-0517', action: 'submitted', actor: '陈昊', at: '2026-10-28 09:00', note: '门店办公耗材补货，提交审批。' },

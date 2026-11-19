@@ -15,7 +15,7 @@ public static class ApiIdempotency
     public static void UseIdempotencyHeaders(this WebApplication app) => app.Use(async (context, next) =>
     {
         var request = context.Request;
-        var contract = context.GetEndpoint()?.Metadata.GetMetadata<IdempotentWriteAttribute>();
+        var contract = context.GetEndpoint()?.Metadata.GetMetadata<ApiWriteAttribute>();
         var hasKey = request.Headers.TryGetValue(Header, out var header);
         var hasRevision = request.Headers.TryGetValue(HeaderNames.IfMatch, out var match);
         if (contract is null || (!hasKey && !hasRevision))
@@ -25,7 +25,7 @@ public static class ApiIdempotency
         }
 
         Guid key = default;
-        if (hasKey && !TryParseKey(header.Count == 1 ? header[0] : null, out key))
+        if (hasKey && (!contract.Idempotent || !TryParseKey(header.Count == 1 ? header[0] : null, out key)))
         {
             await ApiProblems.Create(context, 400, detail: "Idempotency-Key must contain one non-empty UUID.").ExecuteAsync(context);
             return;

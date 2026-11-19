@@ -1,4 +1,5 @@
 using Nexora.Finance.Application;
+using Npgsql;
 using Wolverine.Attributes;
 using Wolverine.Persistence;
 
@@ -15,6 +16,7 @@ public static class ReportExportHandler
         ReportExports exports, CancellationToken ct) => exports.RebuildAsync(command, ct);
 
     [Transactional(Mode = TransactionMiddlewareMode.Eager)]
+    [ScheduleRetry(typeof(NpgsqlException), 2, 10, 30)]
     public static Task Handle(BuildReportExport command, FinanceDbContext db, ReportExports exports, CancellationToken ct) =>
         exports.BuildAsync(command, ct);
 }

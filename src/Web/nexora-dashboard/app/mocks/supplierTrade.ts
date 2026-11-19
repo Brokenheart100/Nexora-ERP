@@ -7,7 +7,9 @@ import type {
 } from './types'
 
 export const supplierBillStatusLabels: Record<SupplierBillStatus, string> = {
+  draft: '草稿',
   pending: '待复核',
+  provisional: '暂估待确认',
   posted: '已过账',
   cancelled: '已退回'
 }
@@ -190,7 +192,8 @@ export const supplierPayments: SupplierPayment[] = [
     bankName: '招商银行',
     method: 'transfer',
     reference: 'BANK-20261112-001',
-    note: 'C1 固定算例首笔付款。'
+    note: 'C1 固定算例首笔付款。',
+    status: 'completed'
   },
   {
     id: 'PAY-2026-1102',
@@ -201,7 +204,8 @@ export const supplierPayments: SupplierPayment[] = [
     bankAccountId: 'ba-2026-01',
     bankName: '招商银行',
     method: 'transfer',
-    reference: 'BANK-20261113-004'
+    reference: 'BANK-20261113-004',
+    status: 'completed'
   },
   {
     id: 'PAY-2026-1103',
@@ -213,7 +217,8 @@ export const supplierPayments: SupplierPayment[] = [
     bankName: '招商银行',
     method: 'transfer',
     reference: 'BANK-20261117-009',
-    note: '扣除退货贷项后的净付款。'
+    note: '扣除退货贷项后的净付款。',
+    status: 'completed'
   }
 ]
 

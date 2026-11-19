@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   convert: []
   edit: []
+  send: []
   back: []
   openOrder: [orderId: string]
 }>()
@@ -73,6 +74,9 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
           </h2>
           <p class="mt-0.5 text-xs text-muted">
             报价人 {{ quote?.owner }} · 有效期至 {{ quote?.validUntil }}
+          </p>
+          <p v-if="quote?.sentAt" class="mt-0.5 text-xs text-muted" data-testid="quote-sent-at">
+            正式发出于 {{ quote.sentAt }}
           </p>
         </div>
         <UBadge
@@ -238,6 +242,16 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
             :disabled="!canEditSelected"
             data-testid="quote-edit"
             @click="emit('edit')"
+          />
+          <UButton
+            label="正式发出"
+            icon="i-carbon-send"
+            color="warning"
+            variant="outline"
+            size="sm"
+            :disabled="!canCreate || quote?.status !== 'draft' || Boolean(quote?.convertedOrderId)"
+            data-testid="quote-send"
+            @click="emit('send')"
           />
           <UButton
             label="转为销售订单"

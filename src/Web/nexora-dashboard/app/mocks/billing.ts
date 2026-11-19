@@ -5,6 +5,8 @@ import type {
   InvoiceDeliveryStatus,
   InvoiceLine,
   InvoiceStatus,
+  RecurringIntervalMonths,
+  RecurringInvoiceOccurrence,
   RecurringInvoicePlan
 } from './types'
 import { salesOrders } from './sales'
@@ -35,19 +37,6 @@ export const invoiceDeliveryStatusLabels: Record<InvoiceDeliveryStatus, string> 
 export const invoiceDeliveryStatusColors: Record<InvoiceDeliveryStatus, 'success' | 'error'> = {
   sent: 'success',
   failed: 'error'
-}
-
-export const recurringCadenceLabels: Record<RecurringInvoicePlan['cadence'], string> = {
-  monthly: '按月',
-  quarterly: '按季'
-}
-export const recurringStatusLabels: Record<RecurringInvoicePlan['status'], string> = {
-  active: '执行中',
-  paused: '已暂停'
-}
-export const recurringStatusColors: Record<RecurringInvoicePlan['status'], 'success' | 'warning'> = {
-  active: 'success',
-  paused: 'warning'
 }
 
 function delivery(
@@ -224,53 +213,161 @@ export const invoices: Invoice[] = invoiceSeeds.map((seed) => {
   }
 })
 
-/**
- * 定期开票计划：仅展示计划列表与暂停 / 恢复的本地状态，不实现真实调度。
- */
+export const recurringServiceOptions = [
+  { label: 'IT 运维支持服务', value: 'svc-it', unitPrice: 12800 },
+  { label: '数据备份与容灾服务', value: 'svc-backup', unitPrice: 9000 },
+  { label: '门店收银系统维护', value: 'svc-pos', unitPrice: 4800 },
+  { label: '办公设备维保服务', value: 'svc-device', unitPrice: 9800 },
+  { label: '年度审计支持服务', value: 'svc-audit', unitPrice: 6000 }
+]
+
+export const recurringIntervalLabels: Record<RecurringIntervalMonths, string> = {
+  1: '每月',
+  3: '每季度',
+  6: '每半年',
+  12: '每年'
+}
+
+export const recurringPlanStatusLabels: Record<RecurringInvoicePlan['status'], string> = {
+  active: '执行中',
+  paused: '已暂停'
+}
+
+export const recurringOccurrenceStatusLabels: Record<RecurringInvoiceOccurrence['status'], string> = {
+  executed: '已开票',
+  skipped: '已跳过',
+  blocked: '期间阻断'
+}
+
+export const recurringOccurrenceStatusColors: Record<RecurringInvoiceOccurrence['status'], 'success' | 'neutral' | 'warning'> = {
+  executed: 'success',
+  skipped: 'neutral',
+  blocked: 'warning'
+}
+
+/** 定期开票计划：模板字段与后端 ScheduleView 对齐，本地模拟执行与历史。 */
 export const recurringInvoicePlans: RecurringInvoicePlan[] = [
   {
     id: 'RCP-2026-001',
     workspaceId: 'ws-hq',
     customerName: '杭州云杉科技有限公司',
-    cadence: 'monthly',
-    amount: '12800.00',
-    nextRunAt: '2026-12-01',
-    lastRunAt: '2026-11-01',
+    serviceId: 'svc-it',
+    serviceName: 'IT 运维支持服务',
+    quantity: 1,
+    unitPrice: 12800,
+    intervalMonths: 1,
+    dueDays: 30,
+    firstOn: '2026-01-19',
+    endsOn: '2027-12-19',
+    nextRunAt: '2026-11-19',
+    lastRunAt: '2026-10-19',
     status: 'active',
-    owner: '李婉'
+    version: 4,
+    owner: '李婉',
+    createdAt: '2025-12-20',
+    updatedAt: '2026-10-20'
   },
   {
     id: 'RCP-2026-002',
     workspaceId: 'ws-hq',
     customerName: '南京远航贸易有限公司',
-    cadence: 'quarterly',
-    amount: '36000.00',
+    serviceId: 'svc-backup',
+    serviceName: '数据备份与容灾服务',
+    quantity: 4,
+    unitPrice: 9000,
+    intervalMonths: 3,
+    dueDays: 15,
+    firstOn: '2026-01-05',
+    endsOn: '2027-01-05',
     nextRunAt: '2027-01-05',
     lastRunAt: '2026-10-05',
     status: 'active',
-    owner: '陈默'
+    version: 2,
+    owner: '陈默',
+    createdAt: '2025-12-18',
+    updatedAt: '2026-10-06'
   },
   {
     id: 'RCP-2026-003',
     workspaceId: 'ws-retail',
     customerName: '杭州邻里生活超市',
-    cadence: 'monthly',
-    amount: '4800.00',
+    serviceId: 'svc-pos',
+    serviceName: '门店收银系统维护',
+    quantity: 1,
+    unitPrice: 4800,
+    intervalMonths: 1,
+    dueDays: 15,
+    firstOn: '2026-01-03',
     nextRunAt: '2026-12-03',
     lastRunAt: '2026-11-03',
     status: 'paused',
-    owner: '沈嘉'
+    version: 3,
+    owner: '沈嘉',
+    createdAt: '2025-12-15',
+    updatedAt: '2026-11-04'
   },
   {
     id: 'RCP-2026-004',
     workspaceId: 'ws-south',
     customerName: '深圳市恒通办公设备有限公司',
-    cadence: 'monthly',
-    amount: '9800.00',
+    serviceId: 'svc-device',
+    serviceName: '办公设备维保服务',
+    quantity: 1,
+    unitPrice: 9800,
+    intervalMonths: 1,
+    dueDays: 20,
+    firstOn: '2026-01-08',
     nextRunAt: '2026-12-08',
     lastRunAt: '2026-11-08',
     status: 'active',
-    owner: '周奕'
+    version: 2,
+    owner: '周奕',
+    createdAt: '2025-12-21',
+    updatedAt: '2026-11-09'
+  },
+  {
+    id: 'RCP-2026-005',
+    workspaceId: 'ws-hq',
+    customerName: '杭州云杉科技有限公司',
+    serviceId: 'svc-audit',
+    serviceName: '年度审计支持服务',
+    quantity: 1,
+    unitPrice: 6000,
+    intervalMonths: 1,
+    dueDays: 30,
+    firstOn: '2026-06-01',
+    nextRunAt: '2026-12-01',
+    lastRunAt: '2026-11-01',
+    status: 'active',
+    version: 2,
+    owner: '李婉',
+    blockedPeriods: ['2026-12'],
+    createdAt: '2026-05-20',
+    updatedAt: '2026-11-02'
+  }
+]
+
+/** 计划历史：执行、跳过与期间阻断均保留，便于回看模板版本。 */
+export const recurringInvoiceOccurrences: RecurringInvoiceOccurrence[] = [
+  {
+    id: 'OCC-2026-0001',
+    planId: 'RCP-2026-002',
+    workspaceId: 'ws-hq',
+    scheduledOn: '2026-10-05',
+    status: 'executed',
+    version: 2,
+    invoiceId: 'INV-2026-0082',
+    actedAt: '2026-10-05 08:05'
+  },
+  {
+    id: 'OCC-2026-0002',
+    planId: 'RCP-2026-001',
+    workspaceId: 'ws-hq',
+    scheduledOn: '2026-09-19',
+    status: 'skipped',
+    version: 1,
+    actedAt: '2026-09-19 09:12',
+    note: '客户要求合并到下一期开票。'
   }
 ]
 
@@ -285,5 +382,8 @@ export function cloneInvoice(invoice: Invoice): Invoice {
 
 /** 深拷贝定期开票计划。 */
 export function cloneRecurringInvoicePlan(plan: RecurringInvoicePlan): RecurringInvoicePlan {
-  return { ...plan }
+  return {
+    ...plan,
+    ...(plan.blockedPeriods ? { blockedPeriods: [...plan.blockedPeriods] } : {})
+  }
 }

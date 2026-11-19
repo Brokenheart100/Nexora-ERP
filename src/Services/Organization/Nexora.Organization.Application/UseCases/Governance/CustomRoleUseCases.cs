@@ -82,7 +82,7 @@ public sealed class CustomRoleUseCases(IWorkspaceRepository workspaces, IApplica
     private async Task<Workspace> ForMutationAsync(Guid id, ActorContext actor, long expectedVersion, CancellationToken ct)
     {
         var workspace = await LoadAsync(id, actor, WorkspacePermissions.BusinessRolesManage, ct);
-        if (workspace.Version != expectedVersion) throw new BusinessConflictException("Authorization version changed; reload the workspace.");
+        if (workspace.Version != expectedVersion) throw new RevisionConflictException("Authorization version changed; reload the workspace.");
         return workspace;
     }
 

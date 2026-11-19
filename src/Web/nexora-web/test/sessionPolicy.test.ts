@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatIdleRemaining, idleDeadline, idleRemaining, idleWarningWindow, sessionIdleError,
   sessionPolicyKey, sessionSourceSummary, sessionUnauthorized, type SessionPolicy,
-} from '../app/utils/sessionPolicy'
+} from '../app/utils/account/sessionPolicy'
 
 function policy(overrides: Partial<SessionPolicy> = {}): SessionPolicy {
   return {

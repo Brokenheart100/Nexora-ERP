@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Nexora.Finance.Domain;
 
@@ -7,6 +8,12 @@ internal static class LedgerModelConfiguration
 {
     internal static void Configure(ModelBuilder model)
     {
+        var partnership = model.Entity<PartnershipYear>();
+        partnership.ToTable("partnership_years");
+        partnership.HasKey(x => new { x.TenantId, x.WorkspaceId, x.Year });
+        partnership.Property(x => x.Version).IsConcurrencyToken();
+        partnership.Property(x => x.Partners).HasConversion(x => JsonSerializer.Serialize(x, (JsonSerializerOptions?)null),
+            x => JsonSerializer.Deserialize<PartnerCapital[]>(x, (JsonSerializerOptions?)null)!).HasColumnType("jsonb");
         var periods = model.Entity<FiscalPeriod>();
         periods.ToTable("fiscal_periods");
         periods.HasKey(x => new { x.TenantId, x.WorkspaceId, x.Month });
@@ -31,6 +38,10 @@ internal static class LedgerModelConfiguration
         journals.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.On });
         journals.Property(x => x.Version).IsConcurrencyToken();
         journals.Property(x => x.SourceKey).HasMaxLength(87);
+        journals.Property(x => x.ImportProvider).HasMaxLength(40);
+        journals.Property(x => x.ExternalId).HasMaxLength(80);
+        journals.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.ImportProvider, x.ExternalId })
+            .IsUnique().HasFilter("\"ImportProvider\" IS NOT NULL");
         journals.Property(x => x.SourceNumber).HasMaxLength(80);
         journals.Property(x => x.Memo).HasMaxLength(300);
         journals.Property(x => x.MakerIssuer).HasMaxLength(500);

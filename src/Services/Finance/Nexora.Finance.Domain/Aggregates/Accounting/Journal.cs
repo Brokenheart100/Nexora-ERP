@@ -10,6 +10,8 @@ public sealed class Journal
     public JournalKind Kind { get; private set; }
     public string SourceKey { get; private set; } = "";
     public string SourceNumber { get; private set; } = "";
+    public string? ImportProvider { get; private set; }
+    public string? ExternalId { get; private set; }
     public Guid? ReversesId { get; private set; }
     public CashActivity? CashActivity { get; private set; }
     public string MakerIssuer { get; private set; } = "";
@@ -42,9 +44,28 @@ public sealed class Journal
     public void Edit(AccountingBook book, DateOnly on, string memo, IReadOnlyList<JournalLineSnapshot> lines, JournalActor actor, CashActivity? cashActivity = null)
     {
         RequireMaker(actor);
+        if (ImportProvider is not null || Kind == JournalKind.Imported) throw new LedgerRuleException("Imported journal content cannot be edited.");
         if (State != JournalState.Draft) throw new LedgerRuleException("Only draft journals may be edited.");
         SetContent(book, on, memo, lines, cashActivity);
         Version++;
+    }
+
+    public static Journal Import(AccountingBook book, string provider, string externalId, string key, DateOnly on,
+        string memo, JournalActor maker, IReadOnlyList<JournalLineSnapshot> lines, DateTimeOffset now, CashActivity? cashActivity)
+    {
+        var journal = Start(book, JournalKind.Imported, externalId, key, on, memo, maker, lines, now, cashActivity);
+        journal.ImportProvider = provider;
+        journal.ExternalId = externalId;
+        return journal;
+    }
+
+    public static Journal ImportOpening(AccountingBook book, string fileHash, DateOnly on, string memo, JournalActor maker,
+        IReadOnlyList<JournalLineSnapshot> lines, DateTimeOffset now)
+    {
+        var journal = Start(book, JournalKind.Opening, "OPENING", "opening", on, memo, maker, lines, now);
+        journal.ImportProvider = "opening-csv";
+        journal.ExternalId = fileHash;
+        return journal;
     }
     public void Submit(JournalActor actor)
     {
@@ -68,8 +89,8 @@ public sealed class Journal
     }
     public Journal RequestReversal(AccountingBook book, DateOnly on, string reason, JournalActor maker, DateTimeOffset now)
     {
-        if (State != JournalState.Posted || Kind != JournalKind.Manual || on < On)
-            throw new LedgerRuleException("Only a posted manual journal can be reversed on or after its original date.");
+        if (State != JournalState.Posted || Kind is not (JournalKind.Manual or JournalKind.Imported) || on < On)
+            throw new LedgerRuleException("Only a posted manual or imported journal can be reversed on or after its original date.");
         var reversal = Start(book, JournalKind.Reversal, SourceNumber, $"reversal:{Id:N}", on, reason,
             maker, _lines.Select(x => new JournalLineSnapshot(x.AccountId, x.Code, x.Name, x.Credit, x.Debit)).ToArray(), now);
         reversal.ReversesId = Id;
@@ -106,6 +127,7 @@ public sealed class Journal
     {
         if (on < book.StartsOn || on.Year > 9998 || Kind == JournalKind.Opening && on != book.StartsOn)
             throw new ArgumentException("Invalid journal date.");
+        book.DemandTaxDateOpen(on);
         memo = memo?.Trim() ?? "";
         if (memo.Length is < 1 or > 300) throw new ArgumentException("A journal description is required.");
         if (lines.Count is < 2 or > 200) throw new ArgumentException("A journal needs between two and two hundred lines.");
@@ -115,8 +137,8 @@ public sealed class Journal
                 throw new ArgumentException("Each line needs a valid account and exactly one positive amount in book precision.");
         }
         if (lines.Sum(x => x.Debit) != lines.Sum(x => x.Credit)) throw new LedgerRuleException("Debits and credits must balance.");
-        if (cashActivity is { } activity && (Kind != JournalKind.Manual || !Enum.IsDefined(activity)))
-            throw new ArgumentException("Cash flow classification is only available on manual journals.");
+        if (cashActivity is { } activity && (Kind is not (JournalKind.Manual or JournalKind.Imported) || !Enum.IsDefined(activity)))
+            throw new ArgumentException("Cash flow classification is available on manual and imported journals.");
         On = on;
         Memo = memo;
         CashActivity = cashActivity;

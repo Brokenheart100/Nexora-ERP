@@ -14,10 +14,10 @@ internal static class OrganizationExceptionHandling
         app.UseExceptionHandler(handler => handler.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-            var conditional = error is RevisionConflictException && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
+            var conditional = error is (RevisionConflictException or DbUpdateConcurrencyException) && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
             var status = error switch
             {
-                RevisionConflictException when conditional => 412,
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => 412,
                 ResourceNotFoundException => 404,
                 AccessDeniedException => 403,
                 GovernanceAccessException => 403,
@@ -34,7 +34,7 @@ internal static class OrganizationExceptionHandling
             var code = error switch
             {
                 IdempotencyConflictException => "organization.idempotency_conflict",
-                RevisionConflictException when conditional => "organization.precondition_failed",
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => "organization.precondition_failed",
                 RevisionConflictException or DbUpdateConcurrencyException => "organization.version_conflict",
                 BusinessConflictException => "organization.state_conflict",
                 GovernanceRuleException => "organization.governance_rule",

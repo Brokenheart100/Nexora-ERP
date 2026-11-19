@@ -1,6 +1,6 @@
 import { defineEventHandler, sendRedirect } from 'h3'
-import { bffConfig } from '../../utils/bff-config'
-import { requireFreshBffSession } from '../../utils/bff-oidc'
+import { bffConfig } from '../../utils/runtime/bff-config'
+import { requireFreshBffSession } from '../../utils/auth/bff-oidc'
 
 export default defineEventHandler(async (event) => {
   await requireFreshBffSession(event)

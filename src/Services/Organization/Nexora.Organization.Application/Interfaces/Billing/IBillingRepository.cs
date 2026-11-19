@@ -4,6 +4,7 @@ namespace Nexora.Organization.Application;
 
 public interface IBillingRepository
 {
+    Task LockLocalCheckoutAsync(IdentityReference owner, CancellationToken ct);
     Task<WorkspaceSubscription?> FindSubscriptionAsync(IdentityReference owner, CancellationToken cancellationToken);
     void AddSubscription(WorkspaceSubscription subscription);
     Task<BillingInvoice?> FindInvoiceAsync(Guid invoiceId, CancellationToken cancellationToken);

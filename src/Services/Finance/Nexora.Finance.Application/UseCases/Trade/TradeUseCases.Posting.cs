@@ -1,3 +1,4 @@
+using Nexora.BuildingBlocks.Application;
 using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Application;
@@ -29,11 +30,12 @@ public sealed partial class TradeUseCases
         var reviewer = Actor(current);
         doc.DemandIndependent(reviewer);
         var terms = doc.Terms;
+        book.DemandTaxDateOpen(terms.On);
         var gate = await posting.GateAsync(current.Scope, book, terms.On, ct);
         if (gate is not null) throw new LedgerRuleException(gate);
         if (terms.Kind == TradeKind.Void)
         {
-            await VoidAsync(current, book, doc, ct);
+            await VoidAsync(current, book, doc, statements, ct);
             return [];
         }
 
@@ -52,7 +54,7 @@ public sealed partial class TradeUseCases
         else
         {
             var bank = await BankAsync(current.Scope, Required(terms.BankId), ct);
-            var outgoing = terms.Kind is TradeKind.Payment or TradeKind.Expense or TradeKind.Transfer;
+            var outgoing = terms.Kind is TradeKind.Payment or TradeKind.Expense or TradeKind.Transfer or TradeKind.OwnerDrawing;
             var bankAmount = outgoing ? -terms.Amount : terms.Amount;
             bankChanges.Add((bank, bankAmount));
             lines.Add(new(bank.AccountId, bankAmount));
@@ -66,6 +68,17 @@ public sealed partial class TradeUseCases
                 case TradeKind.Income:
                     var category = terms.Kind == TradeKind.Expense ? AccountCategory.Expense : AccountCategory.Income;
                     lines.Add(new((await DemandAccount(current.Scope, Required(terms.CounterAccountId), category, AccountPurpose.Posting, ct)).Id, -bankAmount));
+                    break;
+                case TradeKind.OwnerContribution:
+                case TradeKind.OwnerDrawing:
+                    var counter = Required(terms.CounterAccountId);
+                    var fiscalYear = FiscalInvoiceNumber.Year(terms.On, book.FiscalYearStartMonth);
+                    var partnership = await partnerships.FindAsync(current.Scope, fiscalYear, ct);
+                    if (partnership is not null && !partnership.Partners.Any(x =>
+                        (outgoing ? x.DrawingsAccountId : x.CapitalAccountId) == counter))
+                        throw new LedgerRuleException("Choose a configured partner drawings or capital account for this fiscal year.");
+                    lines.Add(new((await DemandAccount(current.Scope, counter,
+                        AccountCategory.Equity, AccountPurpose.Posting, ct)).Id, -bankAmount));
                     break;
                 case TradeKind.Transfer:
                     var target = await BankAsync(current.Scope, Required(terms.OtherBankId), ct);
@@ -114,11 +127,13 @@ public sealed partial class TradeUseCases
         return variances;
     }
 
-    private async Task VoidAsync(BookAccess access, AccountingBook book, TradeDocument reversal, CancellationToken ct)
+    private async Task VoidAsync(BookAccess access, AccountingBook book, TradeDocument reversal, StatementAllocation statements, CancellationToken ct)
     {
         var original = await DocumentAsync(access.Scope, Required(reversal.Terms.SourceId), ct);
         var journalId = original.JournalId ?? throw new LedgerRuleException("A posted original document is required.");
         if (reversal.Terms.On < original.Terms.On) throw new LedgerRuleException("The reversal predates the original document.");
+        if (original.Terms.Kind is (TradeKind.OwnerContribution or TradeKind.OwnerDrawing) && original.Terms.StatementLineId is Guid statementLine)
+            await statements.ReleaseDocumentMatchAsync(access.Scope, book, statementLine, original.Id, ct);
         original.MarkReversed(reversal.Id);
         var journal = await posting.ReverseAsync(access.Scope, book, journalId, reversal, Actor(access), ct);
         if (original.Terms.Kind == TradeKind.Payment)

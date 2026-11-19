@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cliScope, deviceGrantView, isCodeChallenge, isCodeVerifier, keycloakVerificationUrl, requiredScope, scopeFor, verificationPageUrl } from '../server/utils/bff-cli'
+import { cliScope, deviceGrantView, isCodeChallenge, isCodeVerifier, keycloakVerificationUrl, requiredScope, scopeFor, verificationPageUrl } from '../server/utils/auth/bff-cli'
 
 const challenge = 'a'.repeat(43)
 

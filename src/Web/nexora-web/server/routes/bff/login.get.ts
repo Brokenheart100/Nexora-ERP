@@ -1,4 +1,4 @@
 import { defineEventHandler } from 'h3'
-import { beginLogin } from '../../utils/bff-oidc'
+import { beginLogin } from '../../utils/auth/bff-oidc'
 
 export default defineEventHandler(event => beginLogin(event))

@@ -19,6 +19,8 @@ public sealed partial class LedgerUseCases
         var action = $"period.{command.Action}";
         var replay = await mutations.ReplayAsync(current, command.OperationId, action, command, ct);
         if (replay is not null) return new(command.Month, replay.ResultVersion);
+        if (await store.HasApplyingOpeningSubledgersAsync(current.Scope, ct))
+            throw new LedgerRuleException("Wait for the approved opening subledger batch to post.");
         var reason = Reason(command.Reason);
         var period = await store.PeriodAsync(current.Scope, command.Month, ct);
         DemandVersion(period?.Version ?? 0, command.ExpectedVersion);

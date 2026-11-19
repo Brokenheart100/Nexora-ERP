@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Diagnostics.Metrics;
 using System.Text;
 using System.Text.Json;
 using Nexora.BuildingBlocks.Application;
@@ -11,6 +12,9 @@ public sealed class ReportExports(TradeAccess access, FinancialReports reports, 
 {
     private const int PendingLimit = 3;
     private const int RetainedLimit = 20;
+    public const string MeterName = "Nexora.Finance.Reporting";
+    private static readonly Meter Meter = new(MeterName);
+    private static readonly Counter<long> CapacityRejections = Meter.CreateCounter<long>("nexora.finance.report_export.capacity_rejections");
 
     public async Task<ReportExportView[]> ListAsync(Guid workspaceId, CancellationToken ct)
     {
@@ -71,7 +75,10 @@ public sealed class ReportExports(TradeAccess access, FinancialReports reports, 
     private async Task DemandCapacityAsync(BookAccess current, CancellationToken ct)
     {
         if (await store.CountPendingAsync(current.Scope, Actor(current), ct) >= PendingLimit)
+        {
+            CapacityRejections.Add(1);
             throw new BusinessConflictException("Too many report exports are still queued. Wait for one to finish, then retry.");
+        }
     }
 
     private async Task<(ReportExportView, BuildReportExport)> AddAsync(BookAccess current, Guid operationId, string action,

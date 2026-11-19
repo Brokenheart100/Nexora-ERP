@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-11-19T04:13:10.624Z",
+  "base": "http://localhost:3001",
+  "assertions": "all-passed",
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "screenshots": [
+    "01-opening-overview.png",
+    "02-seed-posted-result.png",
+    "03-record-detail.png",
+    "04-batch-submitted.png",
+    "05-batch-applying.png",
+    "06-batch-posted-records.png",
+    "07-new-record-detail.png",
+    "08-source-inventory.png",
+    "09-recurring-list.png",
+    "10-recurring-plan.png",
+    "11-recurring-executed.png",
+    "12-invoice-from-plan.png",
+    "13-period-blocked.png",
+    "14-plan-form.png",
+    "15-plan-created.png",
+    "16-new-plan-detail.png",
+    "17-plan-edited.png",
+    "18-plan-paused.png",
+    "19-plan-skipped.png",
+    "20-recurring-dark.png"
+  ]
+}

@@ -5,10 +5,15 @@ namespace Nexora.MasterData.Application;
 
 public sealed class PartnerQueries(ICatalogAccess access, IPartnerReader reader)
 {
-    public async Task<PartnerList> ListAsync(Guid workspaceId, PageWindow page, CancellationToken cancellationToken)
+    public async Task<PartnerList> ListAsync(Guid workspaceId, PageWindow page, CancellationToken cancellationToken, string? role = null)
     {
         var current = await access.DemandAsync(workspaceId, PartnerPermissions.Read, cancellationToken);
-        var (items, hasMore) = await reader.ListAsync(current.Scope, page, cancellationToken);
+        var filter = role switch
+        {
+            null => (PartnerRoles?)null, "customer" => PartnerRoles.Customer, "supplier" => PartnerRoles.Supplier,
+            "donor" => PartnerRoles.Donor, _ => throw new CatalogRuleException("Invalid partner role.")
+        };
+        var (items, hasMore) = await reader.ListAsync(current.Scope, page, cancellationToken, filter);
         return new(items, hasMore, current.Allows(PartnerPermissions.Manage));
     }
 

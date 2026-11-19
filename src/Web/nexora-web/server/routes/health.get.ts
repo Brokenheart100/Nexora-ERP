@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, setResponseHeader } from 'h3'
-import { bffConfig } from '../utils/bff-config'
-import { withBffRedis } from '../utils/bff-redis'
+import { bffConfig } from '../utils/runtime/bff-config'
+import { withBffRedis } from '../utils/session/bff-redis'
 
 export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Cache-Control', 'no-store')

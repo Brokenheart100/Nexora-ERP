@@ -8,6 +8,11 @@ internal static class McpToolCatalog
     public const string TrialBalance = "finance_trial_balance";
     public const string FinancialReport = "finance_financial_report";
     public const string ListJournals = "finance_list_journals";
+    public const string ListBanks = "finance_list_banks";
+    public const string ListCustomers = "finance_list_customers";
+    public const string ListSuppliers = "finance_list_suppliers";
+    public const string ListInvoices = "finance_list_invoices";
+    public const string ListBills = "finance_list_bills";
 
     public static IReadOnlySet<string> ReportKinds { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -72,8 +77,26 @@ internal static class McpToolCatalog
               "required": ["workspaceId"],
               "additionalProperties": false
             }
-            """)
+            """),
+        Paged(ListBanks, "List bank or cash accounts for the authorized workspace."),
+        Paged(ListCustomers, "List customer summaries for the authorized workspace."),
+        Paged(ListSuppliers, "List supplier summaries for the authorized workspace."),
+        Paged(ListInvoices, "List posted customer invoices for the authorized workspace."),
+        Paged(ListBills, "List posted supplier bills for the authorized workspace.")
     ];
+
+    private static McpToolDefinition Paged(string name, string description) => new(name, description,
+        """
+        {
+          "type": "object",
+          "properties": {
+            "workspaceId": { "type": "string", "format": "uuid" },
+            "page": { "type": "integer", "minimum": 1, "maximum": 100 }
+          },
+          "required": ["workspaceId"],
+          "additionalProperties": false
+        }
+        """);
 
     public static bool IsKnown(string name) => Tools.Any(tool => tool.Name == name);
 }

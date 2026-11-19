@@ -3,13 +3,15 @@
 
 // P6-04 local backup/restore drill.
 // Dumps key databases with pg_dump -Fc, restores each into a scratch database,
-// compares row counts and aggregate checksums, then drops the scratch database.
+// compares row counts and aggregate checksums, then drops this run's scratch databases.
 
 const { execFileSync } = require('node:child_process')
+const { randomUUID } = require('node:crypto')
 const fs = require('node:fs')
 const path = require('node:path')
 const os = require('node:os')
 const { performance } = require('node:perf_hooks')
+const { reconcileRestored } = require('./reconcile-restored.cjs')
 
 function argValue(name, fallback) {
   const prefix = '--' + name + '='
@@ -20,10 +22,13 @@ function argValue(name, fallback) {
 const options = {
   container: argValue('container', 'postgres-frkgfdpc'),
   keep: process.argv.includes('--keep'),
+  reconcile: argValue('reconcile', ''),
 }
 
 const root = path.resolve(__dirname, '..', '..')
-const backupDir = path.join(root, 'artifacts', 'p6', 'backup')
+const runId = randomUUID().slice(0, 12).replace('-', '')
+const output = options.reconcile ? path.join(root, 'artifacts', 'p1', 'runtime', 'restore-' + runId) : path.join(root, 'artifacts', 'p6')
+const backupDir = path.join(output, 'backup')
 fs.mkdirSync(backupDir, { recursive: true })
 
 const databases = [
@@ -67,8 +72,6 @@ function restore(file, database) {
 }
 
 function createScratch(database) {
-  psql('postgres', 'select pg_terminate_backend(pid) from pg_stat_activity where datname = ' + quoteLiteral(database))
-  psql('postgres', 'drop database if exists ' + quoteIdent(database))
   psql('postgres', 'create database ' + quoteIdent(database))
 }
 
@@ -157,6 +160,7 @@ const result = {
   notes: [],
   databases: [],
 }
+const scratchDatabases = new Map()
 
 try {
   psql('postgres', 'select 1')
@@ -173,8 +177,9 @@ try {
     const dumpMillis = Math.round(performance.now() - dumpStarted)
 
     const sourceChecks = collectChecks(db.name, db)
-    const scratch = 'p6_restore_' + db.name
+    const scratch = 'p6_restore_' + runId + '_' + db.name
     createScratch(scratch)
+    scratchDatabases.set(db.name, scratch)
 
     console.log('Restoring ' + db.name + ' into ' + scratch)
     const restoreStarted = performance.now()
@@ -203,10 +208,18 @@ try {
     if (mismatches.length) {
       throw new Error('backup/restore verification failed for ' + db.name + ': ' + JSON.stringify(mismatches))
     }
-    if (!options.keep) dropScratch(scratch)
+    if (!options.keep && !options.reconcile) {
+      dropScratch(scratch)
+      scratchDatabases.delete(db.name)
+    }
     console.log('Verified ' + db.name + ' in ' + restoreMillis + ' ms')
   }
 
+  if (options.reconcile) {
+    result.reconciliation = reconcileRestored(psql, Object.fromEntries(scratchDatabases), options.reconcile)
+    if (result.reconciliation.checks.some(check => !check.matched) || !result.reconciliation.workspaceProjectionMatched)
+      throw new Error('Restored business balances or workspace projection differ. See the drill report.')
+  }
   const totalDump = result.databases.reduce((sum, item) => sum + item.dumpMillis, 0)
   const totalRestore = result.databases.reduce((sum, item) => sum + item.restoreMillis, 0)
   result.totals = {
@@ -223,6 +236,12 @@ try {
   result.completedAt = new Date().toISOString()
   throw error
 } finally {
+  if (!options.keep) {
+    for (const scratch of scratchDatabases.values()) {
+      try { dropScratch(scratch) }
+      catch { result.notes.push('Could not remove scratch database ' + scratch) }
+    }
+  }
   if (!result.totals) {
     result.totals = {
       databases: result.databases.length,
@@ -232,8 +251,14 @@ try {
       allVerified: result.databases.length > 0 && result.databases.every(item => item.verified),
     }
   }
-  fs.writeFileSync(path.join(root, 'artifacts', 'p6', 'backup-restore.json'), JSON.stringify(result, null, 2))
+  fs.writeFileSync(path.join(output, 'backup-restore.json'), JSON.stringify(result, null, 2))
   const rows = result.databases.map(item => '| ' + item.name + ' | ' + (item.dumpBytes / 1048576).toFixed(1) + ' MiB | ' + item.dumpMillis + ' | ' + item.restoreMillis + ' | ' + (item.verified ? '一致' : '不一致') + ' |').join('\n')
+  const crossChecks = result.reconciliation ? [
+    '## 恢复后工作区对账', '',
+    '| 项目 | 总账 | 子账 | 结果 |', '| --- | ---: | ---: | --- |',
+    ...result.reconciliation.checks.map(check => `| ${check.name} | ${check.ledger} | ${check.subledger} | ${check.matched ? '一致' : '不一致'} |`),
+    '', '组织与 Reporting 工作区投影 ' + (result.reconciliation.workspaceProjectionMatched ? '一致。' : '不一致。'), '',
+  ] : []
   const lines = [
     '# P6-04 本地备份恢复演练',
     '',
@@ -247,6 +272,7 @@ try {
     '',
     '合计: ' + result.totals.databases + ' 个数据库，备份 ' + (result.totals.dumpBytes / 1048576).toFixed(1) + ' MiB，备份耗时 ' + result.totals.dumpMillis + ' ms，恢复耗时 ' + result.totals.restoreMillis + ' ms，全部校验: ' + (result.totals.allVerified ? '通过' : '失败') + '。',
     '',
+    ...crossChecks,
     '## 说明',
     '',
     ...result.notes.map(note => '- ' + note),
@@ -266,10 +292,10 @@ try {
     '## 限制与缺口',
     '',
     '- 没有 WAL 归档/时间点恢复；无法证明 RPO ≤ 15 分钟。',
-    '- 没有异地备份或备份保留策略；备份文件位于本机 artifacts/p6/backup。',
-    '- 未演练服务切换、消息补投、投影重建和对账；这些需要独立脚本与可切换的测试环境。',
+    '- 没有异地备份或备份保留策略。备份目录为 ' + path.relative(root, backupDir).replaceAll('\\', '/') + '。',
+    '- 服务切换、消息补投、投影重建尚需演练。',
     '- 恢复耗时不含容器/服务启动、应用预热和外部依赖校验，不能作为 RTO 结论。',
     '',
   ]
-  fs.writeFileSync(path.join(root, 'artifacts', 'p6', 'backup-restore.md'), lines.join('\n'))
+  fs.writeFileSync(path.join(output, 'backup-restore.md'), lines.join('\n'))
 }

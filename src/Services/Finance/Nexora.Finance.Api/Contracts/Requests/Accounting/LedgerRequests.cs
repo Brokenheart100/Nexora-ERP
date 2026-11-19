@@ -4,6 +4,8 @@ namespace Nexora.Finance.Api;
 
 public static partial class LedgerEndpoints
 {
+    public sealed record ImportRequest(Guid OperationId, string Provider, string ExternalId, JournalDraftInput Draft);
+    public sealed record ImportedBatchRequest(Guid OperationId, string Decision, ImportedJournalVersion[] Journals);
     public sealed record StartRequest(Guid OperationId, string Kind, string? SourceNumber, JournalDraftInput Draft);
     public sealed record EditRequest(Guid OperationId, long ExpectedVersion, JournalDraftInput Draft);
     public sealed record DecisionRequest(Guid OperationId, long ExpectedVersion, string Decision);

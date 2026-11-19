@@ -80,7 +80,7 @@ internal static class OrganizationModelConfiguration
         invoice.HasKey(x => x.Id);
         invoice.Property(x => x.Id).ValueGeneratedNever();
         invoice.Property(x => x.PlanCode).HasMaxLength(40).IsRequired();
-        invoice.Property(x => x.Status).HasMaxLength(20).IsRequired();
+        invoice.Property(x => x.Status).HasMaxLength(20).IsRequired().IsConcurrencyToken();
         invoice.Property(x => x.Currency).HasMaxLength(3).IsRequired();
         invoice.Property(x => x.AmountCents).IsRequired();
         invoice.Property(x => x.PaymentReference).HasMaxLength(120);

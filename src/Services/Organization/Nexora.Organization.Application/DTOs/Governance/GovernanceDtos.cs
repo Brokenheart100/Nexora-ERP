@@ -15,7 +15,7 @@ public sealed record InvitationView(Guid Id, string Email, string Role, string S
 public sealed record RoleView(string Code, string? Area, string[] Permissions);
 
 public sealed record AccessView(Guid WorkspaceId, Guid TenantId, long AuthorizationVersion, IReadOnlyList<string> Permissions, string Role,
-    bool IsPersonal = false, Guid MemberId = default, ScopedPermission[]? ScopedPermissions = null,
+    bool IsPersonal, Guid MemberId, ScopedPermission[]? ScopedPermissions = null,
     Guid[]? DepartmentIds = null);
 
 public sealed record InvitationCreatedResult(InvitationView Invitation, string Token, long AuthorizationVersion, string? MailStatus = null);

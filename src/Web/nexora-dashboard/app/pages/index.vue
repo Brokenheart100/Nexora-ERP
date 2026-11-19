@@ -2,19 +2,15 @@
 import type { ButtonProps, TableColumn, TimelineItem } from '@nuxt/ui'
 import type { BadgeColor, ChangeEntityType, RecentDocument } from '~/mocks'
 import {
-  changeEntityLabels,
   changeLogEntries,
   invoiceStatusColors,
-  invoiceStatusLabels,
   invoices,
   products,
   purchaseOrders,
   recentDocuments,
   salesOrders,
   salesStatusColors,
-  salesStatusLabels,
   statusColors,
-  statusLabels,
   todos
 } from '~/mocks'
 
@@ -24,11 +20,22 @@ type ActivityFilter = 'all' | ChangeEntityType
 
 const toast = useToast()
 const route = useRoute()
+const { t, locale } = useI18n()
 const { loading: refreshing, run: runRefresh } = useMockRefresh()
 const { workspace } = useMockWorkspace()
+const {
+  purchaseStatusLabel,
+  salesStatusLabel,
+  invoiceStatusLabel,
+  changeEntityLabel,
+  todoPriorityLabel,
+  documentTypeLabel,
+  rawDocumentStatusLabel
+} = useMockLabels()
 
-const currency = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 1 })
-const monthLabels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const monthLabels = computed(() => Array.from({ length: 12 }, (_, index) =>
+  new Intl.DateTimeFormat(locale.value, { month: 'short' }).format(new Date(2026, index, 1))
+))
 
 const lastUpdatedAt = ref(workspace.value.updatedAt)
 watch(() => workspace.value.id, () => {
@@ -38,29 +45,39 @@ watch(() => workspace.value.id, () => {
 function nowLabel() {
   const now = new Date()
   const pad = (value: number) => String(value).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes())
 }
 
-const overviewDescription = computed(() => `${workspace.value.plan} · ${workspace.value.members} 位成员 · 数据更新于 ${lastUpdatedAt.value}`)
+const overviewDescription = computed(() => t('dashboard.overviewMeta', {
+  plan: workspace.value.plan,
+  members: workspace.value.members,
+  time: lastUpdatedAt.value
+}))
 
 // ---- 趋势指标切换 ----
 const trendMetric = ref<TrendMetric>('purchase')
-const trendOptions: Array<{ label: string, value: TrendMetric }> = [
-  { label: '采购额', value: 'purchase' },
-  { label: '销售额', value: 'sales' },
-  { label: '应收余额', value: 'receivable' }
-]
-const trendMeta: Record<TrendMetric, { label: string, title: string }> = {
-  purchase: { label: '采购额', title: '月度采购额' },
-  sales: { label: '销售额', title: '月度销售额' },
-  receivable: { label: '应收余额', title: '月末应收余额' }
-}
+const trendOptions = computed<Array<{ label: string, value: TrendMetric }>>(() => [
+  { label: t('dashboard.trend.purchase'), value: 'purchase' },
+  { label: t('dashboard.trend.sales'), value: 'sales' },
+  { label: t('dashboard.trend.receivable'), value: 'receivable' }
+])
+const trendMeta = computed<Record<TrendMetric, { label: string, title: string }>>(() => ({
+  purchase: { label: t('dashboard.trend.purchase'), title: t('dashboard.trend.purchaseTitle') },
+  sales: { label: t('dashboard.trend.sales'), title: t('dashboard.trend.salesTitle') },
+  receivable: { label: t('dashboard.trend.receivable'), title: t('dashboard.trend.receivableTitle') }
+}))
 const trendValues = computed(() => trendMetric.value === 'purchase'
   ? workspace.value.monthlyPurchase
   : trendMetric.value === 'sales'
     ? workspace.value.monthlySales
     : workspace.value.monthlyReceivables)
-const chartData = computed(() => trendValues.value.map((value, index) => ({ month: monthLabels[index]!, amount: value })))
+const chartData = computed(() => trendValues.value.map((value, index) => ({ month: monthLabels.value[index]!, amount: value })))
+
+function formatTrendTick(value: number) {
+  const amount = Number(value)
+  if (locale.value === 'en') return '¥' + (amount * 10).toFixed(0) + 'k'
+  return new Intl.NumberFormat(locale.value, { maximumFractionDigits: 1 }).format(amount) + ' 万'
+}
 
 // ---- KPI ----
 const monthPurchase = computed(() => workspace.value.monthlyPurchase.at(-1)! * 10000)
@@ -83,6 +100,7 @@ const payableOrders = computed(() => workspaceOrders.value.filter(order => order
 const payableTotal = computed(() => payableOrders.value.reduce((sum, order) => sum + orderTotal(order), 0))
 
 function formatWan(value: number) {
+  if (locale.value === 'en') return '¥' + (value / 1000).toFixed(1) + 'k'
   return '¥' + (value / 10000).toFixed(1) + ' 万'
 }
 
@@ -98,50 +116,50 @@ interface Kpi {
 }
 
 const kpis = computed<Kpi[]>(() => [{
-  label: '本月采购额',
+  label: t('dashboard.kpi.purchase'),
   value: formatMoney(monthPurchase.value),
-  hint: `演示口径 · 较上月 +${workspace.value.trendPct}%`,
+  hint: t('dashboard.kpi.purchaseHint', { percent: workspace.value.trendPct }),
   icon: 'i-carbon-growth',
   tone: 'success',
   iconClass: 'bg-success/10 text-success',
   to: '/purchase-orders'
 }, {
-  label: '本月销售额',
+  label: t('dashboard.kpi.sales'),
   value: formatMoney(monthSales.value),
-  hint: `演示口径 · 较上月 +${salesTrendPct.value}%`,
+  hint: t('dashboard.kpi.salesHint', { percent: salesTrendPct.value }),
   icon: 'i-carbon-chart-line',
   tone: 'info',
   iconClass: 'bg-info/10 text-info',
   to: '/sales'
 }, {
-  label: '应收 / 应付',
+  label: t('dashboard.kpi.receivablePayable'),
   value: formatWan(receivableTotal.value) + ' / ' + formatWan(payableTotal.value),
-  hint: `演示口径 · ${receivableInvoices.value.length} 张待收 · ${payableOrders.value.length} 单待付`,
+  hint: t('dashboard.kpi.receivableHint', { receivables: receivableInvoices.value.length, orders: payableOrders.value.length }),
   icon: 'i-carbon-receipt',
   tone: 'primary',
   iconClass: 'bg-primary/10 text-primary',
   to: '/finance'
 }, {
-  label: '待处理采购订单',
-  value: pendingOrders.value.length + ' 单',
-  hint: pendingOrders.value.length ? '演示口径 · 需要审批或跟进' : '演示口径 · 当前无需处理',
+  label: t('dashboard.kpi.pendingPurchases'),
+  value: t('dashboard.kpi.orders', { count: pendingOrders.value.length }),
+  hint: pendingOrders.value.length ? t('dashboard.kpi.pendingHint') : t('dashboard.kpi.pendingHintIdle'),
   icon: 'i-carbon-purchase',
   tone: 'warning',
   iconClass: 'bg-warning/10 text-warning',
   to: '/purchase-orders'
 }, {
-  label: '库存预警',
-  value: stockWarnings.value + ' 个',
-  hint: `演示口径 · 占在售商品的 ${stockWarningRate.value}%`,
+  label: t('dashboard.kpi.lowStock'),
+  value: t('dashboard.kpi.products', { count: stockWarnings.value }),
+  hint: t('dashboard.kpi.stockHint', { percent: stockWarningRate.value }),
   icon: 'i-carbon-warning-alt',
   tone: 'error',
   iconClass: 'bg-error/10 text-error',
   progress: stockWarningRate.value,
   to: '/inventory'
 }, {
-  label: '在售商品',
-  value: activeProducts.value.length + ' 个',
-  hint: `演示口径 · 覆盖 ${activeCategories.value} 个品类`,
+  label: t('dashboard.kpi.activeProducts'),
+  value: t('dashboard.kpi.products', { count: activeProducts.value.length }),
+  hint: t('dashboard.kpi.productHint', { categories: activeCategories.value }),
   icon: 'i-carbon-catalog',
   tone: 'primary',
   iconClass: 'bg-primary/10 text-primary',
@@ -150,19 +168,19 @@ const kpis = computed<Kpi[]>(() => [{
 
 // ---- 待办 ----
 const todoGroup = ref<TodoGroup>('approval')
-const todoGroups: Array<{ key: TodoGroup, label: string }> = [
-  { key: 'approval', label: '审批' },
-  { key: 'draft', label: '草稿' },
-  { key: 'overdue', label: '逾期' }
-]
+const todoGroups = computed<Array<{ key: TodoGroup, label: string }>>(() => [
+  { key: 'approval', label: t('dashboard.todos.groups.approval') },
+  { key: 'draft', label: t('dashboard.todos.groups.draft') },
+  { key: 'overdue', label: t('dashboard.todos.groups.overdue') }
+])
 const workspaceTodos = computed(() => todos.filter(todo => todo.workspaceId === workspace.value.id))
 const doneTodos = computed(() => workspaceTodos.value.filter(todo => todo.done).length)
 const pendingTodos = computed(() => workspaceTodos.value.filter(todo => !todo.done).length)
 const todoProgress = computed(() => Math.round(doneTodos.value / Math.max(1, workspaceTodos.value.length) * 100))
 const allTodosDone = computed(() => workspaceTodos.value.length > 0 && workspaceTodos.value.every(todo => todo.done))
-const groupCounts = computed(() => Object.fromEntries(todoGroups.map(group => [group.key, workspaceTodos.value.filter(todo => todo.group === group.key && !todo.done).length])) as Record<TodoGroup, number>)
+const groupCounts = computed(() => Object.fromEntries(todoGroups.value.map(group => [group.key, workspaceTodos.value.filter(todo => todo.group === group.key && !todo.done).length])) as Record<TodoGroup, number>)
 const filteredTodos = computed(() => workspaceTodos.value.filter(todo => todo.group === todoGroup.value))
-const activeTodoGroupLabel = computed(() => todoGroups.find(group => group.key === todoGroup.value)?.label ?? '')
+const activeTodoGroupLabel = computed(() => todoGroups.value.find(group => group.key === todoGroup.value)?.label ?? '')
 
 function markAllDone() {
   const changed = workspaceTodos.value.filter(todo => !todo.done)
@@ -171,12 +189,12 @@ function markAllDone() {
     todo.done = true
   })
   toast.add({
-    title: '待办已全部完成',
-    description: '本地演示状态，可撤销。',
+    title: t('dashboard.todos.allDoneTitle'),
+    description: t('dashboard.todos.allDoneDescription'),
     color: 'success',
     icon: 'i-carbon-checkmark',
     actions: [{
-      label: '撤销',
+      label: t('dashboard.todos.restore'),
       onClick: () => changed.forEach((todo) => {
         todo.done = false
       })
@@ -197,42 +215,42 @@ const emptyDocuments = computed(() => emptyFlags.value.includes('documents') || 
 const emptyActivity = computed(() => emptyFlags.value.includes('activity') || emptyFlags.value.includes('all'))
 const workspaceDocuments = computed(() => emptyDocuments.value ? [] : recentDocuments.filter(document => document.workspaceId === workspace.value.id))
 
-const documentColumns: TableColumn<RecentDocument>[] = [{
+const documentColumns = computed<TableColumn<RecentDocument>[]>(() => [{
   accessorKey: 'id',
-  header: '单号'
+  header: t('dashboard.documents.columns.id')
 }, {
   accessorKey: 'type',
-  header: '类型'
+  header: t('dashboard.documents.columns.type')
 }, {
   accessorKey: 'title',
-  header: '往来单位'
+  header: t('dashboard.documents.columns.counterparty')
 }, {
   accessorKey: 'status',
-  header: '状态'
+  header: t('dashboard.documents.columns.status')
 }, {
   accessorKey: 'amount',
-  header: '金额',
+  header: t('dashboard.documents.columns.amount'),
   meta: { class: { th: 'text-right', td: 'text-right' } }
 }, {
   accessorKey: 'at',
-  header: '更新时间',
+  header: t('dashboard.documents.columns.updatedAt'),
   meta: { class: { th: 'text-right', td: 'text-right whitespace-nowrap' } }
-}]
+}])
 
 function documentStatusLabel(document: RecentDocument) {
   if (document.type === '销售订单') {
     const order = salesOrders.find(item => item.id === document.id)
-    return order ? salesStatusLabels[order.status] : document.status
+    return order ? salesStatusLabel(order.status) : rawDocumentStatusLabel(document.status)
   }
   if (document.type === '采购发票') {
     const invoice = invoices.find(item => item.id === document.id)
-    return invoice ? invoiceStatusLabels[invoice.status] : document.status
+    return invoice ? invoiceStatusLabel(invoice.status) : rawDocumentStatusLabel(document.status)
   }
   if (document.type === '采购订单') {
     const order = purchaseOrders.find(item => item.id === document.id)
-    return order ? statusLabels[order.status] : document.status
+    return order ? purchaseStatusLabel(order.status) : rawDocumentStatusLabel(document.status)
   }
-  return document.status
+  return rawDocumentStatusLabel(document.status)
 }
 
 function documentStatusColor(document: RecentDocument): BadgeColor {
@@ -255,10 +273,11 @@ function documentStatusColor(document: RecentDocument): BadgeColor {
 
 // ---- 最近动态 ----
 const activityFilter = ref<ActivityFilter>('all')
-const activityOptions: Array<{ label: string, value: ActivityFilter }> = [
-  { label: '全部类型', value: 'all' },
-  ...Object.entries(changeEntityLabels).map(([value, label]) => ({ label, value: value as ChangeEntityType }))
-]
+const changeEntityTypes: ChangeEntityType[] = ['product', 'partner', 'purchase-order', 'sales-order', 'invoice', 'definition']
+const activityOptions = computed<Array<{ label: string, value: ActivityFilter }>>(() => [
+  { label: t('dashboard.activity.all'), value: 'all' },
+  ...changeEntityTypes.map(value => ({ label: changeEntityLabel(value), value }))
+])
 const activityIconMap: Record<ChangeEntityType, string> = {
   'product': 'i-carbon-catalog',
   'partner': 'i-carbon-user-multiple',
@@ -275,18 +294,25 @@ const activityEntries = computed(() => emptyActivity.value
       .slice(0, 7))
 const activityItems = computed<TimelineItem[]>(() => activityEntries.value.map(entry => ({
   date: entry.at.slice(5, 16),
-  title: changeEntityLabels[entry.entityType] + ' · ' + entry.action,
+  title: changeEntityLabel(entry.entityType) + ' · ' + entry.action,
   description: entry.entityName + ' · ' + entry.actor + '：' + entry.summary,
   icon: activityIconMap[entry.entityType]
 })))
 
 function exportReport() {
   downloadCsv(
-    '工作台单据-' + new Date().toISOString().slice(0, 10) + '.csv',
-    ['单号', '类型', '往来单位', '状态', '金额', '更新时间'],
+    t('dashboard.documents.exportFilename', { date: new Date().toISOString().slice(0, 10) }),
+    [
+      t('dashboard.documents.columns.id'),
+      t('dashboard.documents.columns.type'),
+      t('dashboard.documents.columns.counterparty'),
+      t('dashboard.documents.columns.status'),
+      t('dashboard.documents.columns.amount'),
+      t('dashboard.documents.columns.updatedAt')
+    ],
     workspaceDocuments.value.map(document => [
       document.id,
-      document.type,
+      documentTypeLabel(document.type),
       document.title,
       documentStatusLabel(document),
       document.amount.toFixed(2),
@@ -294,8 +320,8 @@ function exportReport() {
     ])
   )
   toast.add({
-    title: '已导出 ' + workspaceDocuments.value.length + ' 条单据',
-    description: 'CSV 由浏览器本地生成，未经过后端。',
+    title: t('dashboard.documents.exportTitle', { count: workspaceDocuments.value.length }),
+    description: t('dashboard.documents.exportDescription'),
     color: 'success',
     icon: 'i-carbon-document-export'
   })
@@ -305,8 +331,8 @@ function refreshData() {
   runRefresh(() => {
     lastUpdatedAt.value = nowLabel()
     toast.add({
-      title: '数据已刷新',
-      description: '演示数据已重新读取，刷新页面仍会恢复初始值。',
+      title: t('dashboard.refresh.title'),
+      description: t('dashboard.refresh.description'),
       color: 'neutral',
       icon: 'i-carbon-renew'
     })
@@ -314,14 +340,14 @@ function refreshData() {
 }
 
 const overviewLinks = computed<ButtonProps[]>(() => [{
-  label: '导出报表',
+  label: t('dashboard.documents.exportButton'),
   icon: 'i-carbon-document-export',
   color: 'neutral',
   variant: 'outline',
   size: 'sm',
   onClick: exportReport
 }, {
-  label: '刷新',
+  label: t('dashboard.refresh.button'),
   icon: 'i-carbon-renew',
   color: 'neutral',
   variant: 'ghost',
@@ -335,7 +361,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
   <div class="contents">
     <UDashboardPanel id="home">
       <template #header>
-        <UDashboardNavbar title="工作台" :ui="{ right: 'gap-2' }">
+        <UDashboardNavbar :title="t('nav.dashboard')" :ui="{ right: 'gap-2' }">
           <template #leading>
             <UDashboardSidebarCollapse />
           </template>
@@ -344,7 +370,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
             <NotificationButton />
             <UButton
               to="/purchase-orders"
-              label="新建采购订单"
+              :label="t('dashboard.newPurchaseOrder')"
               icon="i-carbon-add"
               color="primary"
               size="sm"
@@ -355,7 +381,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
 
       <template #body>
         <UPageHeader
-          headline="工作区总览"
+          :headline="t('dashboard.headline')"
           :title="workspace.name"
           :description="overviewDescription"
           :links="overviewLinks"
@@ -390,7 +416,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
           >
             <UCard
               class="h-full rounded-sm nx-lift nx-reveal"
-              :style="{ '--nx-delay': `${index * 50}ms` }"
+              :style="{ '--nx-delay': (index * 50) + 'ms' }"
               :ui="{ body: 'p-4 sm:p-4' }"
             >
               <div class="flex items-start justify-between gap-2">
@@ -424,7 +450,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                 size="xs"
                 :color="kpi.tone"
                 class="mt-2"
-                aria-label="库存预警占比"
+                :aria-label="t('dashboard.stockAria')"
               />
             </UCard>
           </NuxtLink>
@@ -443,7 +469,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                     {{ trendMeta[trendMetric].title }}
                   </h3>
                   <p class="mt-0.5 text-xs text-muted">
-                    2026 年 1–12 月 · 单位：万元 · 演示数据
+                    {{ t('dashboard.trend.range') }}
                   </p>
                 </div>
                 <USelect
@@ -467,8 +493,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               index="month"
               :categories="[{ key: 'amount', label: trendMeta[trendMetric].label }]"
               :height="248"
-              :format="value => `${currency.format(value)} 万`"
-              :aria-label="trendMeta[trendMetric].title + '柱状图'"
+              :format="formatTrendTick"
+              :aria-label="t('dashboard.trend.chartAria', { title: trendMeta[trendMetric].title })"
             />
           </UCard>
 
@@ -481,14 +507,14 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               <div class="flex items-center justify-between gap-2">
                 <div>
                   <h3 class="text-sm font-semibold text-highlighted">
-                    我的待办
+                    {{ t('dashboard.todos.title') }}
                   </h3>
                   <p class="mt-0.5 text-xs text-muted">
-                    按审批、草稿与逾期分组
+                    {{ t('dashboard.todos.subtitle') }}
                   </p>
                 </div>
                 <UButton
-                  label="全部完成"
+                  :label="t('dashboard.todos.completeAll')"
                   icon="i-carbon-checkmark"
                   color="neutral"
                   variant="ghost"
@@ -518,32 +544,33 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                 />
                 <span class="ml-auto text-xs tabular-nums text-muted">{{ doneTodos }}/{{ workspaceTodos.length }}</span>
               </div>
+
               <UProgress
                 :model-value="todoProgress"
                 size="sm"
                 color="primary"
                 class="mb-3"
-                aria-label="待办完成度"
+                :aria-label="t('dashboard.todos.progressAria')"
               />
 
               <div v-if="emptyTodos" class="py-2" data-testid="dashboard-empty-todos">
                 <UEmpty
                   variant="naked"
                   icon="i-carbon-task"
-                  title="暂无待办"
-                  description="演示：当前工作区没有待办事项（?empty=todos）"
+                  :title="t('dashboard.todos.emptyTitle')"
+                  :description="t('dashboard.todos.emptyDescription')"
                 />
               </div>
               <div v-else-if="allTodosDone" class="py-2" data-testid="dashboard-todo-all-done">
                 <UEmpty
                   variant="naked"
                   icon="i-carbon-checkmark-filled"
-                  title="全部完成"
-                  description="当前工作区的待办已全部完成，可恢复到演示初始状态。"
+                  :title="t('dashboard.todos.allDoneTitle')"
+                  :description="t('dashboard.todos.allDoneDescription')"
                 />
                 <div class="mt-2 text-center">
                   <UButton
-                    label="恢复全部待办"
+                    :label="t('dashboard.todos.restore')"
                     color="neutral"
                     variant="outline"
                     size="xs"
@@ -555,8 +582,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                 <UEmpty
                   variant="naked"
                   icon="i-carbon-task"
-                  title="该分组暂无待办"
-                  :description="`${activeTodoGroupLabel}分组已清空，可切换到其他分组。`"
+                  :title="t('dashboard.todos.groupEmptyTitle')"
+                  :description="t('dashboard.todos.groupEmptyDescription', { group: activeTodoGroupLabel })"
                 />
               </div>
               <ul v-else class="divide-y divide-default">
@@ -580,7 +607,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                         :color="todo.priority === 'high' ? 'error' : todo.priority === 'medium' ? 'warning' : 'neutral'"
                         variant="subtle"
                         size="sm"
-                        :label="todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低'"
+                        :label="todoPriorityLabel(todo.priority)"
                       />
                     </div>
                   </div>
@@ -589,6 +616,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
             </template>
           </UCard>
         </div>
+
+        <FinanceReportingProjectionCard class="mb-4" />
 
         <div class="grid gap-4 xl:grid-cols-3">
           <UCard
@@ -600,15 +629,15 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 class="text-sm font-semibold text-highlighted">
-                    最近单据
+                    {{ t('dashboard.documents.title') }}
                   </h3>
                   <p class="mt-0.5 text-xs text-muted">
-                    采购、入库、销售、发票与付款的最近动态
+                    {{ t('dashboard.documents.subtitle') }}
                   </p>
                 </div>
                 <UButton
                   to="/change-log"
-                  label="查看全部"
+                  :label="t('dashboard.documents.viewAll')"
                   color="neutral"
                   variant="ghost"
                   size="sm"
@@ -643,8 +672,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
                   <UEmpty
                     variant="naked"
                     icon="i-carbon-document"
-                    title="暂无单据"
-                    description="演示：当前工作区暂时没有单据（?empty=documents）"
+                    :title="t('dashboard.documents.emptyTitle')"
+                    :description="t('dashboard.documents.emptyDescription')"
                   />
                 </div>
               </template>
@@ -660,10 +689,10 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 class="text-sm font-semibold text-highlighted">
-                    最近动态
+                    {{ t('dashboard.activity.title') }}
                   </h3>
                   <p class="mt-0.5 text-xs text-muted">
-                    来自模拟审计记录
+                    {{ t('dashboard.activity.subtitle') }}
                   </p>
                 </div>
                 <USelect
@@ -683,8 +712,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               <UEmpty
                 variant="naked"
                 icon="i-carbon-time"
-                title="暂无动态"
-                description="演示：当前工作区没有变更记录（?empty=activity）"
+                :title="t('dashboard.activity.emptyTitle')"
+                :description="t('dashboard.activity.emptyDescription')"
               />
             </div>
             <div v-else class="nx-reveal" :style="{ '--nx-delay': '300ms' }">
@@ -695,7 +724,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               />
               <UButton
                 to="/change-log"
-                label="查看全部变更"
+                :label="t('dashboard.activity.viewAll')"
                 color="neutral"
                 variant="ghost"
                 size="xs"
@@ -707,8 +736,8 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
         </div>
 
         <p class="text-[11px] text-dimmed">
-          所有数据来自 <code class="font-mono">app/mocks/</code> 的本地模拟数据，刷新页面后恢复初始值。
-          空态演示：在地址后追加 <code class="font-mono">?empty=todos</code>、<code class="font-mono">?empty=documents</code> 或 <code class="font-mono">?empty=activity</code>。
+          {{ t('dashboard.footer.dataBefore') }} <code class="font-mono">app/mocks/</code> {{ t('dashboard.footer.dataAfter') }}
+          {{ t('dashboard.footer.emptyBefore') }} <code class="font-mono">?empty=todos</code>{{ t('dashboard.footer.emptySeparator') }}<code class="font-mono">?empty=documents</code> {{ t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{ t('dashboard.footer.emptyAfter') }}
         </p>
       </template>
     </UDashboardPanel>

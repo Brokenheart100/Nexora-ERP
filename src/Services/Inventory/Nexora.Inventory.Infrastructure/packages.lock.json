@@ -522,6 +522,13 @@
           "Nexora.BuildingBlocks.Application": "[1.0.0, )"
         }
       },
+      "nexora.finance.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "System.ServiceModel.Primitives": "[10.1.0, )",
+          "protobuf-net.Grpc": "[1.2.2, )"
+        }
+      },
       "nexora.inventory.application": {
         "type": "Project",
         "dependencies": {

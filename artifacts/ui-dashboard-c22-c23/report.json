@@ -1,0 +1,442 @@
+{
+  "ranAt": "2026-11-19T11:55:24.258Z",
+  "base": "http://localhost:3001",
+  "assertions": 86,
+  "passed": 86,
+  "failed": 0,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "results": [
+    {
+      "ok": true,
+      "label": "C22 账户菜单打开安全抽屉并显示当前身份",
+      "detail": "张明远 · 采购经理 · 工作区所有者"
+    },
+    {
+      "ok": true,
+      "label": "C22-1 当前身份角色徽标为所有者",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 展示有效空闲策略 30 分钟",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 展示策略来源",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 登录渠道展示 4 项状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 SSO 渠道显示已启用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 恢复邮箱显示待验证",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 注销预检展示 4 项阻断",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 存在阻断时禁用申请注销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 当前会话临期提示 18 分钟",
+      "detail": "当前会话将在 18 分钟后空闲过期 到期时间 2026-11-19 18:08；可在操作后延长，不需要重新登录。 延长会话"
+    },
+    {
+      "ok": true,
+      "label": "C22-1 当前设备标记为当前会话",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 设备记录含设备名",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 设备记录含登录与最近活动时间",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 延长会话后变为 48 分钟有效",
+      "detail": "当前会话仍有 48 分钟空闲有效期 到期时间 2026-11-19 20:43；可在操作后延长，不需要重新登录。 延长会话"
+    },
+    {
+      "ok": true,
+      "label": "C22-1 单个撤销其他设备后状态为已撤销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 已撤销设备不再显示撤销按钮",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 批量撤销后其他设备均为已撤销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 无其他有效设备时批量撤销禁用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换模拟身份后账户同步为陈立",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换身份后角色与权限同步",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换身份后注销预检同步为 3 项",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 展示敏感操作附加验证已过期",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 完成附加验证后提示通过",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换身份后会话变为 185 分钟有效",
+      "detail": "当前会话仍有 185 分钟空闲有效期 到期时间 2026-11-19 20:55；可在操作后延长，不需要重新登录。 延长会话"
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换身份后当前设备同步",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 切换身份后仅显示该身份的会话",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-1 再次延长会话按当前剩余时间累加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 设备授权复用同一界面展示 CLI 待确认请求",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 CLI 请求初始为等待确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 CLI 仅申请 1 个工作区只读范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 明确只读范围不含写权限",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 无效授权码给出核验失败反馈",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 有效 MCP 授权码核验成功",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 核验后选中对应 MCP 请求",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 MCP 展示财务、总账、报表 3 个只读范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 MCP 范围按用途展示",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 拒绝后请求状态为已拒绝",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 拒绝后给出设备未获得令牌的反馈",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 可切回 CLI 待确认请求",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 同意 CLI 授权后状态为已授权",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 同意后反馈授予的只读范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 过期代码状态为已过期",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 过期记录说明 15 分钟内未确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 过期请求不能继续同意",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 可选择已授权记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 撤销已授权设备后状态为已撤销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22-2 撤销后反馈令牌立即失效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 侧栏提供工作区助手入口",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 专业版工作区显示助手可用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 默认打开固定会话样例",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 会话列表展示 3 个历史会话",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 能力状态显示余额与往来可用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 待审批卡显示用途与参数摘要",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 待审批卡显示执行范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 工具调用初始为等待审批",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 允许后工具状态更新为已允许",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 允许后会话展示查询结果",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 查询结果提供科目、总账、报表 3 个入口",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 从工具结果跳转到报表中心",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 报表中心页面正常渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 返回助手后会话结果保留",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 新建会话后列表增加一条",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 新会话标题为默认标题",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 输入问题后发送按钮可用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 本地分片输出时显示生成中状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 流式完成后展示经营摘要结果",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 摘要标注数据截止与来源",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 可切换历史会话并恢复上下文",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 历史会话保留原消息内容",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 历史会话列表可再次切换",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 历史会话展示原经营数据",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 取消生成后消息标记为已取消",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 取消后提供恢复生成入口",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 恢复后完成输出并产生待审批工具",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 恢复后的工具卡显示账龄用途与范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 拒绝后工具状态更新为已拒绝",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 拒绝后会话说明未访问财务数据",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 标准版工作区提示套餐未包含",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 套餐受限时展示升级说明",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 切回专业版后助手恢复可用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 受限角色提示缺失 finance.view 权限",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 受限角色禁用输入框",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-1 受限角色禁用发送按钮",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 受限角色禁用工具批准按钮",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C23-2 受限角色说明无法批准财务工具",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C22/C23 全流程无错误页",
+      "detail": ""
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Nexora.ServiceDefaults.Http;
 using Microsoft.AspNetCore.Authorization;
 using Nexora.Finance.Application;
@@ -20,12 +21,13 @@ public static partial class BankReconciliationEndpoints
     public static Task<BankReconciliationSnapshot> Preview(Guid workspaceId, Guid bankId, PreviewRequest request,
         BankReconciliations service, CancellationToken ct) => service.PreviewAsync(workspaceId, bankId, request.Through, request.StatementBalance, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Bank)]
     public static Task<ReconciliationView> Prepare(Guid workspaceId, Guid bankId, PrepareRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ReconciliationView>(new PrepareReconciliation(workspaceId, request.OperationId, bankId, request.Through, request.StatementBalance), ct);
 
     [Authorize, WolverineGet(Root + "/reconciliations/{id:guid}/pdf")]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK, "application/pdf")]
     public static async Task<IResult> Pdf(Guid workspaceId, Guid id, BankReconciliations service, IReconciliationRenderer renderer,
         HttpContext context, CancellationToken ct)
     {
@@ -34,7 +36,7 @@ public static partial class BankReconciliationEndpoints
         return Results.File(file.Bytes, "application/pdf", file.FileName);
     }
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Root + "/reconciliations/{id:guid}/decision")]
     public static Task<ReconciliationView> Decide(Guid workspaceId, Guid id, DecisionRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ReconciliationView>(new DecideReconciliation(workspaceId, request.OperationId, id, request.ExpectedVersion,

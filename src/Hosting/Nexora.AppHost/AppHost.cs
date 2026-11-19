@@ -298,6 +298,7 @@ var inventory = builder.AddProject<Projects.Nexora_Inventory_Api>("inventory", l
     .WithEnvironment("Authentication__Authority", authority)
     .WaitFor(inventoryDatabase).WaitFor(organization).WaitFor(broker);
 organization.WithReference(inventory);
+finance.WithReference(inventory);
 
 var sales = builder.AddProject<Projects.Nexora_Sales_Api>("sales", launchProfileName: null)
     .WithHttpsEndpoint()

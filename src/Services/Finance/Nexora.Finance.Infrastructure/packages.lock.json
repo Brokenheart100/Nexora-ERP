@@ -544,8 +544,22 @@
           "Nexora.Finance.Domain": "[1.0.0, )"
         }
       },
+      "nexora.finance.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "System.ServiceModel.Primitives": "[10.1.0, )",
+          "protobuf-net.Grpc": "[1.2.2, )"
+        }
+      },
       "nexora.finance.domain": {
         "type": "Project"
+      },
+      "nexora.inventory.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "System.ServiceModel.Primitives": "[10.1.0, )",
+          "protobuf-net.Grpc": "[1.2.2, )"
+        }
       },
       "nexora.masterdata.contracts": {
         "type": "Project",

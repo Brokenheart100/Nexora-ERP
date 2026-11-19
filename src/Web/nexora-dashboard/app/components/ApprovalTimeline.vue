@@ -41,16 +41,10 @@ const toneMap: Record<string, string> = {
         :data-testid="stepTestId"
       >
         <div class="flex flex-col items-center">
-          <span
-            class="flex size-5 shrink-0 items-center justify-center rounded-full"
-            :class="toneMap[step.action]"
-          >
+          <span class="flex size-5 shrink-0 items-center justify-center rounded-full" :class="toneMap[step.action]">
             <UIcon :name="iconMap[step.action]" class="size-3" />
           </span>
-          <span
-            v-if="index < steps.length - 1"
-            class="mt-1 flex-1 border-l border-default"
-          />
+          <span v-if="index < steps.length - 1" class="mt-1 flex-1 border-l border-default" />
         </div>
         <div class="min-w-0 flex-1 pb-0.5">
           <div class="flex flex-wrap items-center gap-x-2 gap-y-1">

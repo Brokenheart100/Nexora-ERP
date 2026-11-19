@@ -292,7 +292,10 @@ async function reloadPage() {
           </div>
 
           <template #footer>
-            <div v-if="!showSkeleton && !isError && !isForbidden && !isEmpty" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+            <div
+              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
+              class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
+            >
               <p class="text-xs text-muted">
                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
                 <span v-if="hasFilters" class="text-primary">

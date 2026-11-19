@@ -11,15 +11,18 @@ public sealed class TradePosting(ILedgerStore ledger, TimeProvider clock, BankCu
     public async Task<string?> GateAsync(ResourceScope scope, AccountingBook book, DateOnly on, CancellationToken ct)
     {
         if (on < book.StartsOn || on.Year > 9998) return "The posting date is outside the accounting book.";
+        if (book.IsTaxLocked(on)) return "The posting date is locked by a tax filing.";
         var period = await ledger.PeriodAsync(scope, FiscalPeriod.MonthOf(on), ct);
         if (period?.State != PeriodState.Open) return "The accounting period is not open.";
+        if (await ledger.HasApplyingOpeningSubledgersAsync(scope, ct)) return "Wait for the approved opening subledger batch to post.";
         if ((await ledger.SourceAsync(scope, "opening", ct)) is { State: not JournalState.Posted })
             return "Complete or cancel the pending book opening first.";
         return null;
     }
 
     public async Task<Guid> PostAsync(ResourceScope scope, AccountingBook book, Guid sourceId, string sourceNumber,
-        DateOnly on, string memo, JournalActor maker, JournalActor reviewer, IReadOnlyList<PostLine> lines, CancellationToken ct)
+        DateOnly on, string memo, JournalActor maker, JournalActor reviewer, IReadOnlyList<PostLine> lines, CancellationToken ct,
+        JournalKind kind = JournalKind.Automatic)
     {
         var entries = lines.GroupBy(x => x.AccountId).Select(x => new PostLine(x.Key, x.Sum(y => y.SignedAmount)))
             .Where(x => x.SignedAmount != 0).ToArray();
@@ -37,8 +40,8 @@ public sealed class TradePosting(ILedgerStore ledger, TimeProvider clock, BankCu
                 Math.Max(0, entry.SignedAmount), Math.Max(0, -entry.SignedAmount));
         }).ToArray();
         var now = clock.GetUtcNow();
-        var source = maker == InventoryMaker ? "stock" : "trade";
-        var journal = Journal.Start(book, JournalKind.Automatic, sourceNumber, $"{source}:{sourceId:N}", on, memo, maker, snapshots, now);
+        var source = kind == JournalKind.SubledgerOpening ? "opening-subledger" : maker == InventoryMaker ? "stock" : "trade";
+        var journal = Journal.Start(book, kind, sourceNumber, $"{source}:{sourceId:N}", on, memo, maker, snapshots, now);
         journal.Submit(maker);
         journal.Post(reviewer, book.NextPostingNumber(), now);
         if (accounts.Any(x => !x.IsUsed)) book.AdvanceChart();

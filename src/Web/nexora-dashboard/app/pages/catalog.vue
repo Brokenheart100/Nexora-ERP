@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { ChangeEntry, Product, ProductStatus, ProductTracking } from '~/mocks'
+import type { ChangeEntry, Product, ProductKind, ProductStatus, ProductTracking } from '~/mocks'
 import {
   changeLogEntries,
   inventoryPositions,
@@ -68,6 +68,14 @@ const productUnitOptions = computed(() => unitDefinitions
 const productTaxOptions = computed(() => taxCodes
   .filter(taxItem => taxItem.status === 'active' && taxItem.kind === 'output')
   .map(taxItem => ({ label: taxItem.name, value: taxItem.rate })))
+const kindItems: { label: string, value: ProductKind }[] = [
+  { label: '商品', value: 'goods' },
+  { label: '服务', value: 'service' }
+]
+const kindLabels: Record<ProductKind, string> = {
+  goods: '商品',
+  service: '服务'
+}
 const trackingItems = [
   { label: '不追踪', value: 'none' },
   { label: '批次追踪', value: 'batch' },
@@ -159,7 +167,7 @@ function clearSelection() {
 
 const columns: TableColumn<Product>[] = [{
   id: 'select',
-  header: '',
+  header: '选择',
   meta: { class: { th: 'w-10', td: 'w-10' } }
 }, {
   accessorKey: 'sku',
@@ -173,13 +181,9 @@ const columns: TableColumn<Product>[] = [{
   accessorKey: 'category',
   header: '分类'
 }, {
-  accessorKey: 'price',
-  header: '单价',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'stock',
-  header: '库存',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
+  id: 'kind',
+  header: '类型',
+  meta: { class: { td: 'whitespace-nowrap' } }
 }, {
   accessorKey: 'status',
   header: '状态'
@@ -226,6 +230,7 @@ const editForm = reactive({
   sku: '',
   category: '',
   unit: '',
+  kind: 'goods' as ProductKind,
   price: 0,
   stock: 0,
   status: 'active' as ProductStatus,
@@ -243,6 +248,7 @@ function openEditor(product: Product) {
   editForm.sku = product.sku
   editForm.category = product.category
   editForm.unit = product.unit
+  editForm.kind = product.kind ?? 'goods'
   editForm.price = product.price
   editForm.stock = product.stock
   editForm.status = product.status
@@ -260,6 +266,7 @@ const createForm = reactive({
   sku: '',
   category: '',
   unit: '',
+  kind: 'goods' as ProductKind,
   price: 0,
   stock: 0,
   status: 'draft' as ProductStatus,
@@ -279,6 +286,7 @@ function openCreate() {
   createForm.sku = ''
   createForm.category = ''
   createForm.unit = ''
+  createForm.kind = 'goods'
   createForm.price = 0
   createForm.stock = 0
   createForm.status = 'draft'
@@ -308,6 +316,7 @@ function saveCreate() {
   const product: Product = {
     id: 'p-local-' + Date.now(),
     ...parsed.data,
+    tracking: parsed.data.kind === 'service' ? 'none' : parsed.data.tracking,
     updatedAt: at
   }
   rows.value.unshift(product)
@@ -345,13 +354,14 @@ function saveEditor() {
       sku: parsed.data.sku,
       category: parsed.data.category,
       unit: parsed.data.unit,
+      kind: parsed.data.kind,
       price: parsed.data.price,
       stock: parsed.data.stock,
       status: parsed.data.status,
       brand: parsed.data.brand,
       barcode: parsed.data.barcode,
       spec: parsed.data.spec,
-      tracking: parsed.data.tracking,
+      tracking: parsed.data.kind === 'service' ? 'none' : parsed.data.tracking,
       taxRate: parsed.data.taxRate,
       updatedAt: at
     }
@@ -399,6 +409,8 @@ const detailInventoryRefs = computed(() => {
   if (!sku) return 0
   return inventoryPositions.filter(position => position.sku === sku).length
 })
+
+const detailRefs = computed(() => detailPurchaseRefs.value + detailSalesRefs.value + detailInventoryRefs.value)
 
 const detailChangeEntries = computed(() => {
   const product = detailProduct.value
@@ -725,13 +737,19 @@ async function onImportFile(event: Event) {
                   {{ row.original.unit }} · {{ row.original.category }}
                 </p>
               </template>
-              <template #price-cell="{ row }">
-                {{ formatMoney(row.original.price) }}
-              </template>
-              <template #stock-cell="{ row }">
-                <span :class="row.original.stock === 0 ? 'text-error' : row.original.stock < 30 ? 'text-warning' : ''">
-                  {{ row.original.stock }}
-                </span>
+              <template #kind-cell="{ row }">
+                <div class="flex flex-col gap-1">
+                  <UBadge
+                    :color="(row.original.kind ?? 'goods') === 'service' ? 'info' : 'neutral'"
+                    variant="subtle"
+                    size="sm"
+                    :label="kindLabels[row.original.kind ?? 'goods']"
+                    data-testid="catalog-kind-badge"
+                  />
+                  <span class="text-[11px] text-muted">
+                    {{ (row.original.tracking ?? 'none') === 'none' ? '不跟踪库存' : '跟踪库存' }}
+                  </span>
+                </div>
               </template>
               <template #status-cell="{ row }">
                 <UBadge
@@ -863,6 +881,14 @@ async function onImportFile(event: Event) {
                 data-testid="catalog-create-unit"
               />
             </UFormField>
+            <UFormField label="类型" name="kind">
+              <USelect
+                v-model="createForm.kind"
+                :items="kindItems"
+                class="w-full"
+                data-testid="catalog-create-kind"
+              />
+            </UFormField>
             <UFormField label="状态" name="status">
               <USelect
                 v-model="createForm.status"
@@ -885,6 +911,7 @@ async function onImportFile(event: Event) {
               <USelect
                 v-model="createForm.tracking"
                 :items="trackingItems"
+                :disabled="createForm.kind === 'service'"
                 class="w-full"
                 data-testid="catalog-create-tracking"
               />
@@ -898,26 +925,14 @@ async function onImportFile(event: Event) {
               />
             </UFormField>
           </div>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="单价（元）" name="price" required>
-              <UInput
-                v-model.number="createForm.price"
-                type="number"
-                min="0"
-                class="w-full"
-                data-testid="catalog-create-price"
-              />
-            </UFormField>
-            <UFormField label="库存" name="stock" required>
-              <UInput
-                v-model.number="createForm.stock"
-                type="number"
-                min="0"
-                class="w-full"
-                data-testid="catalog-create-stock"
-              />
-            </UFormField>
-          </div>
+          <UAlert
+            color="neutral"
+            variant="soft"
+            icon="i-carbon-information"
+            title="单价与库存不在商品档案维护"
+            description="单价在销售 / 采购交易行录入；库存数量由仓库收发货、盘点与调拨流程调整。"
+            data-testid="catalog-create-policy"
+          />
         </UForm>
       </template>
 
@@ -981,7 +996,7 @@ async function onImportFile(event: Event) {
           <UFormField label="规格" name="spec">
             <UInput v-model="editForm.spec" class="w-full" data-testid="catalog-edit-spec" />
           </UFormField>
-          <div class="grid gap-4 sm:grid-cols-3">
+          <div class="grid gap-4 sm:grid-cols-2">
             <UFormField label="单位" name="unit">
               <USelect
                 v-model="editForm.unit"
@@ -990,20 +1005,12 @@ async function onImportFile(event: Event) {
                 data-testid="catalog-edit-unit"
               />
             </UFormField>
-            <UFormField label="单价（元）" name="price">
-              <UInput
-                v-model.number="editForm.price"
-                type="number"
-                min="0"
+            <UFormField label="类型" name="kind">
+              <USelect
+                v-model="editForm.kind"
+                :items="kindItems"
                 class="w-full"
-              />
-            </UFormField>
-            <UFormField label="库存" name="stock">
-              <UInput
-                v-model.number="editForm.stock"
-                type="number"
-                min="0"
-                class="w-full"
+                data-testid="catalog-edit-kind"
               />
             </UFormField>
           </div>
@@ -1012,6 +1019,7 @@ async function onImportFile(event: Event) {
               <USelect
                 v-model="editForm.tracking"
                 :items="trackingItems"
+                :disabled="editForm.kind === 'service'"
                 class="w-full"
                 data-testid="catalog-edit-tracking"
               />
@@ -1030,8 +1038,17 @@ async function onImportFile(event: Event) {
               v-model="editForm.status"
               :items="[{ label: '在售', value: 'active' }, { label: '草稿', value: 'draft' }, { label: '已归档', value: 'archived' }]"
               class="w-full"
+              data-testid="catalog-edit-status"
             />
           </UFormField>
+          <UAlert
+            color="neutral"
+            variant="soft"
+            icon="i-carbon-information"
+            title="单价与库存不在商品档案维护"
+            description="单价在销售 / 采购交易行录入；库存数量由仓库收发货、盘点与调拨流程调整。"
+            data-testid="catalog-edit-policy"
+          />
         </UForm>
       </template>
 
@@ -1107,18 +1124,18 @@ async function onImportFile(event: Event) {
             </div>
             <div>
               <dt class="text-[11px] text-muted">
-                单价
+                商品 / 服务
               </dt>
-              <dd class="tabular-nums">
-                {{ formatMoney(detailProduct.price) }}
+              <dd data-testid="catalog-detail-kind">
+                {{ kindLabels[detailProduct.kind ?? 'goods'] }}
               </dd>
             </div>
             <div>
               <dt class="text-[11px] text-muted">
-                库存
+                是否跟踪库存
               </dt>
-              <dd class="tabular-nums">
-                {{ detailProduct.stock }}
+              <dd data-testid="catalog-detail-track-stock">
+                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking ?? 'none'] + '）' }}
               </dd>
             </div>
             <div>
@@ -1158,6 +1175,30 @@ async function onImportFile(event: Event) {
               <dd>{{ detailProduct.updatedAt }}</dd>
             </div>
           </dl>
+
+          <UAlert
+            v-if="detailRefs > 0"
+            color="warning"
+            variant="soft"
+            icon="i-carbon-link"
+            :title="'已被 ' + detailRefs + ' 处业务引用'"
+            description="停用或归档只影响新单据的选择项；历史采购、销售与库存单据仍保留原商品信息。"
+            data-testid="catalog-detail-reference-notice"
+          />
+
+          <div class="flex flex-wrap items-center justify-between gap-2 rounded-sm border border-default px-3 py-2">
+            <p class="text-xs text-muted">
+              库存数量与成本在仓库流程维护，商品档案只保留是否跟踪库存。
+            </p>
+            <NuxtLink to="/inventory" data-testid="catalog-detail-inventory-link">
+              <UButton
+                label="前往仓库流程"
+                color="neutral"
+                variant="outline"
+                size="xs"
+              />
+            </NuxtLink>
+          </div>
 
           <section data-testid="catalog-detail-changelog">
             <h3 class="mb-2 text-xs font-medium text-default">

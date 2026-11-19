@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import type { Identity, Projection, Workspace } from '~/utils/workspace'
-import { invitationCodeSchema, workspaceLabel, workspaceNameSchema } from '~/utils/workspace'
+import type { Identity, Projection, Workspace } from '~/utils/workspace/workspace'
+import { invitationCodeSchema, workspaceLabel, workspaceNameSchema } from '~/utils/workspace/workspace'
 
 type MessageKey =
   | 'loadFailed'

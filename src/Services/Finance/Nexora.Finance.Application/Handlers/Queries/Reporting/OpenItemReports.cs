@@ -36,7 +36,7 @@ public sealed class OpenItemReports(TradeAccess access, IFinanceHistoryReader hi
             OpenItems.At(facts, through, true).Sum(x => x.Outstanding), OpenItems.At(facts, through, false).Sum(x => x.Outstanding));
     }
 
-    private static long Watermark(AccountingBook book, DateOnly through, long? watermark)
+    internal static long Watermark(AccountingBook book, DateOnly through, long? watermark)
     {
         if (through < book.StartsOn || through.Year > 9998 || watermark < 0 || watermark > book.LastPostingNumber)
             throw new ArgumentException("Invalid report date or posting watermark.");

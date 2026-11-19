@@ -3,7 +3,7 @@ using Nexora.Organization.Domain;
 
 namespace Nexora.Organization.Application;
 
-public sealed class BillingUseCases(IWorkspaceRepository workspaces, IApplicationAuthorization authorization, AccountMapping accounts,
+public sealed partial class BillingUseCases(IWorkspaceRepository workspaces, IApplicationAuthorization authorization, AccountMapping accounts,
     IBillingRepository billing, IBillingCounters counters, BillingEntitlements entitlements, TimeProvider clock)
 {
     public async Task<BillingView> GetAsync(Guid workspaceId, ActorContext actor, CancellationToken cancellationToken)
@@ -68,6 +68,8 @@ public sealed class BillingUseCases(IWorkspaceRepository workspaces, IApplicatio
         var subscription = await entitlements.EnsureSubscriptionAsync(workspace, cancellationToken);
         var invoice = await billing.FindInvoiceAsync(command.InvoiceId, cancellationToken) ?? throw new ResourceNotFoundException();
         if (invoice.BillingAccountId != subscription.Id || invoice.WorkspaceId != workspace.Id) throw new ResourceNotFoundException();
+        if (invoice.CheckoutSubscriptionVersion is not null)
+            throw new BusinessConflictException("请继续原测试结账以确认付款。");
         if (string.IsNullOrWhiteSpace(command.Reference)) throw new ArgumentException("付款参考号不能为空。");
         var now = clock.GetUtcNow();
         var invoices = await billing.ListInvoicesAsync(subscription.Id, cancellationToken);

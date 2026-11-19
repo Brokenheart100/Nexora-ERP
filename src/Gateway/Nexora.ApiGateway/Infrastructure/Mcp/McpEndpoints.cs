@@ -17,6 +17,11 @@ internal static class McpEndpoints
             client.BaseAddress = new Uri("https+http://finance");
             client.Timeout = TimeSpan.FromSeconds(15);
         });
+        builder.Services.AddHttpClient(McpFinanceTools.MasterDataClientName, client =>
+        {
+            client.BaseAddress = new Uri("https+http://masterdata");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
         builder.Services.AddSingleton<McpFinanceTools>();
     }
 
@@ -101,12 +106,10 @@ internal static class McpEndpoints
         var outcome = await tools.CallAsync(name, arguments, bearer, cancellationToken);
         var elapsed = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         logger.LogInformation(
-            "MCP tool call {Tool} workspace={WorkspaceId} subject={Subject} status={Status} elapsedMs={ElapsedMs:0}",
-            name, outcome.WorkspaceId ?? "-", subject, outcome.Status, elapsed);
+            "MCP tool call {Tool} workspace={WorkspaceId} subject={Subject} status={Status} trace={TraceId} elapsedMs={ElapsedMs:0}",
+            name, outcome.WorkspaceId ?? "-", subject, outcome.Status, Activity.Current?.TraceId.ToString() ?? http.TraceIdentifier, elapsed);
         if (outcome.Status == McpToolStatus.InvalidArguments)
             return Error(id, McpProtocol.InvalidParams, outcome.Message, StatusCodes.Status200OK);
-        if (outcome.Detail is { Length: > 0 } detail)
-            logger.LogWarning("MCP tool call {Tool} failed with {Status}: {Detail}", name, outcome.Status, detail);
 
         var isError = outcome.Status != McpToolStatus.Ok;
         var result = new JsonObject

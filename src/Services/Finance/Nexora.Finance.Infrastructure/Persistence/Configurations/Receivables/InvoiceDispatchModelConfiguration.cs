@@ -13,6 +13,8 @@ internal static class InvoiceDispatchModelConfiguration
         dispatch.Property(x => x.Version).IsConcurrencyToken();
         dispatch.Property(x => x.Recipient).HasMaxLength(254);
         dispatch.Property(x => x.Detail).HasMaxLength(300);
-        dispatch.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.InvoiceId });
+        dispatch.Property(x => x.DocumentId).HasColumnName("InvoiceId");
+        dispatch.Property(x => x.IsDonation).HasDefaultValue(false);
+        dispatch.HasIndex(x => new { x.TenantId, x.WorkspaceId, x.DocumentId });
     }
 }

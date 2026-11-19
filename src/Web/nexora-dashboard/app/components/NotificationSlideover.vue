@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { TimelineItem } from '@nuxt/ui'
 
+const { t } = useI18n()
+const { notificationSourceLabel } = useMockLabels()
 const { open, items, unread, markAllRead, markRead } = useNotifications()
 
 const timelineItems = computed<TimelineItem[]>(() => items.value.map(item => ({
   date: item.at,
   title: item.title,
-  description: item.source + ' · ' + item.description,
+  description: notificationSourceLabel(item.source) + ' · ' + item.description,
   icon: item.icon,
   value: item.id,
   to: item.to
@@ -31,8 +33,8 @@ async function selectItem(_event: Event, item: TimelineItem) {
 <template>
   <USlideover
     v-model:open="open"
-    title="通知"
-    description="公告、采购/销售待审批、库存预警与最近单据（本地模拟数据）"
+    :title="t('notifications.title')"
+    :description="t('notifications.description')"
     :ui="{ content: 'sm:max-w-md' }"
     data-testid="notification-slideover"
   >
@@ -47,11 +49,7 @@ async function selectItem(_event: Event, item: TimelineItem) {
         <template #title="{ item }">
           <span class="flex items-center justify-between gap-2">
             <span class="flex min-w-0 items-center gap-1.5">
-              <span
-                v-if="isUnread(item)"
-                class="size-1.5 shrink-0 rounded-full bg-primary"
-                aria-label="未读"
-              />
+              <span v-if="isUnread(item)" class="size-1.5 shrink-0 rounded-full bg-primary" :aria-label="t('notifications.unread')" />
               <span class="truncate">{{ item.title }}</span>
             </span>
             <UButton
@@ -60,7 +58,7 @@ async function selectItem(_event: Event, item: TimelineItem) {
               color="neutral"
               variant="ghost"
               size="xs"
-              aria-label="标为已读"
+              :aria-label="t('notifications.readOne')"
               data-testid="notification-read-one"
               @click.stop="readItem(item)"
             />
@@ -70,8 +68,8 @@ async function selectItem(_event: Event, item: TimelineItem) {
       <UEmpty
         v-else
         icon="i-carbon-notification"
-        title="暂无通知"
-        description="当前工作区没有需要处理的事项"
+        :title="t('notifications.emptyTitle')"
+        :description="t('notifications.emptyDescription')"
       />
     </template>
 
@@ -79,7 +77,7 @@ async function selectItem(_event: Event, item: TimelineItem) {
       <div class="flex w-full items-center justify-between gap-2">
         <div class="flex items-center gap-2">
           <UButton
-            label="全部标记已读"
+            :label="t('notifications.markAll')"
             icon="i-carbon-checkmark"
             color="neutral"
             variant="ghost"
@@ -88,10 +86,10 @@ async function selectItem(_event: Event, item: TimelineItem) {
             data-testid="notification-read-all"
             @click="markAllRead"
           />
-          <span class="text-xs text-dimmed">{{ unread.length }} 条未读</span>
+          <span class="text-xs text-dimmed">{{ t('notifications.unreadCount', { count: unread.length }) }}</span>
         </div>
         <UButton
-          label="关闭"
+          :label="t('notifications.close')"
           color="neutral"
           variant="outline"
           size="sm"

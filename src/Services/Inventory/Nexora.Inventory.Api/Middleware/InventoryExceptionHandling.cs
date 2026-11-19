@@ -15,10 +15,10 @@ internal static class InventoryExceptionHandling
         app.UseExceptionHandler(handler => handler.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-            var conditional = error is RevisionConflictException && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
+            var conditional = error is (RevisionConflictException or DbUpdateConcurrencyException) && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
             var status = error switch
             {
-                RevisionConflictException when conditional => 412,
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => 412,
                 ResourceNotFoundException => 404,
                 AccessDeniedException => 403,
                 InventoryAuthorityUnavailableException => 503,
@@ -32,10 +32,10 @@ internal static class InventoryExceptionHandling
             var code = error switch
             {
                 IdempotencyConflictException => "inventory.idempotency_conflict",
-                RevisionConflictException when conditional => "inventory.precondition_failed",
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => "inventory.precondition_failed",
                 RevisionConflictException or DbUpdateConcurrencyException => "inventory.version_conflict",
                 BusinessConflictException => "inventory.state_conflict",
-                StockRuleException => "inventory.stock_rule",
+                StockRuleException rule => rule.Code,
                 _ => null
             };
             await ApiProblems.Create(context, status, code, detail).ExecuteAsync(context);

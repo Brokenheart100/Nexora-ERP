@@ -770,6 +770,8 @@
           "Nexora.BuildingBlocks.Grpc": "[1.0.0, )",
           "Nexora.BuildingBlocks.Infrastructure": "[1.0.0, )",
           "Nexora.Finance.Application": "[1.0.0, )",
+          "Nexora.Finance.Contracts": "[1.0.0, )",
+          "Nexora.Inventory.Contracts": "[1.0.0, )",
           "Nexora.MasterData.Contracts": "[1.0.0, )",
           "Nexora.Organization.Contracts": "[1.0.0, )",
           "Nexora.Purchasing.Contracts": "[1.0.0, )",
@@ -779,6 +781,13 @@
           "WolverineFx.Postgresql": "[6.61.0, )",
           "WolverineFx.RabbitMQ": "[6.61.0, )",
           "WolverineFx.RuntimeCompilation": "[6.61.0, )"
+        }
+      },
+      "nexora.inventory.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "System.ServiceModel.Primitives": "[10.1.0, )",
+          "protobuf-net.Grpc": "[1.2.2, )"
         }
       },
       "nexora.masterdata.contracts": {

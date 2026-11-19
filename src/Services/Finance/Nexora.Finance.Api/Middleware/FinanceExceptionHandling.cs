@@ -15,10 +15,10 @@ internal static class FinanceExceptionHandling
         app.UseExceptionHandler(handler => handler.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-            var conditional = error is RevisionConflictException && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
+            var conditional = error is (RevisionConflictException or DbUpdateConcurrencyException) && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
             var status = error switch
             {
-                RevisionConflictException when conditional => 412,
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => 412,
                 ResourceNotFoundException => 404,
                 AccessDeniedException => 403,
                 BookAuthorityUnavailableException or InvoiceRenderingUnavailableException => 503,
@@ -32,10 +32,10 @@ internal static class FinanceExceptionHandling
             var code = error switch
             {
                 IdempotencyConflictException => "finance.idempotency_conflict",
-                RevisionConflictException when conditional => "finance.precondition_failed",
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => "finance.precondition_failed",
                 RevisionConflictException or DbUpdateConcurrencyException => "finance.version_conflict",
                 BusinessConflictException => "finance.state_conflict",
-                LedgerRuleException => "finance.ledger_rule",
+                LedgerRuleException rule => rule.Code,
                 _ => null
             };
             await ApiProblems.Create(context, status, code, detail).ExecuteAsync(context);

@@ -1,6 +1,6 @@
 import { defineEventHandler } from 'h3'
-import { bffConfig } from '../../../../utils/bff-config'
-import { cliScope } from '../../../../utils/bff-cli'
+import { bffConfig } from '../../../../utils/runtime/bff-config'
+import { cliScope } from '../../../../utils/auth/bff-cli'
 
 export default defineEventHandler((event) => {
   const settings = bffConfig(event)

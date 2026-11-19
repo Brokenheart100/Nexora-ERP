@@ -279,6 +279,18 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("InvoiceNumberPattern")
+                        .HasMaxLength(55)
+                        .HasColumnType("character varying(55)");
+
+                    b.Property<long>("InvoiceNumberStart")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasDefaultValue(1L);
+
+                    b.Property<long>("InvoiceNumberVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("IsPersonal")
                         .HasColumnType("boolean");
 
@@ -289,6 +301,22 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<DateOnly>("StartsOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("TaxBasis")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<long>("TaxCalendarVersion")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("TaxCycle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<DateOnly?>("TaxLockedThrough")
                         .HasColumnType("date");
 
                     b.Property<Guid>("TenantId")
@@ -544,6 +572,12 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<int?>("NumberFiscalYear")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("NumberSequence")
+                        .HasColumnType("bigint");
+
                     b.Property<decimal>("OpenBalance")
                         .HasPrecision(20, 6)
                         .HasColumnType("numeric(20,6)");
@@ -557,6 +591,9 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.Property<string>("Terms")
                         .IsRequired()
                         .HasColumnType("jsonb");
+
+                    b.Property<bool>("UsesFiscalNumber")
+                        .HasColumnType("boolean");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -572,7 +609,52 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "WorkspaceId", "Number")
                         .IsUnique();
 
+                    b.HasIndex("TenantId", "WorkspaceId", "NumberFiscalYear", "NumberSequence")
+                        .IsUnique()
+                        .HasFilter("\"NumberSequence\" IS NOT NULL");
+
                     b.ToTable("customer_documents", "finance");
+                });
+
+            modelBuilder.Entity("Nexora.Finance.Domain.DonationFiscalTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("DonationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("IssuedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("LinkedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "DonationId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "WorkspaceId", "Code", "Number")
+                        .IsUnique();
+
+                    b.ToTable("donation_fiscal_tickets", "finance");
                 });
 
             modelBuilder.Entity("Nexora.Finance.Domain.FiscalPeriod", b =>
@@ -675,8 +757,14 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("InvoiceId");
+
+                    b.Property<bool>("IsDonation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("JournalId")
                         .HasColumnType("uuid");
@@ -713,7 +801,7 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "WorkspaceId", "InvoiceId");
+                    b.HasIndex("TenantId", "WorkspaceId", "DocumentId");
 
                     b.ToTable("invoice_dispatches", "finance");
                 });
@@ -735,7 +823,7 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("DocumentId")
+                    b.Property<Guid?>("DocumentId")
                         .HasColumnType("uuid");
 
                     b.Property<long>("TemplateVersion")
@@ -845,6 +933,14 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("ImportProvider")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
                     b.Property<int>("Kind")
                         .HasColumnType("integer");
 
@@ -918,6 +1014,10 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId", "WorkspaceId", "SourceKey")
                         .IsUnique()
                         .HasFilter("\"State\" <> 4");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "ImportProvider", "ExternalId")
+                        .IsUnique()
+                        .HasFilter("\"ImportProvider\" IS NOT NULL");
 
                     b.ToTable("journals", "finance");
                 });
@@ -1024,6 +1124,97 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("journal_links", "finance");
+                });
+
+            modelBuilder.Entity("Nexora.Finance.Domain.OpeningSubledgerBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<Guid>("EquityAccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Maker")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateOnly>("On")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Postings")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Rejection")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Reviewer")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Rows")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("State")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkspaceId")
+                        .IsUnique()
+                        .HasFilter("\"State\" IN (0, 1, 2)");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "Id");
+
+                    b.ToTable("opening_subledger_batches", "finance");
+                });
+
+            modelBuilder.Entity("Nexora.Finance.Domain.PartnershipYear", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Partners")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("TenantId", "WorkspaceId", "Year");
+
+                    b.ToTable("partnership_years", "finance");
                 });
 
             modelBuilder.Entity("Nexora.Finance.Domain.PeriodTransition", b =>
@@ -1382,6 +1573,72 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                     b.ToTable("tax_classifications", "finance");
                 });
 
+            modelBuilder.Entity("Nexora.Finance.Domain.TaxFiling", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CorrectsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FiledByIssuer")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("FiledBySubject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("LockBooks")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Through")
+                        .HasColumnType("date");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "WorkspaceId", "From", "Through", "Version")
+                        .IsUnique();
+
+                    b.ToTable("tax_filings", "finance");
+                });
+
             modelBuilder.Entity("Nexora.Finance.Domain.TaxGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1608,6 +1865,16 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("Nexora.Finance.Domain.DonationFiscalTicket", b =>
+                {
+                    b.HasOne("Nexora.Finance.Domain.TradeDocument", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "WorkspaceId", "DonationId")
+                        .HasPrincipalKey("TenantId", "WorkspaceId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Nexora.Finance.Domain.FiscalPeriod", b =>
                 {
                     b.HasOne("Nexora.Finance.Domain.AccountingBook", null)
@@ -1681,6 +1948,16 @@ namespace Nexora.Finance.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Nexora.Finance.Domain.TaxClassification", b =>
+                {
+                    b.HasOne("Nexora.Finance.Domain.AccountingBook", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "WorkspaceId")
+                        .HasPrincipalKey("TenantId", "WorkspaceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Nexora.Finance.Domain.TaxFiling", b =>
                 {
                     b.HasOne("Nexora.Finance.Domain.AccountingBook", null)
                         .WithMany()

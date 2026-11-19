@@ -42,6 +42,6 @@ public sealed class FiscalPeriod
     }
     public void RequireOpen()
     {
-        if (State != PeriodState.Open) throw new LedgerRuleException("The accounting period is not open.");
+        if (State != PeriodState.Open) throw new LedgerRuleException("The accounting period is not open.", "finance.period_not_open");
     }
 }

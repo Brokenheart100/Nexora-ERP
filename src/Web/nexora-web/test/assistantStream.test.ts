@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appendDelta, assistantStatusLabel, parseSseChunk } from '../app/utils/assistantStream'
+import { appendDelta, assistantStatusLabel, parseSseChunk } from '../app/utils/assistant/assistantStream'
 
 describe('parseSseChunk', () => {
   it('parses complete frames and keeps the unfinished tail', () => {

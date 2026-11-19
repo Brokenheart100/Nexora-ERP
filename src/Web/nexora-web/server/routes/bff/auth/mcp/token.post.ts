@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody, setResponseStatus } from 'h3'
-import { exchangeDeviceCode, isCodeVerifier } from '../../../../utils/bff-cli'
+import { exchangeDeviceCode, isCodeVerifier } from '../../../../utils/auth/bff-cli'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ deviceCode?: unknown, codeVerifier?: unknown }>(event).catch(() => undefined)

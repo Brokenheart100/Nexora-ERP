@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Nexora.BuildingBlocks.Application;
 using Nexora.Organization.Application;
 using Nexora.Organization.Domain;
 
@@ -22,13 +23,15 @@ public sealed class WorkspaceRepository(OrganizationDbContext db) : IWorkspaceRe
         .Include(x => x.CustomRoles).Include(x => x.RoleGrants).Include(x => x.Departments).AsSplitQuery();
     public Task<Workspace?> FindInvitationAsync(Guid invitationId, CancellationToken cancellationToken) =>
         Aggregate().SingleOrDefaultAsync(x => x.Invitations.Any(i => i.Id == invitationId), cancellationToken);
-    public async Task<IReadOnlyList<MemberView>> ListMembersAsync(Guid workspaceId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MemberView>> ListMembersAsync(Guid workspaceId, CancellationToken cancellationToken, PageWindow? page = null)
     {
-        var rows = await (from m in db.Members.AsNoTracking()
+        var query = from m in db.Members.AsNoTracking()
                join u in db.Accounts.AsNoTracking() on new { m.Issuer, m.Subject } equals new { u.Issuer, u.Subject }
                where m.WorkspaceId == workspaceId
-               orderby m.JoinedAtUtc
-               select new { Member = m, UserId = u.Id, u.VerifiedEmail }).ToListAsync(cancellationToken);
+               orderby m.JoinedAtUtc, m.Id
+               select new { Member = m, UserId = u.Id, u.VerifiedEmail };
+        if (page is { } window) query = query.Skip(window.Offset).Take(window.Size);
+        var rows = await query.ToListAsync(cancellationToken);
         return rows.Select(row =>
         {
             var m = row.Member;

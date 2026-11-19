@@ -16,6 +16,20 @@ public static partial class LedgerEndpoints
     private const string Journal = Journals + "/{id:guid}";
     private const string Period = Root + "/periods/{month}";
     private const string Links = Root + "/links";
+    private const string Imported = Journals + "/imported";
+
+    [Authorize, ApiWrite, WolverinePost(Imported)]
+    public static async Task<Created<LedgerChange>> Import(Guid workspaceId, ImportRequest request, IMessageBus bus, CancellationToken ct)
+    {
+        var result = await bus.InvokeAsync<LedgerChange>(
+            new ImportJournal(workspaceId, request.OperationId, request.Provider, request.ExternalId, request.Draft), ct);
+        return CreatedJournal(workspaceId, result);
+    }
+
+    [Authorize, ApiWrite, WolverinePost(Imported + "/batch-decision")]
+    public static Task<LedgerChange[]> BatchDecision(Guid workspaceId, ImportedBatchRequest request, IMessageBus bus, CancellationToken ct) =>
+        bus.InvokeAsync<LedgerChange[]>(
+            new DecideImportedJournals(workspaceId, request.OperationId, request.Decision, request.Journals), ct);
 
     [Authorize, WolverineGet(Root)]
     public static Task<LedgerHome> Home(Guid workspaceId, LedgerUseCases ledger, CancellationToken ct) => ledger.HomeAsync(workspaceId, ct);
@@ -29,7 +43,7 @@ public static partial class LedgerEndpoints
     public static Task<JournalView> Detail(Guid workspaceId, Guid id, LedgerUseCases ledger, CancellationToken ct) =>
         ledger.DetailAsync(workspaceId, id, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Journals)]
     public static async Task<Created<LedgerChange>> Start(Guid workspaceId, StartRequest request, IMessageBus bus, CancellationToken ct)
     {
@@ -37,17 +51,17 @@ public static partial class LedgerEndpoints
         return CreatedJournal(workspaceId, result);
     }
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePut(Journal)]
     public static Task<LedgerChange> Edit(Guid workspaceId, Guid id, EditRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<LedgerChange>(new EditJournal(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Draft), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Journal + "/decision")]
     public static Task<LedgerChange> Decide(Guid workspaceId, Guid id, DecisionRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<LedgerChange>(new DecideJournal(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Decision), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Journal + "/reversal")]
     public static async Task<Created<LedgerChange>> Reverse(Guid workspaceId, Guid id, ReverseRequest request, IMessageBus bus, CancellationToken ct)
     {
@@ -62,7 +76,7 @@ public static partial class LedgerEndpoints
     public static Task<PeriodDetail> ReadPeriod(Guid workspaceId, string month, LedgerUseCases ledger, CancellationToken ct) =>
         ledger.PeriodAsync(workspaceId, ParseDate(month), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Period)]
     public static Task<PeriodChange> MovePeriod(Guid workspaceId, string month, PeriodRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<PeriodChange>(new MoveFiscalPeriod(workspaceId, request.OperationId, ParseDate(month), request.ExpectedVersion,
@@ -76,13 +90,13 @@ public static partial class LedgerEndpoints
     public static Task<JournalLinkScan> ScanLinks(Guid workspaceId, LedgerUseCases ledger, CancellationToken ct) =>
         ledger.ScanLinksAsync(workspaceId, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Links)]
     public static Task<JournalLinkChange> CreateLink(Guid workspaceId, CreateLinkRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<JournalLinkChange>(new CreateJournalLink(workspaceId, request.OperationId, request.FromJournalId,
             request.ToJournalId, request.Kind, request.Memo), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Links + "/{linkId:guid}/delete")]
     public static Task<JournalLinkChange> DeleteLink(Guid workspaceId, Guid linkId, DeleteLinkRequest request, IMessageBus bus,
         CancellationToken ct) => bus.InvokeAsync<JournalLinkChange>(new DeleteJournalLink(workspaceId, request.OperationId, linkId,

@@ -59,7 +59,7 @@ public sealed class MasterDataDeliveryTests
             {
                 scenario.WithClaim(new Claim("sub", "masterdata-delivery"));
                 scenario.Post.Json(input).ToUrl($"/api/masterdata/workspaces/{workspaceId}/definitions");
-                scenario.StatusCodeShouldBe(200);
+                scenario.StatusCodeShouldBe(201);
             });
             return result.ReadAsJson<CatalogMutation>()!;
         }

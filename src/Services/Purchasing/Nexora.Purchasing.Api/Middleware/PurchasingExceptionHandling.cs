@@ -15,10 +15,10 @@ internal static class PurchasingExceptionHandling
         app.UseExceptionHandler(handler => handler.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-            var conditional = error is RevisionConflictException && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
+            var conditional = error is (RevisionConflictException or DbUpdateConcurrencyException) && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
             var status = error switch
             {
-                RevisionConflictException when conditional => 412,
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => 412,
                 ResourceNotFoundException => 404,
                 AccessDeniedException => 403,
                 PurchaseAuthorityUnavailableException => 503,
@@ -32,7 +32,7 @@ internal static class PurchasingExceptionHandling
             var code = error switch
             {
                 IdempotencyConflictException => "purchasing.idempotency_conflict",
-                RevisionConflictException when conditional => "purchasing.precondition_failed",
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => "purchasing.precondition_failed",
                 RevisionConflictException or DbUpdateConcurrencyException => "purchasing.version_conflict",
                 BusinessConflictException => "purchasing.state_conflict",
                 PurchaseRuleException => "purchasing.order_rule",

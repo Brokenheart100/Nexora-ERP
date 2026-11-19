@@ -38,7 +38,7 @@ public static class ProjectionEndpoints
         var projection = await reader.FindAsync(id, cancellationToken);
         if (projection is not null) return Results.Ok(projection);
         context.Response.Headers.RetryAfter = "2";
-        return Results.Accepted($"/api/reports/workspaces/{id}", new ProjectionPending("pending"));
+        return TypedResults.Accepted($"/api/reports/workspaces/{id}", new ProjectionPending("pending"));
     }
 
     public sealed record ProjectionPending(string Status);

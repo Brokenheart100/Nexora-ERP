@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Nexora.Sales.Application;
 using Wolverine;
@@ -19,12 +20,13 @@ public static partial class SalesFulfillmentEndpoints
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status412PreconditionFailed, "application/problem+json")]
-    public static Task<FulfillmentBatchChange> Issue(Guid workspaceId, Guid id, IssueRequest request, HttpRequest http, IMessageBus bus, CancellationToken ct)
+    public static async Task<Accepted<FulfillmentBatchChange>> Issue(Guid workspaceId, Guid id, IssueRequest request, HttpRequest http, IMessageBus bus, CancellationToken ct)
     {
         var operation = SalesOrderHeaders.OperationId(http, request.OperationId);
         var (version, condition) = SalesOrderHeaders.Version(http, id, request.ExpectedVersion);
-        return bus.InvokeAsync<FulfillmentBatchChange>(new IssueFulfillmentPermit(workspaceId, operation, id, version,
+        var result = await bus.InvokeAsync<FulfillmentBatchChange>(new IssueFulfillmentPermit(workspaceId, operation, id, version,
             request.WarehouseId, request.Lines, request.HoldSeconds, condition), ct);
+        return TypedResults.Accepted($"/api/sales/workspaces/{workspaceId}/orders/{id}/fulfillments", result);
     }
     [Authorize, WolverinePost(Root + "/{permitId:guid}/cancel")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]

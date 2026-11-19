@@ -11,14 +11,21 @@ public sealed partial class ReceivableUseCases(TradeAccess access, ITradeStore t
         var (current, book) = await access.ReadAsync(workspace, ct);
         var setup = await receivables.SetupAsync(current.Scope, ct);
         return new(setup?.Accounts, current.Allows(ChartPermissions.Manage), current.Allows(LedgerPermissions.Draft),
-            current.Allows(LedgerPermissions.Post), book.BaseCurrency);
+            current.Allows(LedgerPermissions.Post), book.BaseCurrency, book.InvoiceNumberPattern is not null);
     }
 
-    public async Task<CustomerDocumentView[]> ListAsync(Guid workspace, int page, CancellationToken ct)
+    public async Task<CustomerDocumentView[]> ListAsync(Guid workspace, int page, CancellationToken ct, bool postedInvoicesOnly = false)
     {
         RequirePage(page);
         var (current, _) = await access.ReadAsync(workspace, ct);
-        return (await receivables.ListAsync(current.Scope, page, ct)).Select(x => View(x, current)).ToArray();
+        return (await receivables.ListAsync(current.Scope, page, ct, postedInvoicesOnly)).Select(x => View(x, current)).ToArray();
+    }
+
+    public async Task<CustomerDocumentView> DetailAsync(Guid workspace, Guid id, CancellationToken ct)
+    {
+        var (current, _) = await access.ReadAsync(workspace, ct);
+        var document = await receivables.FindAsync(current.Scope, id, ct) ?? throw new ResourceNotFoundException();
+        return View(document, current);
     }
 
     public async Task<ShipmentAllowance[]> ShipmentsAsync(Guid workspace, int page, CancellationToken ct)
@@ -67,7 +74,8 @@ public sealed partial class ReceivableUseCases(TradeAccess access, ITradeStore t
         if (replay is not null) return Result(replay);
         await SetupAsync(current.Scope, ct);
         var draft = command.Draft ?? throw new ArgumentException("A customer document is required.");
-        var number = NormalizeNumber(draft.Number);
+        var fiscal = draft.Kind == "invoice" && string.IsNullOrWhiteSpace(draft.Number) && book.InvoiceNumberPattern is not null;
+        var number = fiscal ? "" : NormalizeNumber(draft.Number);
         var terms = draft.Kind switch
         {
             "invoice" => await InvoiceAsync(current.Scope, book, draft, number, ct),
@@ -77,7 +85,7 @@ public sealed partial class ReceivableUseCases(TradeAccess access, ITradeStore t
             "credit" => await CreditAsync(current.Scope, book, draft, number, ct),
             _ => throw new ArgumentException("Unknown customer document type.")
         };
-        var doc = new CustomerDocument(book, terms, Actor(current), clock.GetUtcNow());
+        var doc = new CustomerDocument(book, terms, Actor(current), clock.GetUtcNow(), fiscal);
         receivables.Add(doc);
         return Record(current, command.OperationId, action, command, doc.Id, doc.Version);
     }
@@ -111,8 +119,16 @@ public sealed partial class ReceivableUseCases(TradeAccess access, ITradeStore t
         if (command.Approve)
         {
             doc.DemandIndependent(actor);
+            book.DemandTaxDateOpen(doc.Terms.On);
             var gate = await posting.GateAsync(current.Scope, book, doc.Terms.On, ct);
             if (gate is not null) throw new LedgerRuleException(gate);
+            if (doc.UsesFiscalNumber)
+            {
+                var next = await NextNumberAsync(current.Scope, book, doc.Terms.On, ct);
+                if (!StringComparer.Ordinal.Equals(next.Number, command.ExpectedNumber))
+                    throw new LedgerRuleException("Preview and confirm the current invoice number.", "finance.invoice_number_changed");
+                doc.AssignFiscalNumber(next.Number, next.FiscalYear, next.Sequence);
+            }
             await PostAsync(current.Scope, book, doc, actor, ct);
         }
         else
@@ -161,8 +177,10 @@ public sealed partial class ReceivableUseCases(TradeAccess access, ITradeStore t
     private static Guid Required(Guid? id) => id is Guid value && value != Guid.Empty ? value : throw new ArgumentException("A reference is required.");
     private static JournalActor Actor(BookAccess current) => new(current.Actor.Issuer, current.Actor.Subject);
     private static CustomerDocumentView View(CustomerDocument x, BookAccess current) => new(x.Id, x.Terms with
-        { Brand = x.Terms.Brand is { } brand ? brand with { LogoPngBase64 = null } : null },
-        x.State.ToString().ToLowerInvariant(), x.Version, x.JournalId, x.OpenBalance, x.MadeBy(Actor(current)));
+        { Brand = x.Terms.Brand is { } brand ? brand with { LogoPngBase64 = null } : null,
+            Number = x.UsesFiscalNumber && x.NumberSequence is null ? "" : x.Number },
+        x.State.ToString().ToLowerInvariant(), x.Version, x.JournalId, x.OpenBalance, x.MadeBy(Actor(current)),
+        x.UsesFiscalNumber && x.NumberSequence is null && x.State == CustomerDocumentState.Submitted);
     private static TradeChange Result(FinanceAudit audit) => new(audit.TargetId!.Value, audit.ResultVersion);
     private TradeChange Record(BookAccess current, Guid operation, string action, object input, Guid id, long version)
     {

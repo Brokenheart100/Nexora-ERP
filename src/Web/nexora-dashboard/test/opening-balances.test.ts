@@ -57,6 +57,23 @@ describe('opening balances store', () => {
     expect(posted.batch?.state).toBe('posted')
     expect(posted.batch?.result?.journalIds).toHaveLength(4)
     expect(posted.batch?.result?.passed).toBe(3)
+
+    const result = posted.batch?.result
+    expect(result?.records).toHaveLength(17)
+    expect(result?.records.filter(record => record.kind === 'journal')).toHaveLength(4)
+    expect(result?.records.filter(record => record.kind === 'stock')).toHaveLength(2)
+    expect(result?.records.filter(record => record.kind === 'receivable')).toHaveLength(5)
+    expect(result?.records.filter(record => record.kind === 'payable')).toHaveLength(4)
+    expect(result?.records.filter(record => record.kind === 'bank')).toHaveLength(2)
+
+    const stock = result?.records.find(record => record.kind === 'stock')
+    expect(stock?.docNo).toBe('STK-OPEN-0002-0001')
+    expect(stock?.sourceId).toBe('src-stock-east')
+    expect(stock?.sourceLabel).toBe('华东中心仓')
+    expect(stock?.sourceReference).toBe('第 1–12 行')
+    expect(stock?.amount).toBe(486400)
+    expect(stock?.at).toBe(result?.postedAt)
+    expect(result?.records.filter(record => record.kind === 'journal').map(record => record.docNo)).toEqual(result?.journalIds)
   })
 
   it('requires a rejection reason and keeps the source rows on the batch', () => {

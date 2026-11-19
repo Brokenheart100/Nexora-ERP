@@ -23,6 +23,9 @@ public sealed class BillingInvoice
     public Guid? PaymentOperationId { get; private set; }
     public DateTimeOffset IssuedAtUtc { get; private set; }
     public DateTimeOffset? PaidAtUtc { get; private set; }
+    public long? CheckoutSubscriptionVersion { get; private set; }
+    public DateTimeOffset? CheckoutPeriodEndUtc { get; private set; }
+    public bool UsesSavedTestCard { get; private set; }
 
     public static BillingInvoice Issue(Guid billingAccountId, Guid workspaceId, BillingPlan plan, bool paid,
         Guid operationId, string? reference, DateTimeOffset now, int? amountCents = null) => new()
@@ -42,6 +45,13 @@ public sealed class BillingInvoice
         PaymentReference = reference;
         PaymentOperationId = paymentOperationId;
         PaidAtUtc = now.ToUniversalTime();
+    }
+
+    public void StartLocalCheckout(long subscriptionVersion, DateTimeOffset? periodEndUtc, bool useSavedCard)
+    {
+        CheckoutSubscriptionVersion = subscriptionVersion;
+        CheckoutPeriodEndUtc = periodEndUtc;
+        UsesSavedTestCard = useSavedCard;
     }
 
     public void Void()

@@ -60,6 +60,12 @@ public sealed class InvoiceSchedule
 
     public void WaitFor(string reason) => PendingReason = reason;
 
+    public void Skip(DateOnly on)
+    {
+        Complete(on);
+        Version++;
+    }
+
     public DateOnly[] Preview(int count)
     {
         if (count is < 1 or > 24) throw new ArgumentException("Preview between one and twenty-four dates.");

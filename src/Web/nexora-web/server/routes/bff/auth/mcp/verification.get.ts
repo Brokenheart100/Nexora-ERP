@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { bffConfig } from '../../../../utils/bff-config'
-import { keycloakVerificationUrl, verificationPageUrl } from '../../../../utils/bff-cli'
+import { bffConfig } from '../../../../utils/runtime/bff-config'
+import { keycloakVerificationUrl, verificationPageUrl } from '../../../../utils/auth/bff-cli'
 
 export default defineEventHandler((event) => {
   const code = getQuery(event).user_code

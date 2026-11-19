@@ -20,23 +20,29 @@ public static partial class RecurringEndpoints
         ReceivableUseCases service, IRecurringInvoices recurring, CancellationToken ct) =>
         service.OccurrencesAsync(workspaceId, id, page ?? 1, recurring, ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Root)]
     public static Task<ScheduleChange> Create(Guid workspaceId, SaveRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ScheduleChange>(new SaveInvoiceSchedule(workspaceId, request.OperationId, null, request.ExpectedVersion, request.Input), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePut(Root + "/{id:guid}")]
     public static Task<ScheduleChange> Edit(Guid workspaceId, Guid id, SaveRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ScheduleChange>(new SaveInvoiceSchedule(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Input), ct);
 
-    [IdempotentWrite("expectedVersion")]
+    [ApiWrite("expectedVersion")]
     [Authorize, WolverinePost(Root + "/{id:guid}/pause")]
     public static Task<ScheduleChange> Pause(Guid workspaceId, Guid id, PauseRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ScheduleChange>(new PauseInvoiceSchedule(workspaceId, request.OperationId, id, request.ExpectedVersion, request.Paused), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/{id:guid}/run")]
     public static Task<ScheduleChange> Run(Guid workspaceId, Guid id, RunRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<ScheduleChange>(new RunInvoiceSchedule(workspaceId, request.OperationId, id, request.On), ct);
+
+    [Authorize, ApiWrite("expectedVersion"), WolverinePost(Root + "/{id:guid}/skip")]
+    public static Task<ScheduleChange> Skip(Guid workspaceId, Guid id, SkipRequest request, IMessageBus bus, CancellationToken ct) =>
+        bus.InvokeAsync<ScheduleChange>(new SkipInvoiceSchedule(workspaceId, request.OperationId, id, request.ExpectedVersion, request.On), ct);
+
+    public sealed record SkipRequest(Guid OperationId, long ExpectedVersion, DateOnly On);
 }

@@ -13,7 +13,7 @@ public sealed partial class LedgerUseCases
             current.AllowsAny(LedgerPermissions.Post), current.AllowsAny(LedgerPermissions.Reverse), current.Allows(LedgerPermissions.Period),
             (await store.PeriodsAsync(current.Scope, ct))
                 .Where(period => monthKeys is null || monthKeys.Contains(period.Month.Year * 100 + period.Month.Month))
-                .Select(View).ToArray());
+                .Select(View).ToArray(), !book.IsPersonal && current.Allows(ChartPermissions.Manage));
     }
 
     public async Task<JournalSummary[]> ListAsync(Guid workspaceId, DateOnly? month, Guid? accountId, bool postedOnly, PageWindow page, CancellationToken ct)

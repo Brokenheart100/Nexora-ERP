@@ -2,6 +2,8 @@ using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Application;
 
+public sealed record ChartImportStatus(Guid Id, string State, DateTimeOffset ExpiresAtUtc, long Revision, long? CommittedRevision);
+
 public sealed record ChartState(AccountingBook Book, IReadOnlyList<ChartAccount> Accounts);
 
 public sealed record ChartAccountView(Guid Id, string Code, string Name, string Category, string? ParentCode,

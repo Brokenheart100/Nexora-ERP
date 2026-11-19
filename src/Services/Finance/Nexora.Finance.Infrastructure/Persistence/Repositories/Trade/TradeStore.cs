@@ -14,8 +14,15 @@ public sealed class TradeStore(FinanceDbContext db) : ITradeStore, IStatementSto
     public Task<BankAccount[]> BanksAsync(ResourceScope scope, CancellationToken ct) => Scope<BankAccount>(scope).OrderBy(x => x.Code).ToArrayAsync(ct);
     public Task<BankAccount?> BankAsync(ResourceScope scope, Guid id, CancellationToken ct) => Scope<BankAccount>(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<TradeDocument?> DocumentAsync(ResourceScope scope, Guid id, CancellationToken ct) => Scope<TradeDocument>(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
-    public Task<TradeDocument[]> DocumentsAsync(ResourceScope scope, int page, CancellationToken ct) => Scope<TradeDocument>(scope).AsNoTracking()
-        .OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id).Skip((page - 1) * 50).Take(50).ToArrayAsync(ct);
+    public Task<TradeDocument[]> DocumentsAsync(ResourceScope scope, int page, CancellationToken ct, bool postedBillsOnly = false)
+    {
+        var query = postedBillsOnly ? db.Set<TradeDocument>().FromSqlInterpolated($"""
+            SELECT * FROM finance.trade_documents WHERE "TenantId" = {scope.TenantId} AND "WorkspaceId" = {scope.WorkspaceId}
+              AND ("Terms"->>'Kind')::integer = {(int)TradeKind.Bill} AND "State" = {(int)TradeState.Posted}
+            """) : Scope<TradeDocument>(scope);
+        return query.AsNoTracking().OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id)
+            .Skip((page - 1) * 50).Take(50).ToArrayAsync(ct);
+    }
     public Task<BankMovement?> MovementAsync(ResourceScope scope, Guid id, CancellationToken ct) => Scope<BankMovement>(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<BankMovement[]> MovementsAsync(ResourceScope scope, Guid bankId, int page, CancellationToken ct) => Scope<BankMovement>(scope).AsNoTracking()
         .Where(x => x.BankId == bankId).OrderByDescending(x => x.On).ThenByDescending(x => x.Id).Skip((page - 1) * 50).Take(50).ToArrayAsync(ct);
@@ -49,9 +56,9 @@ public sealed class TradeStore(FinanceDbContext db) : ITradeStore, IStatementSto
         Scope<BankImportPreview>(access.Scope).SingleOrDefaultAsync(x => x.Id == id && x.Issuer == access.Actor.Issuer && x.Subject == access.Actor.Subject, ct);
     public Task<StatementLine[]> ExistingAsync(ResourceScope scope, Guid bankId, string[] ids, CancellationToken ct) =>
         Scope<StatementLine>(scope).AsNoTracking().Where(x => x.BankId == bankId && ids.Contains(x.ExternalId)).ToArrayAsync(ct);
-    public Task<StatementLine[]> ListAsync(ResourceScope scope, Guid bankId, int page, CancellationToken ct) =>
+    public Task<StatementLine[]> ListAsync(ResourceScope scope, Guid bankId, PageWindow page, CancellationToken ct) =>
         Scope<StatementLine>(scope).AsNoTracking().Where(x => x.BankId == bankId)
-            .OrderByDescending(x => x.On).ThenByDescending(x => x.Id).Skip((page - 1) * 50).Take(50).ToArrayAsync(ct);
+            .OrderByDescending(x => x.On).ThenByDescending(x => x.Id).Skip(page.Offset).Take(page.Size).ToArrayAsync(ct);
     public Task<StatementLine?> LineAsync(ResourceScope scope, Guid id, CancellationToken ct) => Scope<StatementLine>(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<StatementMatch?> MatchAsync(ResourceScope scope, Guid id, CancellationToken ct) => Scope<StatementMatch>(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
     public Task<StatementMatch[]> MatchesAsync(ResourceScope scope, Guid lineId, CancellationToken ct) =>

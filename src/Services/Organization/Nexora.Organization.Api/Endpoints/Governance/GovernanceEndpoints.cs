@@ -1,6 +1,8 @@
 using Nexora.ServiceDefaults.Http;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Nexora.BuildingBlocks.Application;
 using Nexora.Organization.Application;
 using Nexora.Organization.Domain;
@@ -26,8 +28,9 @@ public static class GovernanceEndpoints
     }
 
     [RequireWorkspacePermission(WorkspacePermissions.MembersRead), WolverineGet("/api/workspaces/{id:guid}/members")]
-    public static Task<IReadOnlyList<MemberView>> Members(Guid id, GovernanceUseCases useCases, ICurrentActor actor, CancellationToken cancellationToken) =>
-        useCases.MembersAsync(id, actor.GetRequired(), cancellationToken);
+    public static Task<IReadOnlyList<MemberView>> Members(Guid id, [FromQuery] int? page, [FromQuery] int? pageSize,
+        GovernanceUseCases useCases, ICurrentActor actor, CancellationToken cancellationToken) =>
+        useCases.MembersAsync(id, actor.GetRequired(), cancellationToken, PageWindow.Optional(page, pageSize));
 
     [RequireWorkspacePermission(WorkspacePermissions.Assign), WolverineGet("/api/workspaces/{id:guid}/roles")]
     public static IReadOnlyList<RoleView> Roles() => new[] { GovernanceRoles.Owner, GovernanceRoles.Administrator, GovernanceRoles.Reader }
@@ -36,19 +39,26 @@ public static class GovernanceEndpoints
             WorkspacePermissions.All.Where(p => ExecutionRoles.Allows(role, p)).ToArray()))).ToArray();
 
     [RequireWorkspacePermission(WorkspacePermissions.Invite), WolverineGet("/api/workspaces/{id:guid}/invitations")]
-    public static Task<IReadOnlyList<InvitationView>> Invitations(Guid id, GovernanceUseCases useCases, ICurrentActor actor, CancellationToken cancellationToken) =>
-        useCases.InvitationsAsync(id, actor.GetRequired(), cancellationToken);
+    public static Task<IReadOnlyList<InvitationView>> Invitations(Guid id, [FromQuery] int? page, [FromQuery] int? pageSize,
+        GovernanceUseCases useCases, ICurrentActor actor, CancellationToken cancellationToken) =>
+        useCases.InvitationsAsync(id, actor.GetRequired(), cancellationToken, PageWindow.Optional(page, pageSize));
 
-    [IdempotentWrite]
+    [RequireWorkspacePermission(WorkspacePermissions.Invite), WolverineGet("/api/workspaces/{id:guid}/invitations/{invitationId:guid}")]
+    public static Task<InvitationView> Invitation(Guid id, Guid invitationId, GovernanceUseCases useCases, ICurrentActor actor, CancellationToken ct) =>
+        useCases.InvitationAsync(id, invitationId, actor.GetRequired(), ct);
+
+    [ApiWrite("expectedVersion")]
     [RequireWorkspacePermission(WorkspacePermissions.Invite), WolverinePost("/api/workspaces/{id:guid}/invitations")]
-    public static async Task<InvitationCreatedResult> Invite(Guid id, InviteMemberRequest request, ICurrentActor actor,
+    public static async Task<Created<InvitationCreatedResult>> Invite(Guid id, InviteMemberRequest request, ICurrentActor actor,
         IMessageBus bus, IWorkspaceInvitationMail mail, CancellationToken cancellationToken)
     {
         var invitation = await bus.InvokeAsync<InvitationCreatedResult>(new CreateInvitation(id, request.ExpectedVersion,
             request.OperationId, request.Email, request.Role, actor.GetRequired(), request.BusinessRoles), cancellationToken);
-        return invitation.Token.Length == 0 ? invitation : invitation with { MailStatus = await mail.SendAsync(invitation, cancellationToken) };
+        var result = invitation.Token.Length == 0 ? invitation : invitation with { MailStatus = await mail.SendAsync(invitation, cancellationToken) };
+        return TypedResults.Created($"/api/workspaces/{id}/invitations/{invitation.Invitation.Id}", result);
     }
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [RequireWorkspacePermission(WorkspacePermissions.BusinessRolesManage), WolverinePost("/api/workspaces/{id:guid}/invitations/{invitationId:guid}/approve")]
     public static async Task<InvitationCreatedResult> ApproveInvitation(Guid id, Guid invitationId, ApproveInvitationRequest request,
         ICurrentActor actor, IMessageBus bus, IWorkspaceInvitationMail mail, CancellationToken ct)
@@ -58,6 +68,7 @@ public static class GovernanceEndpoints
         return invitation with { MailStatus = await mail.SendAsync(invitation, ct) };
     }
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [RequireWorkspacePermission(WorkspacePermissions.BusinessRolesManage), WolverinePost("/api/workspaces/{id:guid}/members/{memberId:guid}/business-roles")]
     public static Task<GovernanceMutationResult> ChangeBusinessRoles(Guid id, Guid memberId, ChangeBusinessRolesRequest request,
         ICurrentActor actor, IMessageBus bus, CancellationToken ct) =>
@@ -67,25 +78,30 @@ public static class GovernanceEndpoints
     public static Task<GovernanceMutationResult> Redeem(Guid invitationId, RedeemInvitationRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken cancellationToken) =>
         bus.InvokeAsync<GovernanceMutationResult>(new RedeemInvitation(invitationId, request.Token, actor.GetRequired()), cancellationToken);
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [RequireWorkspacePermission(WorkspacePermissions.Assign), WolverinePost("/api/workspaces/{id:guid}/members/{memberId:guid}")]
     public static Task<GovernanceMutationResult> Change(Guid id, Guid memberId, ChangeMemberRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken cancellationToken) =>
         bus.InvokeAsync<GovernanceMutationResult>(new ChangeWorkspaceMember(id, request.ExpectedVersion, memberId, request.Role, request.IsActive!.Value, actor.GetRequired()), cancellationToken);
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [Authorize, WolverinePost("/api/workspaces/{id:guid}/members/{memberId:guid}/finance-role")]
     public static Task<GovernanceMutationResult> ChangeFinanceRole(Guid id, Guid memberId, ChangeExecutionRoleRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<GovernanceMutationResult>(new ChangeMemberExecutionRole(id, request.ExpectedVersion, memberId,
             ExecutionRoleArea.Finance, request.Action, request.Role, actor.GetRequired()), ct);
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [Authorize, WolverinePost("/api/workspaces/{id:guid}/members/{memberId:guid}/sales-role")]
     public static Task<GovernanceMutationResult> ChangeSalesRole(Guid id, Guid memberId, ChangeExecutionRoleRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<GovernanceMutationResult>(new ChangeMemberExecutionRole(id, request.ExpectedVersion, memberId,
             ExecutionRoleArea.Sales, request.Action, request.Role, actor.GetRequired()), ct);
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [Authorize, WolverinePost("/api/workspaces/{id:guid}/members/{memberId:guid}/purchase-role")]
     public static Task<GovernanceMutationResult> ChangePurchaseRole(Guid id, Guid memberId, ChangeExecutionRoleRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<GovernanceMutationResult>(new ChangeMemberExecutionRole(id, request.ExpectedVersion, memberId,
             ExecutionRoleArea.Purchasing, request.Action, request.Role, actor.GetRequired()), ct);
 
+    [ApiWrite("expectedVersion", idempotent: false)]
     [RequireWorkspacePermission(WorkspacePermissions.Revoke), WolverinePost("/api/workspaces/{id:guid}/invitations/{invitationId:guid}/revoke")]
     public static Task<GovernanceMutationResult> Revoke(Guid id, Guid invitationId, RevokeInvitationRequest request, ICurrentActor actor, IMessageBus bus, CancellationToken cancellationToken) =>
         bus.InvokeAsync<GovernanceMutationResult>(new RevokeWorkspaceInvitation(id, request.ExpectedVersion, invitationId, actor.GetRequired()), cancellationToken);

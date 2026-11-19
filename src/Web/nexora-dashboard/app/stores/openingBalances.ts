@@ -9,6 +9,7 @@ import type {
 } from '~/mocks'
 import {
   buildOpeningBalancePreview,
+  buildOpeningSubledgerResult,
   openingSubledgerBatches,
   openingSubledgerPreview
 } from '~/mocks'
@@ -137,16 +138,8 @@ export const useOpeningBalancesStore = defineStore('opening-balances', () => {
     const firstNumber = Number(firstJournal.slice(prefix.length))
     const journalIds = batch.checks.map((_, index) => prefix + String(firstNumber + index).padStart(4, '0'))
     const passed = batch.checks.filter(check => check.matched).length
-    const result = {
-      journalIds,
-      stockMovements: batch.sources.filter(source => source.kind === 'stock').length,
-      receivableDocs: 6,
-      payableDocs: 4,
-      bankMovements: 2,
-      checks: batch.checks.length,
-      passed,
-      postedAt: nowText()
-    }
+    const postedAt = nowText()
+    const result = buildOpeningSubledgerResult(batchId, journalIds, postedAt, passed, batch.checks.length)
     batch.state = 'posted'
     batch.completedAt = result.postedAt
     batch.version += 1

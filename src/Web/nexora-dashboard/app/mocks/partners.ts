@@ -1,4 +1,4 @@
-import type { Partner, PartnerStatus, PartnerType } from './types'
+import type { Partner, PartnerAddress, PartnerContact, PartnerRole, PartnerStatus, PartnerType } from './types'
 import { makePartner } from './factories'
 
 export const partnerStatusLabels: Record<PartnerStatus, string> = {
@@ -14,6 +14,55 @@ export const partnerTypeLabels: Record<PartnerType, string> = {
   customer: '客户',
   donor: '捐赠人',
   both: '供应商 / 客户'
+}
+export const partnerRoleLabels: Record<PartnerRole, string> = {
+  supplier: '供应商',
+  customer: '客户',
+  donor: '捐赠人'
+}
+
+/** 旧数据的单一 type 映射到多角色；both 表示同时是供应商与客户。 */
+export function partnerRolesOf(partner: Partner): PartnerRole[] {
+  if (partner.roles?.length) return [...partner.roles]
+  if (partner.type === 'both') return ['supplier', 'customer']
+  return [partner.type]
+}
+
+export function partnerRoleLabel(partner: Partner): string {
+  return partnerRolesOf(partner).map(role => partnerRoleLabels[role]).join(' / ')
+}
+
+export function partnerTypeFromRoles(roles: PartnerRole[]): PartnerType {
+  if (roles.includes('supplier') && roles.includes('customer')) return 'both'
+  return roles[0] ?? 'supplier'
+}
+
+/** 补齐多角色、地址与联系人数组，旧固定样例也能在详情中完整展示。 */
+export function normalizePartner(partner: Partner): Partner {
+  const contacts = partner.contacts?.length
+    ? partner.contacts.map(contact => ({ ...contact }))
+    : [{
+        id: partner.id + '-contact-1',
+        name: partner.contact,
+        title: '主联系人',
+        phone: partner.phone,
+        email: partner.email
+      }]
+  const address: PartnerAddress = partner.address ?? {
+    province: partner.code.startsWith('CUS') || partner.code.startsWith('DON') ? '浙江省' : '江苏省',
+    city: partner.code.startsWith('CUS') || partner.code.startsWith('DON') ? '杭州市' : '苏州市',
+    line: '模拟园区 1 号 101 室'
+  }
+  return {
+    ...partner,
+    roles: partnerRolesOf(partner),
+    address: { ...address },
+    contacts
+  }
+}
+
+export function makePartnerContact(seed: string, name = '', title = '', phone = '', email = ''): PartnerContact {
+  return { id: 'contact-' + seed, name, title, phone, email }
 }
 
 const fixedPartners: Partner[] = [
@@ -35,4 +84,4 @@ export const partners: Partner[] = [
     type: i < 3 ? 'supplier' : i < 4 ? 'customer' : 'donor',
     status: i === 4 ? 'inactive' : 'active'
   }, 5100 + i))
-]
+].map(normalizePartner)

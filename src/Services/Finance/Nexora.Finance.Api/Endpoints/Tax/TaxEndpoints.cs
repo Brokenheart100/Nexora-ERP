@@ -13,24 +13,24 @@ public static partial class TaxEndpoints
     [Authorize, WolverineGet(Root)]
     public static Task<TaxSetup> Get(Guid workspaceId, TaxUseCases taxes, CancellationToken ct) => taxes.ReadAsync(workspaceId, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/rates")]
     public static Task<TaxChange> AddRate(Guid workspaceId, RateRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<TaxChange>(new SetTaxRate(workspaceId, request.OperationId, request.Code, request.Name, request.EffectiveOn,
             request.Rate ?? throw new ArgumentException("A tax rate is required.")), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/groups")]
     public static Task<TaxChange> SaveGroup(Guid workspaceId, GroupRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<TaxChange>(new SetTaxGroup(workspaceId, request.OperationId, request.Code, request.Name, request.ExpectedVersion, request.RateCodes), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/classifications")]
     public static Task<TaxChange> Classify(Guid workspaceId, ClassificationRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<TaxChange>(new ClassifyForTax(workspaceId, request.OperationId, request.Kind,
             request.ResourceId, request.GroupCode, request.ExpectedVersion), ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/assessments")]
     public static Task<TaxSnapshot> Assess(Guid workspaceId, AssessRequest request, IMessageBus bus, CancellationToken ct) =>
         bus.InvokeAsync<TaxSnapshot>(new AssessTax(workspaceId, request.OperationId, request.On, request.GroupCode,

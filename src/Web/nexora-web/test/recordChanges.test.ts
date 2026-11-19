@@ -6,7 +6,7 @@ import {
   recordChangeQueryParams,
   recordChangeSummary,
   type RecordChange,
-} from '../app/utils/recordChanges'
+} from '../app/utils/audit/recordChanges'
 
 function change(overrides: Partial<RecordChange>): RecordChange {
   return {

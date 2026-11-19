@@ -1,7 +1,7 @@
 import { createError, defineEventHandler, setHeader } from 'h3'
-import { requireCsrf } from '../../../utils/bff-csrf'
-import { readBffSession, sessionHandle, touchBffSession } from '../../../utils/bff-session'
-import { enforceSessionIdle, fetchSessionPolicy } from '../../../utils/bff-session-policy'
+import { requireCsrf } from '../../../utils/auth/bff-csrf'
+import { readBffSession, sessionHandle, touchBffSession } from '../../../utils/session/bff-session'
+import { enforceSessionIdle, fetchSessionPolicy } from '../../../utils/session/bff-session-policy'
 
 export default defineEventHandler(async (event) => {
   setHeader(event, 'Cache-Control', 'no-store')

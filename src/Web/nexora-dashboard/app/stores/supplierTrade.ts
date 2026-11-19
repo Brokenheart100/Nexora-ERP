@@ -16,6 +16,7 @@ import {
   supplierPayments,
   supplierRefunds
 } from '~/mocks'
+import { useBankReconStore } from './bankRecon'
 
 export interface SupplierReceiptLineMatch {
   id: string
@@ -56,6 +57,7 @@ export interface SupplierBillActionResult {
   message: string
   bill?: SupplierBill
   creditId?: string
+  payment?: SupplierPayment
 }
 
 function money(value: number) {
@@ -75,7 +77,10 @@ function cloneCredit(credit: SupplierCredit): SupplierCredit {
 }
 
 function clonePayment(payment: SupplierPayment): SupplierPayment {
-  return { ...payment }
+  return {
+    ...payment,
+    reversal: payment.reversal ? { ...payment.reversal } : undefined
+  }
 }
 
 function cloneRefund(refund: SupplierRefund): SupplierRefund {
@@ -98,6 +103,8 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
   const refunds = ref<SupplierRefund[]>(supplierRefunds.map(cloneRefund))
   const lastPaymentSignature = ref('')
   const lastPaymentAt = ref(0)
+  /** C6：未开票退货冲减，key 为 receiptId:receiptLineNo。 */
+  const unbilledReturned = ref<Record<string, number>>({})
 
   const postedBills = computed(() => bills.value.filter(bill => bill.status === 'posted'))
   const pendingBills = computed(() => bills.value.filter(bill => bill.status === 'pending'))
@@ -106,8 +113,43 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
   const creditsOf = (billId: string) => credits.value.filter(credit => credit.billId === billId)
   const refundsOf = (creditId: string) => refunds.value.filter(refund => refund.creditId === creditId)
 
+  function returnKey(receiptId: string, receiptLineNo: number) {
+    return receiptId + ':' + receiptLineNo
+  }
+
+  function unbilledReturnedOf(receiptId: string, receiptLineNo: number) {
+    return unbilledReturned.value[returnKey(receiptId, receiptLineNo)] ?? 0
+  }
+
+  /** 原收货明细已开票（含待复核账单）数量，退货确认时据此拆分贷项与未开票冲减。 */
+  function billedQuantityOf(receiptId: string, receiptLineNo: number) {
+    return money(bills.value
+      .filter(bill => bill.status !== 'cancelled')
+      .flatMap(bill => bill.lines)
+      .filter(line => line.receiptId === receiptId && line.receiptLineNo === receiptLineNo)
+      .reduce((sum, line) => sum + line.quantity, 0))
+  }
+
+  function billIdWithReceiptLine(receiptId: string, receiptLineNo: number) {
+    return bills.value.find(bill => bill.status !== 'cancelled'
+      && bill.lines.some(line => line.receiptId === receiptId && line.receiptLineNo === receiptLineNo))?.id ?? ''
+  }
+
+  /** 未开票退货减少可匹配数量，避免同一收货数量再次开票或重复退货。 */
+  function recordReturnReduction(receiptId: string, receiptLineNo: number, quantity: number): SupplierBillActionResult {
+    if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, message: '退货数量必须大于 0。' }
+    const key = returnKey(receiptId, receiptLineNo)
+    unbilledReturned.value = {
+      ...unbilledReturned.value,
+      [key]: unbilledReturnedOf(receiptId, receiptLineNo) + quantity
+    }
+    return { ok: true, message: '未开票退货已冲减可匹配数量。' }
+  }
+
   function paidOf(billId: string) {
-    return money(paymentsOf(billId).reduce((sum, payment) => sum + payment.amount, 0))
+    return money(paymentsOf(billId)
+      .filter(payment => payment.status !== 'voided')
+      .reduce((sum, payment) => sum + payment.amount, 0))
   }
 
   function creditedOf(billId: string) {
@@ -156,7 +198,8 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
             .map(line => ({ line, billStatus: bill.status })))
         const matchedQuantity = money(matchedLines.reduce((sum, item) => sum + item.line.quantity, 0))
         const variance = money(matchedLines.reduce((sum, item) => sum + item.line.variance, 0))
-        const availableQuantity = money(Math.max(0, receiptLine.quantity - matchedQuantity))
+        const returnedQuantity = unbilledReturnedOf(receipt.id, receiptLine.lineNo)
+        const availableQuantity = money(Math.max(0, receiptLine.quantity - matchedQuantity - returnedQuantity))
         const status = availableQuantity <= 0.005 ? 'matched' : matchedQuantity > 0 ? 'partial' : 'available'
         rows.push({
           id: receipt.id + ':' + receiptLine.lineNo,
@@ -299,12 +342,69 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
       bankName: bank.bankName,
       method: input.method,
       reference: input.reference?.trim() || 'BANK-20261118-' + String(payments.value.length + 1).padStart(3, '0'),
-      note: input.note
+      note: input.note,
+      status: 'completed'
     }
     payments.value.unshift(payment)
     lastPaymentSignature.value = signature
     lastPaymentAt.value = now
     return { ok: true, message: '付款 ¥' + amount.toFixed(2) + ' 已登记，账单未结 ¥' + outstandingOf(bill).toFixed(2) + '。' }
+  }
+
+  function voidPayment(paymentId: string, reason: string): SupplierBillActionResult {
+    const payment = payments.value.find(item => item.id === paymentId)
+    if (!payment) return { ok: false, message: '付款记录不存在。' }
+    if (payment.status === 'voided') return { ok: false, message: '该付款已作废，不能重复作废。' }
+    const reasonText = reason.trim()
+    if (!reasonText) return { ok: false, message: '请填写作废原因。' }
+    const bill = bills.value.find(item => item.id === payment.billId)
+    if (!bill) return { ok: false, message: '未找到付款关联的供应商账单。' }
+    if (bill.status !== 'posted') return { ok: false, message: '只有已过账账单的付款可以发起作废更正。' }
+    const bank = bankAccounts.find(account => account.id === payment.bankAccountId)
+    if (!bank) return { ok: false, message: '未找到原付款资金账户。' }
+
+    const createdAt = (() => {
+      const date = new Date()
+      const pad = (value: number) => String(value).padStart(2, '0')
+      return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate())
+        + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes())
+    })()
+    const reversalId = payment.id.replace(/^PAY-/, 'RV-')
+    const bankTransactionId = 'bt-rev-' + payment.id
+    const bankResult = useBankReconStore().recordPaymentReversal({
+      transactionId: bankTransactionId,
+      paymentId: payment.id,
+      billId: bill.id,
+      supplier: bill.supplier,
+      date: createdAt.slice(0, 10),
+      amount: payment.amount,
+      bankAccountId: payment.bankAccountId,
+      journalId: bill.journalId ?? 'JE-AP-RV-' + bill.id.slice(-4)
+    })
+    if (!bankResult.ok) return { ok: false, message: bankResult.message }
+
+    payment.status = 'voided'
+    payment.voidedAt = createdAt
+    payment.voidReason = reasonText
+    payment.reversal = {
+      id: reversalId,
+      paymentId: payment.id,
+      billId: bill.id,
+      date: createdAt.slice(0, 10),
+      amount: payment.amount,
+      bankAccountId: payment.bankAccountId,
+      bankName: payment.bankName,
+      reference: 'REV-' + payment.reference,
+      reason: reasonText,
+      bankTransactionId,
+      createdAt
+    }
+    return {
+      ok: true,
+      message: '付款 ' + payment.id + ' 已作废，冲销记录 ' + reversalId + ' 已生成；账单 ' + bill.id + ' 未结 ¥' + outstandingOf(bill).toFixed(2) + '。',
+      bill,
+      payment
+    }
   }
 
   function recordRefund(creditId: string, bankAccountId: string): SupplierBillActionResult {
@@ -374,6 +474,7 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
     refunds.value = supplierRefunds.map(cloneRefund)
     lastPaymentSignature.value = ''
     lastPaymentAt.value = 0
+    unbilledReturned.value = {}
   }
 
   return {
@@ -388,6 +489,10 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
     paymentsOf,
     creditsOf,
     refundsOf,
+    unbilledReturnedOf,
+    billedQuantityOf,
+    billIdWithReceiptLine,
+    recordReturnReduction,
     paidOf,
     creditedOf,
     outstandingOf,
@@ -396,6 +501,7 @@ export const useSupplierTradeStore = defineStore('supplier-trade', () => {
     createBill,
     reviewBill,
     payBill,
+    voidPayment,
     recordRefund,
     createCreditFromReturn,
     reset

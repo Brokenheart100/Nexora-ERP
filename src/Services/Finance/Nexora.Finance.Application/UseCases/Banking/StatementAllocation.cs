@@ -29,6 +29,13 @@ public sealed class StatementAllocation(IStatementStore statements, ITradeStore 
         movement.Unmatch(match.Amount);
     }
 
+    public async Task ReleaseDocumentMatchAsync(ResourceScope scope, AccountingBook book, Guid lineId, Guid documentId, CancellationToken ct)
+    {
+        var matches = await statements.MatchesAsync(scope, lineId, ct);
+        foreach (var match in matches.Where(x => !x.Reversed && x.ReferenceId == documentId))
+            await ReleaseAsync(scope, book, match, ct);
+    }
+
     private async Task DemandMatchDateAsync(ResourceScope scope, AccountingBook book, StatementLine line, BankMovement movement, CancellationToken ct)
     {
         // A match first affects reconciliation when both sides are in the cutoff.

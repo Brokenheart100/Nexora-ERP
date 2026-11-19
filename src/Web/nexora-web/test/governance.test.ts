@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { roleGrantApprovalName, roleGrantScopeName, roleScopeNames } from '../app/utils/workspaceGovernance'
+import { roleGrantApprovalName, roleGrantScopeName, roleScopeNames } from '../app/utils/organization/workspaceGovernance'
 
 const grant = {
   scope: 'company', scopeId: null, startsOn: null, endsOn: null,

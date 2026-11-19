@@ -725,6 +725,13 @@
           "Nexora.BuildingBlocks.Application": "[1.0.0, )"
         }
       },
+      "nexora.finance.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "System.ServiceModel.Primitives": "[10.1.0, )",
+          "protobuf-net.Grpc": "[1.2.2, )"
+        }
+      },
       "nexora.inventory.application": {
         "type": "Project",
         "dependencies": {
@@ -750,6 +757,7 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.14, )",
           "Nexora.BuildingBlocks.Grpc": "[1.0.0, )",
           "Nexora.BuildingBlocks.Infrastructure": "[1.0.0, )",
+          "Nexora.Finance.Contracts": "[1.0.0, )",
           "Nexora.Inventory.Application": "[1.0.0, )",
           "Nexora.Organization.Contracts": "[1.0.0, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )",

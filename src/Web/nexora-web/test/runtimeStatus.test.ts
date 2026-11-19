@@ -7,7 +7,7 @@ import {
   parseRuntimeStatus,
   runtimeStateKey,
   runtimeStates,
-} from '../app/utils/runtimeStatus'
+} from '../shared/utils/runtimeStatus'
 
 const now = 1_800_000_000_000
 

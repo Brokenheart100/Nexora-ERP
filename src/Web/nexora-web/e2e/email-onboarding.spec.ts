@@ -92,6 +92,16 @@ test('Email registration, company creation and invitation by email for new and e
     await owner.getByRole('button', { name: '创建工作区', exact: true }).click()
     await owner.waitForURL(/\/companies\/[0-9a-f-]+\/setup$/)
     const setupPath = new URL(owner.url()).pathname
+    const sensitive = await owner.evaluate(async (path) => {
+      const capabilities = await (await fetch('/bff/security/capabilities')).json()
+      const csrf = await (await fetch('/bff/antiforgery')).json()
+      const write = await fetch(path, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf.requestToken }, body: '{}',
+      })
+      const failure = await write.json()
+      return { enrolled: capabilities.enrolled, status: write.status, code: failure.data?.code }
+    }, '/bff/api/workspaces/' + setupPath.split('/')[2] + '/settings')
+    expect(sensitive).toEqual({ enrolled: false, status: 403, code: 'mfa_enrollment_required' })
     await owner.goto(setupPath.replace(/\/setup$/, '/members'))
     await expect(owner.getByRole('heading', { name: '团队与成员', exact: true })).toBeVisible()
     const newcomerLink = await invite(owner, newcomerEmail)

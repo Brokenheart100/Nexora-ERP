@@ -1,7 +1,7 @@
 import { defineEventHandler } from 'h3'
-import { requireFreshBffSession } from '../../../utils/bff-oidc'
-import { requireCsrf } from '../../../utils/bff-csrf'
-import { revokeOtherBffSessions, sessionHandle } from '../../../utils/bff-session'
+import { requireFreshBffSession } from '../../../utils/auth/bff-oidc'
+import { requireCsrf } from '../../../utils/auth/bff-csrf'
+import { revokeOtherBffSessions, sessionHandle } from '../../../utils/session/bff-session'
 
 export default defineEventHandler(async (event) => {
   await requireCsrf(event)

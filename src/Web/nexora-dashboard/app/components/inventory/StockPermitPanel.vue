@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import StockReturnDetailSlideover from '~/components/inventory/StockReturnDetailSlideover.vue'
 import StockReturnSlideover from '~/components/inventory/StockReturnSlideover.vue'
 import {
   stockPermitStatusColors,
@@ -19,6 +20,8 @@ const toast = useToast()
 const permits = computed(() => stockFlow.permitsFor(props.sourceType, props.sourceId))
 const returnOpen = ref(false)
 const returnExecutionId = ref<string | null>(null)
+const detailOpen = ref(false)
+const detailReturnId = ref<string | null>(null)
 
 function cancelPermit(id: string) {
   const result = stockFlow.cancelPermit(id)
@@ -33,6 +36,11 @@ function closePermit(id: string) {
 function openReturn(executionId: string) {
   returnExecutionId.value = executionId
   returnOpen.value = true
+}
+
+function openDetail(returnId: string) {
+  detailReturnId.value = returnId
+  detailOpen.value = true
 }
 
 function confirmReturn(id: string) {
@@ -169,6 +177,14 @@ function creditLink(direction: 'purchase' | 'sales') {
               </div>
               <div class="flex flex-wrap items-center gap-1">
                 <UButton
+                  label="详情"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  :data-testid="'stock-return-detail-' + stockReturn.id"
+                  @click="openDetail(stockReturn.id)"
+                />
+                <UButton
                   v-if="canManage && stockReturn.status === 'pending'"
                   label="确认"
                   color="primary"
@@ -206,5 +222,6 @@ function creditLink(direction: 'purchase' | 'sales') {
     </div>
 
     <StockReturnSlideover v-model:open="returnOpen" :execution-id="returnExecutionId" />
+    <StockReturnDetailSlideover v-model:open="detailOpen" :return-id="detailReturnId" />
   </UCard>
 </template>

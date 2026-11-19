@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
+using Nexora.Finance.Contracts.Opening;
 using Nexora.Inventory.Application;
 using Nexora.Purchasing.Contracts;
 using Nexora.Sales.Contracts;
@@ -29,9 +30,11 @@ public static class InventoryMessaging
             options.PublishMessage<ExpireSalesReservation>().ToLocalQueue("reservation-expiry");
             options.LocalQueue("reservation-expiry").UseDurableInbox();
             options.ListenToRabbitQueue(ReceiptRoutes.InventoryQueue).UseDurableInbox();
+            options.ListenToRabbitQueue(StockOpeningRoutes.Queue).UseDurableInbox();
             options.PublishMessage<ReceiptProgressV1>().ToRabbitExchange(ReceiptRoutes.PurchasingExchange);
             options.PublishMessage<InventoryCostedV1>().ToRabbitExchange(ReceiptRoutes.CostExchange);
             options.PublishMessage<StockAdjustedV1>().ToRabbitExchange(ReceiptRoutes.CostExchange);
+            options.PublishMessage<OpeningStockAcknowledgedV1>().ToRabbitExchange(ReceiptRoutes.CostExchange);
             options.Policies.UseDurableOutboxOnAllSendingEndpoints();
         });
     }

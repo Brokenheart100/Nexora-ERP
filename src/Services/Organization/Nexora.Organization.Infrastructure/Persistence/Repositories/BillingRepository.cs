@@ -6,6 +6,11 @@ namespace Nexora.Organization.Infrastructure;
 
 public sealed class BillingRepository(OrganizationDbContext db) : IBillingRepository
 {
+    public async Task LockLocalCheckoutAsync(IdentityReference owner, CancellationToken ct)
+    {
+        var key = $"nexora-local-billing:{owner.Issuer.Length}:{owner.Issuer}{owner.Subject}";
+        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))", ct);
+    }
     public Task<WorkspaceSubscription?> FindSubscriptionAsync(IdentityReference owner, CancellationToken cancellationToken) =>
         db.Subscriptions.SingleOrDefaultAsync(x => x.Issuer == owner.Issuer && x.Subject == owner.Subject, cancellationToken);
 

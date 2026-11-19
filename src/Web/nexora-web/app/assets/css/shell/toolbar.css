@@ -1,0 +1,127 @@
+/* Main column */
+.shell > main {
+  width: 100%;
+  min-width: 0;
+  padding: 0 40px 76px;
+  margin: 0;
+}
+
+.shell > main > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+  padding: 0 40px;
+  margin: 0 -40px;
+  font-size: 12.5px;
+  color: var(--nx-ink-3);
+  background: rgba(245, 247, 251, 0.78);
+  border-bottom: 1px solid rgba(222, 228, 238, 0.85);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.crumbs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.crumbs svg {
+  width: 15px;
+  height: 15px;
+  color: #9aa9bd;
+}
+
+.crumb-sep {
+  color: #b9c4d3;
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: #1c2c43;
+}
+
+.user {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  background: linear-gradient(145deg, #5a86e0, #2d56ab);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  box-shadow: 0 4px 10px -4px rgba(36, 76, 158, 0.7);
+}
+
+.user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--nx-ink-2);
+}
+
+.nav-toggle {
+  display: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--nx-ink-2);
+  background: #fff;
+  border: 1px solid var(--nx-border);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.nav-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.nav-scrim {
+  display: none;
+}
+
+/* Theme and locale controls */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--nx-ink-3);
+  background: #fff;
+  border: 1px solid var(--nx-border);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.theme-toggle:hover {
+  color: var(--nx-primary);
+  border-color: #c8d7ee;
+}
+
+.theme-toggle :deep(svg) {
+  width: 15px;
+  height: 15px;
+}
+
+.locale-switch {
+  min-width: 132px;
+}
+

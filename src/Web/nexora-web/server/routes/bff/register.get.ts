@@ -1,5 +1,5 @@
 import { defineEventHandler, getQuery, setCookie } from 'h3'
-import { beginLogin } from '../../utils/bff-oidc'
+import { beginLogin } from '../../utils/auth/bff-oidc'
 
 const plans = new Set(['free', 'standard', 'pro'])
 

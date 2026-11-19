@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import StockPermitExecutionSlideover from '~/components/inventory/StockPermitExecutionSlideover.vue'
+import InventoryLowStockTab from '~/components/inventory/LowStockTab.vue'
+import InventoryMovementsTab from '~/components/inventory/MovementsTab.vue'
+import InventoryOverviewTab from '~/components/inventory/OverviewTab.vue'
+import InventoryPositionsTab from '~/components/inventory/PositionsTab.vue'
+import StockReturnDetailSlideover from '~/components/inventory/StockReturnDetailSlideover.vue'
 import type {
   InventoryMovement,
   InventoryPosition,
@@ -17,11 +22,7 @@ import {
   clonePurchaseOrder,
   cloneStocktake,
   cloneTransferOrder,
-  inventoryMovements,
-  inventoryPositions,
   inventoryProducts,
-  movementTypeColors,
-  movementTypeLabels,
   purchaseOrders,
   salesOrders,
   stockPermitStatusColors,
@@ -75,9 +76,11 @@ const session = useSessionStore()
 
 const canAdjust = computed(() => can('inventory.adjust'))
 
-/** 本地可写副本：收货、出库、盘点、调拨都只改这里，刷新后从 app/mocks 恢复初始样例。 */
-const rows = ref<InventoryPosition[]>(inventoryPositions.map(position => ({ ...position })))
-const movementRows = ref<InventoryMovement[]>(inventoryMovements.map(movement => ({ ...movement })))
+const inventory = useInventoryStore()
+
+/** 本地可写副本：收货、出库、盘点、调拨只改这里；初始样例来自 inventory store，退货确认后重新进入本页即可看到联动后的库存与流水。 */
+const rows = ref<InventoryPosition[]>(inventory.positions.map(position => ({ ...position })))
+const movementRows = ref<InventoryMovement[]>(inventory.movements.map(movement => ({ ...movement })))
 const stocktakeList = ref<Stocktake[]>(stocktakes.map(cloneStocktake))
 const transferList = ref<TransferOrder[]>(transfers.map(cloneTransferOrder))
 const inboundOrders = ref<PurchaseOrder[]>(cloneInboundOrders())
@@ -96,11 +99,11 @@ const tabItems = [
   { label: '库存位置', value: 'positions', icon: 'i-carbon-package' },
   { label: '库存流水', value: 'movements', icon: 'i-carbon-flow' },
   { label: '盘点与调拨', value: 'operations', icon: 'i-carbon-task-complete' },
+  { label: '仓网与调拨', value: 'warehouse-ops', icon: 'i-carbon-network-4' },
   { label: '低库存', value: 'low-stock', icon: 'i-carbon-warning-alt' }
 ]
 
 const lowStockItems = computed(() => summarizeLowStock(rows.value))
-const zeroStockItems = computed(() => lowStockItems.value.filter(item => item.zeroWarehouseCount > 0).length)
 
 const warehouseRows = computed(() => warehouses.map(warehouse => ({
   warehouse,
@@ -148,8 +151,8 @@ function cloneOutboundOrders() {
 }
 
 function resetLocalState() {
-  rows.value = inventoryPositions.map(position => ({ ...position }))
-  movementRows.value = inventoryMovements.map(movement => ({ ...movement }))
+  rows.value = inventory.positions.map(position => ({ ...position }))
+  movementRows.value = inventory.movements.map(movement => ({ ...movement }))
   stocktakeList.value = stocktakes.map(cloneStocktake)
   transferList.value = transfers.map(cloneTransferOrder)
   inboundOrders.value = cloneInboundOrders()
@@ -299,158 +302,34 @@ function requireAdjust() {
 
 /* ---------------- 仓库总览 ---------------- */
 
+const positionsTab = ref<{ filterByWarehouse: (id: string) => void, filterBySku: (sku: string) => void, exportCsv: () => void } | null>(null)
+const movementsTab = ref<{ searchBySku: (sku: string) => void } | null>(null)
+
 function openWarehouse(id: string) {
-  positionWarehouse.value = id
-  positionSearchInput.value = ''
-  positionSearch.value = ''
-  positionPage.value = 1
+  positionsTab.value?.filterByWarehouse(id)
   tab.value = 'positions'
 }
 
-/* ---------------- 库存位置 ---------------- */
-
-const positionWarehouse = ref('all')
-const positionSearchInput = ref('')
-const positionSearch = ref('')
-const applyPositionSearch = useDebounceFn((value: string) => {
-  positionSearch.value = value
-}, 220)
-watch(positionSearchInput, value => applyPositionSearch(value))
-
-const positionPage = ref(1)
-const positionPageSize = 8
-
-const positionWarehouseItems = computed(() => [
-  { label: '全部仓库', value: 'all' },
-  ...warehouses.map(warehouse => ({ label: warehouse.name, value: warehouse.id }))
-])
-
-const filteredPositions = computed(() => {
-  if (isForbidden.value || isError.value || isEmpty.value) return []
-  const keyword = positionSearch.value.trim().toLowerCase()
-  const list = rows.value.filter((position) => {
-    if (positionWarehouse.value !== 'all' && position.warehouseId !== positionWarehouse.value) return false
-    if (!keyword) return true
-    const text = [position.sku, position.name, position.lotNo, warehouseName(position.warehouseId)].join(' ').toLowerCase()
-    return text.includes(keyword)
-  })
-  return [...list].sort((a, b) => a.warehouseId.localeCompare(b.warehouseId) || a.sku.localeCompare(b.sku) || a.lotNo.localeCompare(b.lotNo))
-})
-
-const positionPageRows = computed(() => {
-  const start = (positionPage.value - 1) * positionPageSize
-  return filteredPositions.value.slice(start, start + positionPageSize)
-})
-const positionPageStart = computed(() => (filteredPositions.value.length ? (positionPage.value - 1) * positionPageSize + 1 : 0))
-const positionPageEnd = computed(() => (positionPage.value - 1) * positionPageSize + positionPageRows.value.length)
-const positionHasFilters = computed(() => positionWarehouse.value !== 'all' || Boolean(positionSearch.value))
-
-watch([positionWarehouse, positionSearch], () => {
-  positionPage.value = 1
-})
-
-const positionColumns: TableColumn<InventoryPosition>[] = [
-  { accessorKey: 'name', header: '商品', meta: { class: { td: 'min-w-[220px] whitespace-normal' } } },
-  { id: 'warehouse', header: '仓库', meta: { class: { td: 'whitespace-nowrap text-muted' } } },
-  { accessorKey: 'lotNo', header: '批次', meta: { class: { td: 'font-mono text-[11px] text-muted' } } },
-  { accessorKey: 'quantity', header: '数量', meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } } },
-  { accessorKey: 'reserved', header: '预留', meta: { class: { th: 'text-right', td: 'text-right tabular-nums text-muted' } } },
-  { accessorKey: 'available', header: '可用量', meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } } },
-  { accessorKey: 'updatedAt', header: '更新时间', meta: { class: { td: 'whitespace-nowrap text-xs text-muted' } } },
-  { id: 'actions', header: '操作', meta: { class: { th: 'w-28 text-right', td: 'w-28 text-right' } } }
-]
-
-function resetPositionFilters() {
-  positionWarehouse.value = 'all'
-  positionSearchInput.value = ''
-  positionSearch.value = ''
-  positionPage.value = 1
-}
+/* ---------------- 库存位置 / 库存流水 ---------------- */
 
 function openPositionMovements(position: InventoryPosition) {
-  movementType.value = 'all'
-  movementFrom.value = ''
-  movementTo.value = ''
-  movementSearchInput.value = position.sku
-  movementSearch.value = position.sku
-  movementPage.value = 1
+  movementsTab.value?.searchBySku(position.sku)
   tab.value = 'movements'
 }
 
-/* ---------------- 库存流水 ---------------- */
+const returnDetailOpen = ref(false)
+const returnDetailId = ref<string | null>(null)
 
-const movementSearchInput = ref('')
-const movementSearch = ref('')
-const applyMovementSearch = useDebounceFn((value: string) => {
-  movementSearch.value = value
-}, 220)
-watch(movementSearchInput, value => applyMovementSearch(value))
-
-const movementType = ref('all')
-const movementFrom = ref('')
-const movementTo = ref('')
-const movementPage = ref(1)
-const movementPageSize = 8
-
-const movementTypeItems = [
-  { label: '全部类型', value: 'all' },
-  ...Object.entries(movementTypeLabels).map(([value, label]) => ({ label, value }))
-]
-
-const filteredMovements = computed(() => {
-  if (isForbidden.value || isError.value || isEmpty.value) return []
-  const keyword = movementSearch.value.trim().toLowerCase()
-  return movementRows.value
-    .filter((movement) => {
-      if (movementType.value !== 'all' && movement.type !== movementType.value) return false
-      const date = movement.at.slice(0, 10)
-      if (movementFrom.value && date < movementFrom.value) return false
-      if (movementTo.value && date > movementTo.value) return false
-      if (!keyword) return true
-      const text = [movement.reference, movement.sku, movement.name, warehouseName(movement.warehouseId)].join(' ').toLowerCase()
-      return text.includes(keyword)
-    })
-    .sort((a, b) => b.at.localeCompare(a.at))
-})
-
-const movementPageRows = computed(() => {
-  const start = (movementPage.value - 1) * movementPageSize
-  return filteredMovements.value.slice(start, start + movementPageSize)
-})
-const movementPageStart = computed(() => (filteredMovements.value.length ? (movementPage.value - 1) * movementPageSize + 1 : 0))
-const movementPageEnd = computed(() => (movementPage.value - 1) * movementPageSize + movementPageRows.value.length)
-const movementHasFilters = computed(() => Boolean(movementSearch.value) || movementType.value !== 'all' || Boolean(movementFrom.value) || Boolean(movementTo.value))
-
-watch([movementSearch, movementType, movementFrom, movementTo], () => {
-  movementPage.value = 1
-})
-
-const movementColumns: TableColumn<InventoryMovement>[] = [
-  { accessorKey: 'at', header: '时间', meta: { class: { td: 'whitespace-nowrap text-xs tabular-nums text-muted' } } },
-  { accessorKey: 'reference', header: '单据号', meta: { class: { td: 'w-44' } } },
-  { accessorKey: 'type', header: '类型' },
-  { accessorKey: 'name', header: '商品', meta: { class: { td: 'min-w-[200px] whitespace-normal' } } },
-  { id: 'warehouse', header: '仓库', meta: { class: { td: 'whitespace-nowrap text-muted' } } },
-  { accessorKey: 'quantity', header: '数量', meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } } }
-]
-
-function movementQuantityLabel(movement: InventoryMovement) {
-  if (movement.type === 'inbound') return '+' + formatNumber(movement.quantity)
-  if (movement.type === 'outbound') return '-' + formatNumber(movement.quantity)
-  if (movement.type === 'adjust') return '±' + formatNumber(movement.quantity)
-  return formatNumber(movement.quantity)
-}
-
-function resetMovementFilters() {
-  movementSearchInput.value = ''
-  movementSearch.value = ''
-  movementType.value = 'all'
-  movementFrom.value = ''
-  movementTo.value = ''
-  movementPage.value = 1
+function openReturnDetail(returnId: string) {
+  returnDetailId.value = returnId
+  returnDetailOpen.value = true
 }
 
 function openMovementReference(movement: InventoryMovement) {
+  if (movement.returnId) {
+    openReturnDetail(movement.returnId)
+    return
+  }
   if (movement.reference.startsWith('PO-')) {
     navigateTo({ path: '/purchase-orders', query: { order: movement.reference } })
     return
@@ -824,90 +703,9 @@ const transferColumns: TableColumn<TransferOrder>[] = [
 
 /* ---------------- 低库存 ---------------- */
 
-const lowStockColumns: TableColumn<LowStockItem>[] = [
-  { accessorKey: 'name', header: '商品', meta: { class: { td: 'min-w-[220px] whitespace-normal' } } },
-  { accessorKey: 'unit', header: '单位', meta: { class: { td: 'text-muted' } } },
-  { accessorKey: 'totalAvailable', header: '合计可用', meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } } },
-  { id: 'distribution', header: '各仓库可用量', meta: { class: { td: 'whitespace-nowrap' } } },
-  { id: 'status', header: '状态', meta: { class: { th: 'w-24' } } },
-  { id: 'actions', header: '操作', meta: { class: { th: 'w-28 text-right', td: 'w-28 text-right' } } }
-]
-
 function openLowStockItem(item: LowStockItem) {
-  positionWarehouse.value = 'all'
-  positionSearchInput.value = item.sku
-  positionSearch.value = item.sku
-  positionPage.value = 1
+  positionsTab.value?.filterBySku(item.sku)
   tab.value = 'positions'
-}
-
-/* ---------------- 导出与刷新 ---------------- */
-
-function exportPositions() {
-  downloadCsv(
-    '库存位置-' + new Date().toISOString().slice(0, 10) + '.csv',
-    ['商品', 'SKU', '仓库', '批次', '数量', '预留', '可用量', '更新时间'],
-    filteredPositions.value.map(position => [
-      position.name,
-      position.sku,
-      warehouseName(position.warehouseId),
-      position.lotNo,
-      position.quantity,
-      position.reserved,
-      position.available,
-      position.updatedAt
-    ])
-  )
-  toast.add({
-    title: '已导出 ' + filteredPositions.value.length + ' 个库存位置',
-    description: 'CSV 由浏览器本地生成，未经过后端。',
-    color: 'success',
-    icon: 'i-carbon-document-export'
-  })
-}
-
-function exportMovements() {
-  downloadCsv(
-    '库存流水-' + new Date().toISOString().slice(0, 10) + '.csv',
-    ['时间', '单据号', '类型', '商品', 'SKU', '仓库', '数量'],
-    filteredMovements.value.map(movement => [
-      movement.at,
-      movement.reference,
-      movementTypeLabels[movement.type],
-      movement.name,
-      movement.sku,
-      warehouseName(movement.warehouseId),
-      movement.quantity
-    ])
-  )
-  toast.add({
-    title: '已导出 ' + filteredMovements.value.length + ' 条库存流水',
-    description: 'CSV 由浏览器本地生成，未经过后端。',
-    color: 'success',
-    icon: 'i-carbon-document-export'
-  })
-}
-
-function exportLowStock() {
-  downloadCsv(
-    '低库存-' + new Date().toISOString().slice(0, 10) + '.csv',
-    ['商品', 'SKU', '单位', '合计可用', '阈值', '涉及仓库数', '零库存仓库数'],
-    lowStockItems.value.map(item => [
-      item.name,
-      item.sku,
-      item.unit,
-      item.totalAvailable,
-      LOW_STOCK_THRESHOLD,
-      item.warehouseIds.length,
-      item.zeroWarehouseCount
-    ])
-  )
-  toast.add({
-    title: '已导出 ' + lowStockItems.value.length + ' 个低库存 SKU',
-    description: '阈值 ' + LOW_STOCK_THRESHOLD + ' 件，CSV 由浏览器本地生成。',
-    color: 'success',
-    icon: 'i-carbon-document-export'
-  })
 }
 
 function refreshInventory() {
@@ -947,7 +745,7 @@ const overflowItems = computed(() => [
   [{
     label: '导出当前库存位置',
     icon: 'i-carbon-download',
-    onSelect: exportPositions
+    onSelect: () => positionsTab.value?.exportCsv()
   }]
 ])
 </script>
@@ -1059,273 +857,29 @@ const overflowItems = computed(() => [
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
           </div>
-          <div v-else :key="'inventory-' + tab" class="nx-fade">
-            <div v-if="tab === 'warehouses'" data-testid="inventory-warehouses">
-              <div class="grid gap-3 border-b border-default px-4 py-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div
-                  v-for="stat in overviewStats"
-                  :key="stat.label"
-                  class="rounded-sm border border-default p-3"
-                  data-testid="inventory-overview"
-                >
-                  <p class="text-xs text-muted">
-                    {{ stat.label }}
-                  </p>
-                  <p class="mt-1 text-xl font-semibold tabular-nums text-highlighted">
-                    {{ stat.value }}
-                    <span class="ml-1 text-xs font-normal text-muted">{{ stat.unit }}</span>
-                  </p>
-                  <p class="mt-0.5 text-[11px] text-muted">
-                    {{ stat.hint }}
-                  </p>
-                </div>
-              </div>
-              <div class="grid gap-4 p-4 xl:grid-cols-3">
-                <InventoryWarehouseCard
-                  v-for="entry in warehouseRows"
-                  :key="entry.warehouse.id"
-                  :warehouse="entry.warehouse"
-                  :address="entry.address"
-                  :summary="entry.summary"
-                  @open="openWarehouse(entry.warehouse.id)"
-                />
-              </div>
-              <div class="border-t border-default px-4 py-2.5 text-xs text-muted" data-testid="inventory-threshold-hint">
-                预警口径：单仓库存位置可用量低于 {{ LOW_STOCK_THRESHOLD }} 件计入预警；「低库存」页签按商品跨仓库汇总可用量。
-              </div>
-            </div>
+          <div v-else class="nx-fade">
+            <InventoryOverviewTab
+              v-show="tab === 'warehouses'"
+              :stats="overviewStats"
+              :rows="warehouseRows"
+              @open="openWarehouse"
+            />
 
-            <div v-else-if="tab === 'positions'" data-testid="inventory-positions">
-              <div class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-2.5">
-                <USelect
-                  v-model="positionWarehouse"
-                  :items="positionWarehouseItems"
-                  size="sm"
-                  class="w-44"
-                  data-testid="inventory-position-warehouse"
-                />
-                <UInput
-                  v-model="positionSearchInput"
-                  icon="i-carbon-search"
-                  placeholder="搜索商品、SKU 或批次"
-                  size="sm"
-                  class="w-64 max-w-full"
-                  data-testid="inventory-position-search"
-                />
-                <UButton
-                  v-if="positionHasFilters"
-                  label="重置"
-                  icon="i-carbon-reset"
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                  data-testid="inventory-position-reset"
-                  @click="resetPositionFilters"
-                />
-                <div class="ml-auto flex items-center gap-2">
-                  <p class="text-xs text-muted">
-                    共 {{ filteredPositions.length }} 个位置
-                  </p>
-                  <UButton
-                    label="导出 CSV"
-                    icon="i-carbon-download"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    data-testid="inventory-position-export"
-                    @click="exportPositions"
-                  />
-                </div>
-              </div>
-              <ResizableTable
-                :data="positionPageRows"
-                :columns="positionColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="openPositionMovements"
-                data-testid="inventory-position-table"
-              >
-                <template #name-cell="{ row }">
-                  <div class="min-w-0">
-                    <p class="truncate text-default">
-                      {{ row.original.name }}
-                    </p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted">
-                      {{ row.original.sku }}
-                    </p>
-                  </div>
-                </template>
-                <template #warehouse-cell="{ row }">
-                  {{ warehouseName(row.original.warehouseId) }}
-                </template>
-                <template #available-cell="{ row }">
-                  <span :class="row.original.available < LOW_STOCK_THRESHOLD ? 'text-warning' : ''">
-                    {{ formatNumber(row.original.available) }}
-                  </span>
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    label="流水"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    data-testid="inventory-position-movements"
-                    @click="openPositionMovements(row.original)"
-                  />
-                </template>
-                <template #empty>
-                  <UEmpty
-                    variant="naked"
-                    icon="i-carbon-package"
-                    title="当前筛选下没有库存位置"
-                    description="切换仓库或清空搜索条件后重试"
-                    :actions="[{ label: '清空筛选', color: 'neutral', variant: 'outline', size: 'sm', onClick: resetPositionFilters }]"
-                  />
-                </template>
-              </ResizableTable>
-              <div class="flex flex-wrap items-center justify-between gap-3 border-t border-default px-4 py-2.5">
-                <p class="text-xs text-muted">
-                  第 {{ positionPageStart }}–{{ positionPageEnd }} 条，共 {{ filteredPositions.length }} 条
-                </p>
-                <UPagination
-                  v-model:page="positionPage"
-                  :total="filteredPositions.length"
-                  :items-per-page="positionPageSize"
-                  size="sm"
-                  data-testid="inventory-position-pagination"
-                />
-              </div>
-            </div>
+            <InventoryPositionsTab
+              v-show="tab === 'positions'"
+              ref="positionsTab"
+              :rows="rows"
+              @open-movements="openPositionMovements"
+            />
 
-            <div v-else-if="tab === 'movements'" data-testid="inventory-movements">
-              <div class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-2.5">
-                <UInput
-                  v-model="movementSearchInput"
-                  icon="i-carbon-search"
-                  placeholder="搜索单据号、商品或 SKU"
-                  size="sm"
-                  class="w-64 max-w-full"
-                  data-testid="movement-search"
-                />
-                <USelect
-                  v-model="movementType"
-                  :items="movementTypeItems"
-                  size="sm"
-                  class="w-36"
-                  data-testid="movement-type"
-                />
-                <div class="flex items-center gap-1.5">
-                  <UInput
-                    v-model="movementFrom"
-                    type="date"
-                    size="sm"
-                    class="w-36"
-                    aria-label="流水开始日期"
-                    data-testid="movement-date-from"
-                  />
-                  <span class="text-xs text-muted">至</span>
-                  <UInput
-                    v-model="movementTo"
-                    type="date"
-                    size="sm"
-                    class="w-36"
-                    aria-label="流水结束日期"
-                    data-testid="movement-date-to"
-                  />
-                </div>
-                <UButton
-                  v-if="movementHasFilters"
-                  label="重置"
-                  icon="i-carbon-reset"
-                  color="neutral"
-                  variant="ghost"
-                  size="sm"
-                  data-testid="movement-reset"
-                  @click="resetMovementFilters"
-                />
-                <div class="ml-auto flex items-center gap-2">
-                  <p class="text-xs text-muted">
-                    共 {{ filteredMovements.length }} 条流水
-                  </p>
-                  <UButton
-                    label="导出 CSV"
-                    icon="i-carbon-download"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    data-testid="movement-export"
-                    @click="exportMovements"
-                  />
-                </div>
-              </div>
-              <ResizableTable
-                :data="movementPageRows"
-                :columns="movementColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="openMovementReference"
-                data-testid="movement-table"
-              >
-                <template #reference-cell="{ row }">
-                  <UButton
-                    :label="row.original.reference"
-                    color="primary"
-                    variant="ghost"
-                    size="xs"
-                    class="px-0 font-mono text-[12px]"
-                    data-testid="movement-reference"
-                    @click="openMovementReference(row.original)"
-                  />
-                </template>
-                <template #type-cell="{ row }">
-                  <UBadge
-                    :color="movementTypeColors[row.original.type]"
-                    variant="subtle"
-                    size="sm"
-                    :label="movementTypeLabels[row.original.type]"
-                  />
-                </template>
-                <template #name-cell="{ row }">
-                  <div class="min-w-0">
-                    <p class="truncate text-default">
-                      {{ row.original.name }}
-                    </p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted">
-                      {{ row.original.sku }}
-                    </p>
-                  </div>
-                </template>
-                <template #warehouse-cell="{ row }">
-                  {{ warehouseName(row.original.warehouseId) }}
-                </template>
-                <template #quantity-cell="{ row }">
-                  {{ movementQuantityLabel(row.original) }}
-                </template>
-                <template #empty>
-                  <UEmpty
-                    variant="naked"
-                    icon="i-carbon-flow"
-                    title="当前筛选下没有库存流水"
-                    description="调整商品、类型或时间范围后重试"
-                    :actions="[{ label: '清空筛选', color: 'neutral', variant: 'outline', size: 'sm', onClick: resetMovementFilters }]"
-                  />
-                </template>
-              </ResizableTable>
-              <div class="flex flex-wrap items-center justify-between gap-3 border-t border-default px-4 py-2.5">
-                <p class="text-xs text-muted">
-                  第 {{ movementPageStart }}–{{ movementPageEnd }} 条，共 {{ filteredMovements.length }} 条
-                </p>
-                <UPagination
-                  v-model:page="movementPage"
-                  :total="filteredMovements.length"
-                  :items-per-page="movementPageSize"
-                  size="sm"
-                  data-testid="movement-pagination"
-                />
-              </div>
-            </div>
+            <InventoryMovementsTab
+              v-show="tab === 'movements'"
+              ref="movementsTab"
+              :rows="movementRows"
+              @open-reference="openMovementReference"
+            />
 
-            <div v-else-if="tab === 'operations'" class="grid gap-4 p-4 xl:grid-cols-2" data-testid="inventory-operations">
+            <div v-show="tab === 'operations'" class="grid gap-4 p-4 xl:grid-cols-2" data-testid="inventory-operations">
               <UCard class="rounded-sm xl:col-span-2" :ui="{ body: 'p-0 sm:p-0', header: 'p-3 sm:px-4' }">
                 <template #header>
                   <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1533,110 +1087,24 @@ const overflowItems = computed(() => [
               </UCard>
             </div>
 
-            <div v-else class="p-4" data-testid="inventory-low-stock">
-              <UAlert
-                color="warning"
-                variant="soft"
-                icon="i-carbon-warning-alt"
-                title="低库存演示阈值"
-                :description="'按商品跨仓库汇总可用量，低于 ' + LOW_STOCK_THRESHOLD + ' 件（含 0）计入低库存；阈值常量定义在 app/mocks/inventory.ts 的 LOW_STOCK_THRESHOLD。'"
-                data-testid="inventory-low-threshold"
-              />
-              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <p class="text-sm font-medium text-highlighted">
-                    低库存商品
-                  </p>
-                  <UBadge variant="subtle" color="warning" size="sm">
-                    {{ lowStockItems.length }} 个 SKU
-                  </UBadge>
-                </div>
-                <div class="flex items-center gap-2">
-                  <p class="text-xs text-muted">
-                    至少一个仓库零库存：{{ zeroStockItems }} 个
-                  </p>
-                  <UButton
-                    label="导出 CSV"
-                    icon="i-carbon-download"
-                    color="neutral"
-                    variant="ghost"
-                    size="sm"
-                    data-testid="inventory-low-export"
-                    @click="exportLowStock"
-                  />
-                </div>
-              </div>
-              <ResizableTable
-                :data="lowStockItems"
-                :columns="lowStockColumns"
-                class="nx-table mt-3"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="openLowStockItem"
-                data-testid="inventory-low-table"
-              >
-                <template #name-cell="{ row }">
-                  <div class="min-w-0">
-                    <p class="truncate text-default">
-                      {{ row.original.name }}
-                    </p>
-                    <p class="mt-0.5 font-mono text-[11px] text-muted">
-                      {{ row.original.sku }}
-                    </p>
-                  </div>
-                </template>
-                <template #totalAvailable-cell="{ row }">
-                  <span :class="row.original.totalAvailable === 0 ? 'text-error' : 'text-warning'">
-                    {{ formatNumber(row.original.totalAvailable) }}
-                  </span>
-                  <span class="ml-1 text-xs text-muted">{{ row.original.unit }}</span>
-                </template>
-                <template #distribution-cell="{ row }">
-                  <div class="flex flex-wrap items-center gap-1.5">
-                    <span
-                      v-for="warehouseId in row.original.warehouseIds"
-                      :key="warehouseId"
-                      class="inline-flex items-center gap-1 rounded-sm border border-default px-1.5 py-0.5 text-[11px]"
-                      :class="(row.original.byWarehouse[warehouseId] ?? 0) === 0 ? 'text-error' : 'text-muted'"
-                    >
-                      {{ warehouseName(warehouseId).slice(0, 2) }}
-                      <span class="font-mono tabular-nums text-default">{{ formatNumber(row.original.byWarehouse[warehouseId] ?? 0) }}</span>
-                    </span>
-                  </div>
-                </template>
-                <template #status-cell="{ row }">
-                  <UBadge
-                    :color="row.original.totalAvailable === 0 ? 'error' : 'warning'"
-                    variant="subtle"
-                    size="sm"
-                    data-testid="inventory-low-status"
-                  >
-                    {{ row.original.totalAvailable === 0 ? '零库存' : '低库存' }}
-                  </UBadge>
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    label="查看位置"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    data-testid="inventory-low-open"
-                    @click="openLowStockItem(row.original)"
-                  />
-                </template>
-                <template #empty>
-                  <UEmpty
-                    variant="naked"
-                    icon="i-carbon-checkmark-filled"
-                    title="当前没有低库存商品"
-                    description="所有商品跨仓库可用量均高于演示阈值"
-                  />
-                </template>
-              </ResizableTable>
-            </div>
+            <InventoryWarehouseOperations
+              v-show="tab === 'warehouse-ops'"
+            />
+
+            <InventoryLowStockTab
+              v-show="tab === 'low-stock'"
+              :items="lowStockItems"
+              @open-item="openLowStockItem"
+            />
           </div>
         </UCard>
       </template>
     </UDashboardPanel>
+
+    <StockReturnDetailSlideover
+      v-model:open="returnDetailOpen"
+      :return-id="returnDetailId"
+    />
 
     <InventoryReceiveSlideover
       v-model:open="receiveOpen"

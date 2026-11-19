@@ -1,0 +1,56 @@
+/*
+ * Odoo-style shared component vocabulary (pilot baseline, 2026-11-17).
+ *
+ * Extracted from the audit module scoped styles so every module page reuses one
+ * set of classes. Always used inside an .odoo-page scope (tokens in
+ * ./tokens.css). Reference: docs/design/odoo-ui-baseline.md.
+ */
+
+/* Page scope --------------------------------------------------------------- */
+.odoo-page {
+  color: var(--od-ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Page header -------------------------------------------------------------- */
+.odoo-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 0 12px; }
+.odoo-page-title h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; color: var(--od-ink); }
+.odoo-page-sub { margin: 4px 0 0; max-width: 78ch; font-size: 12.5px; line-height: 1.5; color: var(--od-muted); }
+.odoo-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.odoo-page-actions button { height: 30px; padding: 0 12px; border-radius: var(--od-radius); font-size: 13px; font-weight: 500; box-shadow: none; }
+
+/* Notebook tabs ------------------------------------------------------------ */
+.odoo-notebook { display: flex; gap: 2px; margin: 0 0 14px; border-bottom: 1px solid var(--od-border); }
+.odoo-notebook-tab { appearance: none; display: inline-flex; align-items: center; gap: 6px; margin-bottom: -1px; padding: 7px 14px; border: 1px solid transparent; border-bottom: 0; border-radius: 4px 4px 0 0; background: transparent; color: var(--od-ink-2); font-size: 13px; font-weight: 500; cursor: pointer; }
+.odoo-notebook-tab:hover { background: var(--od-subtle); color: var(--od-ink); }
+.odoo-notebook-tab.active { border-color: var(--od-border); border-bottom: 1px solid var(--nx-surface); background: var(--nx-surface); color: var(--nx-primary); font-weight: 600; }
+
+/* Filter grid -------------------------------------------------------------- */
+.odoo-filter { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 12px; margin: 0; padding: 0; border: 0; background: transparent; min-width: 0; }
+.odoo-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.odoo-filter label { display: block; margin: 0 0 4px; color: var(--od-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+.odoo-filter input,
+.odoo-filter button[role='combobox'] { height: 30px; border-radius: var(--od-radius); font-size: 13px; }
+
+/* List --------------------------------------------------------------------- */
+.odoo-list-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 8px; }
+.odoo-list-meta { margin: 0; color: var(--od-muted); font-size: 12px; }
+.odoo-list-hint { color: var(--od-muted); font-size: 12px; }
+.odoo-list { border: 1px solid var(--od-border); border-radius: var(--od-radius); overflow: hidden; background: var(--nx-surface); }
+.odoo-list table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.odoo-list thead th { padding: 8px 12px; border-bottom: 1px solid var(--od-border); background: var(--od-subtle); color: var(--od-ink-2); font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; text-align: left; white-space: nowrap; }
+.odoo-list tbody td,
+.odoo-list tbody th { padding: 8px 12px; border-bottom: 1px solid var(--od-border-soft); color: var(--od-ink); font-size: 13px; vertical-align: middle; }
+.odoo-list tbody tr:last-child > * { border-bottom: 0; }
+.odoo-list tbody tr:hover { background: var(--od-subtle); }
+.odoo-list button { height: 24px; padding: 0 8px; border-radius: var(--od-radius); font-size: 12px; }
+.odoo-list p { margin: 0; font-size: 12px; color: var(--od-muted); }
+
+/* Footer ------------------------------------------------------------------- */
+.odoo-loadmore { display: flex; justify-content: center; margin-top: 12px; }
+.odoo-loadmore button { height: 30px; padding: 0 14px; border-radius: var(--od-radius); font-size: 13px; }
+
+/* Inline status ------------------------------------------------------------ */
+.odoo-page [role='status'],
+.odoo-page [role='alert'] { margin: 10px 0; border-radius: var(--od-radius); font-size: 12.5px; }

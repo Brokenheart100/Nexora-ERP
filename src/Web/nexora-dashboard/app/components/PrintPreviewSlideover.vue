@@ -40,7 +40,7 @@ function printNow() {
     </template>
 
     <template #body>
-      <div class="space-y-3">
+      <div class="space-y-3" :data-testid="testId">
         <UAlert
           color="neutral"
           variant="soft"
@@ -50,7 +50,7 @@ function printNow() {
           :data-testid="alertTestId"
         />
         <div v-if="hasDocument" class="rounded-sm border border-default bg-elevated/60 p-3">
-          <div class="mx-auto max-w-[720px] shadow-sm">
+          <div class="mx-auto max-w-180 shadow-sm">
             <slot />
           </div>
         </div>

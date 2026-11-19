@@ -3,7 +3,8 @@ using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Application;
 
-public sealed class FinancialReports(TradeAccess access, IFinancialReportReader reader, ILedgerStore ledger, IFinanceHistoryReader history)
+public sealed partial class FinancialReports(TradeAccess access, IFinancialReportReader reader, ILedgerStore ledger, IFinanceHistoryReader history,
+    IPartnershipStore partnerships)
 {
     public async Task<FinancialReport> ReadAsync(Guid workspaceId, string kind, DateOnly from, DateOnly through, bool compare,
         long? watermark, string? basis, CancellationToken ct)
@@ -15,6 +16,7 @@ public sealed class FinancialReports(TradeAccess access, IFinancialReportReader 
     internal async Task<FinancialReport> ReadScopedAsync(ResourceScope scope, AccountingBook book, string kind, DateOnly from,
         DateOnly through, bool compare, long? watermark, string? basis, CancellationToken ct)
     {
+        if (kind == "equity-changes") return await EquityChangesAsync(scope, book, from, through, compare, watermark, basis, ct);
         var (statementKind, period, at) = Validate(book, kind, from, through, watermark);
         var previousPeriod = compare ? period.Previous(book.StartsOn) : null;
         var cash = IsCash(statementKind, basis);

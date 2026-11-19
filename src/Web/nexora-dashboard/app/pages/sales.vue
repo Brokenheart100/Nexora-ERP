@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
 import type {
   Invoice,
   InvoiceDelivery,
@@ -15,21 +14,14 @@ import type {
 } from '~/mocks'
 import {
   cloneQuote,
-  cloneRecurringInvoicePlan,
   cloneSalesOrder,
-  invoiceStatusColors,
   invoiceStatusLabels,
-  quoteStatusColors,
   quoteStatusLabels,
   quotes as quoteSeed,
-  recurringCadenceLabels,
-  recurringInvoicePlans as recurringSeed,
-  recurringStatusColors,
-  recurringStatusLabels,
   salesOrders as orderSeed,
-  salesStatusColors,
   salesStatusLabels
 } from '~/mocks'
+import type { RecurringPlanInput } from '~/stores/recurringInvoices'
 
 interface SalesFormPayload {
   kind: 'order' | 'quote'
@@ -63,12 +55,15 @@ const route = useRoute()
 const toast = useToast()
 const session = useSessionStore()
 const receivables = useReceivablesStore()
+const recurring = useRecurringInvoicesStore()
 const { workspace } = useMockWorkspace()
 const { can } = useMockPermissions()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
 const { loading, run: runRefresh } = useMockRefresh()
 
-const canCreate = computed(() => can('sales.create'))
+const { actor: demoActor, isMaker, isApprover, setActorRole } = useDemoActor()
+const canCreate = computed(() => can('sales.create') && isMaker.value)
+const canApprove = computed(() => can('sales.create') && isApprover.value)
 const showSkeleton = computed(() => loading.value || stateLoading.value)
 const pageSize = 8
 const PREVIEW_NOTE = '仅本次预览，刷新后恢复。'
@@ -78,7 +73,8 @@ const tabItems = [
   { label: '报价单', value: 'quotes' },
   { label: '应收', value: 'receivables' },
   { label: '发票', value: 'invoices' },
-  { label: '定期开票', value: 'recurring' }
+  { label: '定期开票', value: 'recurring' },
+  { label: '发票交付', value: 'invoice-delivery' }
 ]
 const tab = ref(String(route.query.tab ?? 'orders'))
 if (!tabItems.some(item => item.value === tab.value)) tab.value = 'orders'
@@ -86,12 +82,10 @@ if (!tabItems.some(item => item.value === tab.value)) tab.value = 'orders'
 const orders = ref<SalesOrder[]>([])
 const quoteRows = ref<Quote[]>([])
 const invoiceRows = computed(() => receivables.invoices)
-const recurringRows = ref<RecurringInvoicePlan[]>([])
 
 function resetRows() {
   orders.value = orderSeed.map(cloneSalesOrder)
   quoteRows.value = quoteSeed.map(cloneQuote)
-  recurringRows.value = recurringSeed.map(cloneRecurringInvoicePlan)
 }
 resetRows()
 
@@ -106,7 +100,7 @@ const showFilters = computed(() => ['orders', 'quotes', 'invoices'].includes(tab
 const workspaceOrders = computed(() => orders.value.filter(order => order.workspaceId === workspace.value.id))
 const workspaceQuotes = computed(() => quoteRows.value.filter(quote => quote.workspaceId === workspace.value.id))
 const workspaceInvoices = computed(() => invoiceRows.value.filter(invoice => invoice.workspaceId === workspace.value.id))
-const workspaceRecurring = computed(() => recurringRows.value.filter(plan => plan.workspaceId === workspace.value.id))
+const workspaceRecurring = computed(() => recurring.plans.filter(plan => plan.workspaceId === workspace.value.id))
 
 const statusItems = computed(() => {
   if (tab.value === 'quotes') {
@@ -228,6 +222,9 @@ watch(tab, () => {
   quotePage.value = 1
   invoicePage.value = 1
   recurringPage.value = 1
+  recurringPlanOpen.value = false
+  recurringFormOpen.value = false
+  selectedRecurringId.value = null
 })
 
 watch(() => route.query.tab, (value) => {
@@ -240,6 +237,9 @@ watch(() => route.query.tab, (value) => {
   selectedOrderId.value = null
   selectedQuoteId.value = null
   selectedInvoiceId.value = null
+  recurringPlanOpen.value = false
+  recurringFormOpen.value = false
+  selectedRecurringId.value = null
 })
 
 watch([search, statusFilter, customerFilter, dateFrom, dateTo], () => {
@@ -310,7 +310,26 @@ function nextInvoiceId() {
 const detailOpen = ref(false)
 const selectedOrderId = ref<string | null>(null)
 const selectedOrder = computed(() => orders.value.find(order => order.id === selectedOrderId.value) ?? null)
-const canApproveSelected = computed(() => canCreate.value && selectedOrder.value?.status === 'pending')
+
+function salesOrderMaker(order: SalesOrder) {
+  return order.maker ?? order.approvals?.find(step => step.action === 'submitted')?.actor ?? '张明远'
+}
+const selectedMaker = computed(() => selectedOrder.value ? salesOrderMaker(selectedOrder.value) : '')
+const selfApprovalBlocked = computed(() => Boolean(
+  selectedOrder.value && isApprover.value && selectedMaker.value === demoActor.value.name
+))
+const canWithdrawSelected = computed(() => Boolean(
+  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'pending' && selectedMaker.value === demoActor.value.name
+))
+const canCancelSelected = computed(() => Boolean(
+  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft'
+))
+const canResubmitSelected = computed(() => Boolean(
+  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft' && selectedMaker.value === demoActor.value.name
+))
+const canApproveSelected = computed(() => Boolean(
+  canApprove.value && selectedOrder.value?.status === 'pending' && !selfApprovalBlocked.value
+))
 
 const quoteOpen = ref(false)
 const selectedQuoteId = ref<string | null>(null)
@@ -320,6 +339,16 @@ const invoiceOpen = ref(false)
 const selectedInvoiceId = ref<string | null>(null)
 const selectedInvoice = computed(() => invoiceRows.value.find(invoice => invoice.id === selectedInvoiceId.value) ?? null)
 const selectedInvoiceOrder = computed(() => orders.value.find(order => order.id === selectedInvoice.value?.sourceOrderId) ?? null)
+
+const recurringPlanOpen = ref(false)
+const selectedRecurringId = ref<string | null>(null)
+const recurringFormOpen = ref(false)
+const recurringEditingId = ref<string | null>(null)
+const recurringFormError = ref('')
+const selectedRecurringPlan = computed(() => selectedRecurringId.value ? recurring.planOf(selectedRecurringId.value) ?? null : null)
+const recurringOccurrences = computed(() => selectedRecurringPlan.value ? recurring.historyFor(selectedRecurringPlan.value.id) : [])
+const recurringPreview = computed(() => selectedRecurringPlan.value ? recurring.previewDates(selectedRecurringPlan.value) : [])
+const recurringEditingPlan = computed(() => recurringEditingId.value ? recurring.planOf(recurringEditingId.value) ?? null : null)
 const receiptOpen = ref(false)
 const receiptCustomer = ref('')
 const receiptInvoiceId = ref<string | null>(null)
@@ -349,127 +378,6 @@ const pendingQuote = computed(() => {
 })
 
 const { loading: invoiceBusy, run: runInvoiceAction } = useMockAsync(async () => undefined, { delay: 480 })
-
-const orderColumns: TableColumn<SalesOrder>[] = [{
-  accessorKey: 'id',
-  header: '订单号',
-  meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
-}, {
-  accessorKey: 'customerName',
-  header: '客户',
-  meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
-}, {
-  accessorKey: 'status',
-  header: '状态'
-}, {
-  accessorKey: 'orderedAt',
-  header: '下单日期',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'promisedAt',
-  header: '承诺交付',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'owner',
-  header: '负责人'
-}, {
-  id: 'amount',
-  header: '未税金额',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'actions',
-  header: '操作',
-  meta: { class: { th: 'text-right', td: 'text-right' } }
-}]
-
-const quoteColumns: TableColumn<Quote>[] = [{
-  accessorKey: 'id',
-  header: '报价单号',
-  meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
-}, {
-  accessorKey: 'customerName',
-  header: '客户',
-  meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
-}, {
-  accessorKey: 'status',
-  header: '状态'
-}, {
-  accessorKey: 'validUntil',
-  header: '有效期至',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'owner',
-  header: '报价人'
-}, {
-  id: 'amount',
-  header: '未税金额',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'actions',
-  header: '操作',
-  meta: { class: { th: 'text-right', td: 'text-right' } }
-}]
-
-const invoiceColumns: TableColumn<Invoice>[] = [{
-  accessorKey: 'id',
-  header: '发票号',
-  meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
-}, {
-  accessorKey: 'customerName',
-  header: '客户',
-  meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
-}, {
-  accessorKey: 'status',
-  header: '状态'
-}, {
-  accessorKey: 'issuedAt',
-  header: '开票日期',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'dueAt',
-  header: '到期日',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'amount',
-  header: '价税合计',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'actions',
-  header: '操作',
-  meta: { class: { th: 'text-right', td: 'text-right' } }
-}]
-
-const recurringColumns: TableColumn<RecurringInvoicePlan>[] = [{
-  accessorKey: 'id',
-  header: '计划编号',
-  meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
-}, {
-  accessorKey: 'customerName',
-  header: '客户',
-  meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
-}, {
-  accessorKey: 'cadence',
-  header: '周期'
-}, {
-  accessorKey: 'nextRunAt',
-  header: '下次执行',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'lastRunAt',
-  header: '上次执行',
-  meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'amount',
-  header: '每期金额',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  accessorKey: 'status',
-  header: '状态'
-}, {
-  id: 'actions',
-  header: '操作',
-  meta: { class: { th: 'text-right', td: 'text-right' } }
-}]
 
 function openOrder(orderId: string) {
   selectedOrderId.value = orderId
@@ -550,13 +458,18 @@ function startEditQuote() {
 
 function approveSelectedOrder() {
   const order = selectedOrder.value
-  if (!order || !canCreate.value || order.status !== 'pending') return
+  if (!order) return
+  if (isApprover.value && salesOrderMaker(order) === demoActor.value.name) {
+    toastPreview('不能审批自己提交的单据', '请切换到另一位业务主管后再审批。', 'error')
+    return
+  }
+  if (!canApproveSelected.value || order.status !== 'pending') return
   const stamp = nowStamp()
   order.approvals = [...(order.approvals ?? []), {
     id: localId('approval'),
     orderId: order.id,
     action: 'approved',
-    actor: session.user.name,
+    actor: demoActor.value.name,
     at: stamp,
     note: '审批通过（本地演示）'
   }]
@@ -573,13 +486,73 @@ function rejectSelectedOrder() {
     id: localId('approval'),
     orderId: order.id,
     action: 'rejected',
-    actor: session.user.name,
+    actor: demoActor.value.name,
     at: stamp,
     note: '审批驳回：请核对价格与交期（本地演示）'
   }]
   order.status = 'draft'
   order.updatedAt = stamp
   toastPreview('已驳回销售订单', order.id + ' 已退回草稿', 'warning')
+}
+
+function withdrawSelectedOrder() {
+  const order = selectedOrder.value
+  if (!order || !canWithdrawSelected.value) return
+  const stamp = nowStamp()
+  order.status = 'draft'
+  order.withdrawnAt = stamp
+  order.approvals = [...(order.approvals ?? []), {
+    id: localId('approval'),
+    orderId: order.id,
+    action: 'withdrawn',
+    actor: demoActor.value.name,
+    at: stamp,
+    note: '制单人撤回提交，销售订单退回草稿。'
+  }]
+  order.updatedAt = stamp
+  toastPreview('已撤回销售订单', order.id + ' 回到草稿，可修改后重新提交', 'warning')
+}
+
+function cancelSelectedOrderDraft() {
+  const order = selectedOrder.value
+  if (!order || !canCancelSelected.value) return
+  const stamp = nowStamp()
+  order.status = 'cancelled'
+  order.cancelledAt = stamp
+  order.cancelReason = '草稿取消：客户调整采购计划。'
+  order.updatedAt = stamp
+  toastPreview('已取消销售订单草稿', order.id + ' 保留原单与取消原因', 'error')
+}
+
+function resubmitSelectedOrder() {
+  const order = selectedOrder.value
+  if (!order || !canResubmitSelected.value) return
+  const stamp = nowStamp()
+  order.status = 'pending'
+  order.withdrawnAt = undefined
+  order.approvals = [...(order.approvals ?? []), {
+    id: localId('approval'),
+    orderId: order.id,
+    action: 'submitted',
+    actor: demoActor.value.name,
+    at: stamp,
+    note: '撤回修改后重新提交审批。'
+  }]
+  order.updatedAt = stamp
+  toastPreview('已重新提交审批', order.id + ' 等待独立审批人处理')
+}
+
+const canSendSelectedQuote = computed(() => Boolean(
+  selectedQuote.value && canCreate.value && selectedQuote.value.status === 'draft' && !selectedQuote.value.convertedOrderId
+))
+
+function sendSelectedQuote() {
+  const quote = selectedQuote.value
+  if (!quote || !canSendSelectedQuote.value) return
+  quote.status = 'sent'
+  quote.sentAt = nowStamp()
+  quote.updatedAt = quote.sentAt
+  toastPreview('报价已正式发出', quote.id + ' · ' + quote.customerName)
 }
 
 function startFulfillment() {
@@ -703,7 +676,7 @@ function handleFormSave(payload: SalesFormPayload) {
           id: localId('approval'),
           orderId: id,
           action: 'submitted' as const,
-          actor: session.user.name,
+          actor: demoActor.value.name,
           at: stamp,
           note: '提交审批（本地演示）'
         }]
@@ -725,7 +698,8 @@ function handleFormSave(payload: SalesFormPayload) {
         status,
         orderedAt: todayIso(),
         promisedAt: data.date,
-        owner: session.user.name,
+        owner: demoActor.value.name,
+        maker: demoActor.value.name,
         totalAmount: total.toFixed(2),
         note: data.note,
         lines,
@@ -766,9 +740,10 @@ function handleFormSave(payload: SalesFormPayload) {
       customerName: data.customerName,
       status,
       validUntil: data.date,
-      owner: session.user.name,
+      owner: demoActor.value.name,
       totalAmount: total.toFixed(2),
       lines,
+      sentAt: status === 'sent' ? stamp : undefined,
       updatedAt: stamp
     }
     quoteRows.value = [quote, ...quoteRows.value]
@@ -930,15 +905,22 @@ async function createInvoiceForOrder(orderId: string) {
   if (!order || !canCreate.value) return
   if (invoiceRows.value.some(invoice => invoice.sourceOrderId === order.id && invoice.status !== 'cancelled')) return
   const lines: InvoiceLine[] = order.lines
-    .filter(line => line.shipped > 0)
     .map(line => ({
       lineNo: line.lineNo,
       sku: line.sku,
       name: line.name,
-      quantity: line.shipped,
+      unitPrice: line.unitPrice,
+      invoiceable: receivables.invoiceableQuantityOf(order.id, line.lineNo, line.shipped)
+    }))
+    .filter(line => line.invoiceable > 0)
+    .map(line => ({
+      lineNo: line.lineNo,
+      sku: line.sku,
+      name: line.name,
+      quantity: line.invoiceable,
       unitPrice: line.unitPrice,
       taxRate: '13%',
-      amount: (line.shipped * Number(line.unitPrice)).toFixed(2)
+      amount: (line.invoiceable * Number(line.unitPrice)).toFixed(2)
     }))
   if (!lines.length) {
     toast.add({ title: '暂无可开票数量', description: '请先在订单详情登记履约发货。', color: 'warning', icon: 'i-carbon-warning-alt' })
@@ -970,22 +952,92 @@ async function createInvoiceForOrder(orderId: string) {
   toastPreview('已生成草稿发票', id + ' · 来自 ' + order.id)
 }
 
-function toggleRecurring(plan: RecurringInvoicePlan) {
+function openRecurring(plan: RecurringInvoicePlan) {
+  selectedRecurringId.value = plan.id
+  recurringPlanOpen.value = true
+}
+
+function openRecurringCreate() {
   if (!canCreate.value) return
-  if (plan.status === 'active') {
-    plan.status = 'paused'
-    toastPreview('已暂停定期开票计划', plan.id, 'warning')
+  recurringEditingId.value = null
+  recurringFormError.value = ''
+  recurringFormOpen.value = true
+}
+
+function openRecurringEdit() {
+  if (!canCreate.value || !selectedRecurringPlan.value) return
+  recurringEditingId.value = selectedRecurringPlan.value.id
+  recurringFormError.value = ''
+  recurringFormOpen.value = true
+}
+
+function saveRecurring(input: RecurringPlanInput) {
+  if (!canCreate.value) return
+  const result = recurringEditingId.value
+    ? recurring.updatePlan(recurringEditingId.value, input)
+    : recurring.createPlan({ ...input, workspaceId: workspace.value.id })
+  if (!result.ok) {
+    recurringFormError.value = result.message
     return
   }
-  plan.status = 'active'
-  plan.nextRunAt = addDays(todayIso(), plan.cadence === 'monthly' ? 30 : 90)
-  toastPreview('已恢复定期开票计划', plan.id + ' · 下次执行 ' + plan.nextRunAt)
+  const wasEditing = Boolean(recurringEditingId.value)
+  recurringFormOpen.value = false
+  recurringFormError.value = ''
+  if (result.plan) selectedRecurringId.value = result.plan.id
+  recurringEditingId.value = null
+  toastPreview(wasEditing ? '已更新定期开票计划' : '已创建定期开票计划', result.message)
+}
+
+function toggleRecurringRow(plan: RecurringInvoicePlan) {
+  if (!canCreate.value) return
+  const result = recurring.togglePlan(plan.id)
+  if (!result.ok) {
+    toast.add({ title: '操作失败', description: result.message, color: 'error', icon: 'i-carbon-warning-alt' })
+    return
+  }
+  toastPreview(result.plan?.status === 'active' ? '已恢复定期开票计划' : '已暂停定期开票计划', result.message, result.plan?.status === 'active' ? 'success' : 'warning')
+}
+
+function toggleSelectedRecurring() {
+  if (selectedRecurringPlan.value) toggleRecurringRow(selectedRecurringPlan.value)
+}
+
+function runRecurring(on: string) {
+  if (!canCreate.value || !selectedRecurringPlan.value) return
+  const result = recurring.runPlan(selectedRecurringPlan.value.id, on)
+  if (!result.ok) {
+    toast.add({
+      title: result.blocked ? '期间阻断，已保留待处理' : '执行失败',
+      description: result.message,
+      color: result.blocked ? 'warning' : 'error',
+      icon: 'i-carbon-warning-alt'
+    })
+    return
+  }
+  toastPreview(result.duplicate ? '未重复生成发票' : '已执行定期开票', result.message)
+}
+
+function skipRecurring(on: string) {
+  if (!canCreate.value || !selectedRecurringPlan.value) return
+  const result = recurring.skipPlan(selectedRecurringPlan.value.id, on)
+  if (!result.ok) {
+    toast.add({ title: '跳过失败', description: result.message, color: 'error', icon: 'i-carbon-warning-alt' })
+    return
+  }
+  toastPreview('已跳过到期日', result.message, 'warning')
+}
+
+function openRecurringInvoice(invoiceId: string) {
+  recurringPlanOpen.value = false
+  selectedRecurringId.value = null
+  openInvoice(invoiceId)
 }
 
 function refreshAll() {
   runRefresh(() => {
     resetRows()
     receivables.reset()
+    recurring.reset()
     resetFilters()
     detailOpen.value = false
     quoteOpen.value = false
@@ -1024,6 +1076,27 @@ async function reloadPage() {
               class="hidden sm:inline-flex"
             />
             <NotificationButton />
+            <div
+              class="flex items-center gap-1 rounded-lg border border-default p-0.5"
+              data-testid="sales-actor-switch"
+            >
+              <UButton
+                label="张明远 · 经办"
+                size="xs"
+                :color="isMaker ? 'primary' : 'neutral'"
+                :variant="isMaker ? 'solid' : 'ghost'"
+                data-testid="sales-actor-maker"
+                @click="setActorRole('maker')"
+              />
+              <UButton
+                label="陈立 · 主管"
+                size="xs"
+                :color="isApprover ? 'primary' : 'neutral'"
+                :variant="isApprover ? 'solid' : 'ghost'"
+                data-testid="sales-actor-approver"
+                @click="setActorRole('approver')"
+              />
+            </div>
           </template>
         </UDashboardNavbar>
 
@@ -1067,6 +1140,15 @@ async function reloadPage() {
               :disabled="!canCreate"
               data-testid="quote-new"
               @click="openCreate('quote')"
+            />
+            <UButton
+              v-else-if="tab === 'recurring'"
+              label="新建定期开票"
+              icon="i-carbon-add"
+              size="sm"
+              :disabled="!canCreate"
+              data-testid="recurring-new"
+              @click="openRecurringCreate"
             />
           </template>
         </UDashboardToolbar>
@@ -1178,106 +1260,18 @@ async function reloadPage() {
           </div>
 
           <div v-else :key="'sales-tab-' + tab" class="nx-fade">
-            <template v-if="tab === 'orders'">
-              <ResizableTable
-                :data="pageOrders"
-                :columns="orderColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="row => openOrder(row.id)"
-                data-testid="sales-orders-table"
-              >
-                <template #status-cell="{ row }">
-                  <UBadge
-                    :color="salesStatusColors[row.original.status]"
-                    variant="subtle"
-                    size="sm"
-                    :label="salesStatusLabels[row.original.status]"
-                  />
-                </template>
-                <template #amount-cell="{ row }">
-                  {{ formatMoney(Number(row.original.totalAmount)) }}
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    label="查看"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    data-testid="sales-orders-open"
-                    @click="openOrder(row.original.id)"
-                  />
-                </template>
-                <template #empty>
-                  <div class="flex flex-col items-center gap-2 py-8">
-                    <UEmpty
-                      variant="naked"
-                      icon="i-carbon-search"
-                      title="没有符合条件的销售订单"
-                      description="调整状态、客户或日期筛选后再试。"
-                    />
-                    <UButton
-                      label="清空筛选"
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      @click="resetFilters"
-                    />
-                  </div>
-                </template>
-              </ResizableTable>
-            </template>
-
-            <template v-else-if="tab === 'quotes'">
-              <ResizableTable
-                :data="pageQuotes"
-                :columns="quoteColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="row => openQuote(row.id)"
-                data-testid="quote-table"
-              >
-                <template #status-cell="{ row }">
-                  <UBadge
-                    :color="quoteStatusColors[row.original.status]"
-                    variant="subtle"
-                    size="sm"
-                    :label="quoteStatusLabels[row.original.status]"
-                  />
-                </template>
-                <template #amount-cell="{ row }">
-                  {{ formatMoney(Number(row.original.totalAmount)) }}
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    label="查看"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    data-testid="quote-open"
-                    @click="openQuote(row.original.id)"
-                  />
-                </template>
-                <template #empty>
-                  <div class="flex flex-col items-center gap-2 py-8">
-                    <UEmpty
-                      variant="naked"
-                      icon="i-carbon-search"
-                      title="没有符合条件的报价单"
-                      description="调整状态、客户或日期筛选后再试。"
-                    />
-                    <UButton
-                      label="清空筛选"
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      @click="resetFilters"
-                    />
-                  </div>
-                </template>
-              </ResizableTable>
-            </template>
-
+            <SalesOrdersTable
+              v-if="tab === 'orders'"
+              :rows="pageOrders"
+              @open="openOrder"
+              @reset="resetFilters"
+            />
+            <SalesQuotesTable
+              v-else-if="tab === 'quotes'"
+              :rows="pageQuotes"
+              @open="openQuote"
+              @reset="resetFilters"
+            />
             <template v-else-if="tab === 'receivables'">
               <div class="p-3">
                 <SalesReceivableWorkbench
@@ -1293,106 +1287,27 @@ async function reloadPage() {
                 />
               </div>
             </template>
-
-            <template v-else-if="tab === 'invoices'">
-              <ResizableTable
-                :data="pageInvoices"
-                :columns="invoiceColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                :row-activate="row => openInvoice(row.id)"
-                data-testid="invoice-table"
-              >
-                <template #status-cell="{ row }">
-                  <UBadge
-                    :color="invoiceStatusColors[row.original.status]"
-                    variant="subtle"
-                    size="sm"
-                    :label="invoiceStatusLabels[row.original.status]"
-                  />
-                </template>
-                <template #amount-cell="{ row }">
-                  {{ formatMoney(Number(row.original.amount)) }}
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    label="查看"
-                    color="neutral"
-                    variant="ghost"
-                    size="xs"
-                    data-testid="invoice-open"
-                    @click="openInvoice(row.original.id)"
-                  />
-                </template>
-                <template #empty>
-                  <div class="flex flex-col items-center gap-2 py-8">
-                    <UEmpty
-                      variant="naked"
-                      icon="i-carbon-document"
-                      title="没有符合条件的发票"
-                      description="调整状态、客户或日期筛选后再试。"
-                    />
-                    <UButton
-                      label="清空筛选"
-                      color="neutral"
-                      variant="outline"
-                      size="xs"
-                      @click="resetFilters"
-                    />
-                  </div>
-                </template>
-              </ResizableTable>
-            </template>
-
-            <template v-else>
-              <ResizableTable
-                :data="pageRecurring"
-                :columns="recurringColumns"
-                class="nx-table"
-                :ui="{ th: 'py-2.5', td: 'py-3' }"
-                data-testid="recurring-table"
-              >
-                <template #cadence-cell="{ row }">
-                  {{ recurringCadenceLabels[row.original.cadence] }}
-                </template>
-                <template #status-cell="{ row }">
-                  <UBadge
-                    :color="recurringStatusColors[row.original.status]"
-                    variant="subtle"
-                    size="sm"
-                    :label="recurringStatusLabels[row.original.status]"
-                  />
-                </template>
-                <template #amount-cell="{ row }">
-                  {{ formatMoney(Number(row.original.amount)) }}
-                </template>
-                <template #actions-cell="{ row }">
-                  <UButton
-                    :label="row.original.status === 'active' ? '暂停' : '恢复'"
-                    :icon="row.original.status === 'active' ? 'i-carbon-pause' : 'i-carbon-play'"
-                    color="neutral"
-                    variant="outline"
-                    size="xs"
-                    :disabled="!canCreate"
-                    :data-testid="row.original.status === 'active' ? 'recurring-pause' : 'recurring-resume'"
-                    @click="toggleRecurring(row.original)"
-                  />
-                </template>
-                <template #empty>
-                  <UEmpty
-                    variant="naked"
-                    icon="i-carbon-calendar"
-                    title="暂无定期开票计划"
-                    class="py-8"
-                  />
-                </template>
-              </ResizableTable>
-            </template>
+            <SalesInvoicesTable
+              v-else-if="tab === 'invoices'"
+              :rows="pageInvoices"
+              @open="openInvoice"
+              @reset="resetFilters"
+            />
+            <SalesRecurringTable
+              v-else-if="tab === 'recurring'"
+              :rows="pageRecurring"
+              :can-create="canCreate"
+              @open="openRecurring"
+              @toggle="toggleRecurringRow"
+            />
+            <SalesInvoiceDelivery
+              v-else
+            />
           </div>
 
           <template #footer>
             <div
-              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty && tab !== 'receivables'"
+              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty && !['receivables', 'invoice-delivery'].includes(tab)"
               class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
               <p class="text-xs tabular-nums text-muted">
@@ -1439,10 +1354,17 @@ async function reloadPage() {
           :order="selectedOrder"
           :can-create="canCreate"
           :can-approve="canApproveSelected"
+          :can-withdraw="canWithdrawSelected"
+          :can-cancel="canCancelSelected"
+          :can-resubmit="canResubmitSelected"
+          :self-approval-blocked="selfApprovalBlocked"
           @edit="startEditOrder"
           @approve="approveSelectedOrder"
           @reject="rejectSelectedOrder"
           @fulfill="startFulfillment"
+          @withdraw="withdrawSelectedOrder"
+          @cancel-draft="cancelSelectedOrderDraft"
+          @resubmit="resubmitSelectedOrder"
           @back="closeOrderDetail"
           @open-quote="openQuoteFromOrder"
         />
@@ -1453,6 +1375,7 @@ async function reloadPage() {
           :can-create="canCreate"
           @convert="openConversion"
           @edit="startEditQuote"
+          @send="sendSelectedQuote"
           @back="closeQuoteDetail"
           @open-order="openOrderFromOther"
         />
@@ -1487,6 +1410,28 @@ async function reloadPage() {
           @save-draft="handleSaveDraft"
           @issue="handleIssueInvoice"
           @correct="openCorrection"
+        />
+
+        <SalesRecurringPlanSlideover
+          v-model:open="recurringPlanOpen"
+          :plan="selectedRecurringPlan"
+          :occurrences="recurringOccurrences"
+          :preview="recurringPreview"
+          :can-manage="canCreate"
+          @run="runRecurring"
+          @skip="skipRecurring"
+          @edit="openRecurringEdit"
+          @toggle="toggleSelectedRecurring"
+          @open-invoice="openRecurringInvoice"
+        />
+
+        <SalesRecurringFormSlideover
+          v-model:open="recurringFormOpen"
+          :plan="recurringEditingPlan"
+          :customers="customerOptions"
+          :can-manage="canCreate"
+          :error="recurringFormError"
+          @save="saveRecurring"
         />
 
         <SalesReceiptFormSlideover

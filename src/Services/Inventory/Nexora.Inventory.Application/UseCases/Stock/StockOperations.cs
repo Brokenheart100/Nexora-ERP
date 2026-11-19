@@ -23,6 +23,15 @@ public sealed partial class InventoryUseCases
         return rows.Select(x => View(x, current, x.DestinationId == warehouseId && warehouse.ReceiverId == current.MemberId)).ToArray();
     }
 
+    public async Task<StockOperationView> OperationAsync(Guid workspaceId, Guid warehouseId, Guid id, IStockOperations operations, CancellationToken ct)
+    {
+        var current = await authority.AccessAsync(workspaceId, ct);
+        var warehouse = await RequireWarehouseAsync(current, warehouseId, false, ct);
+        var operation = await operations.FindAsync(current.Scope, id, ct) ?? throw new ResourceNotFoundException();
+        if (operation.WarehouseId != warehouseId && operation.DestinationId != warehouseId) throw new ResourceNotFoundException();
+        return View(operation, current, operation.DestinationId == warehouseId && warehouse.ReceiverId == current.MemberId);
+    }
+
     public async Task<InventoryChange> PrepareOperationAsync(PrepareStockOperation command, IStockOperations operations, CancellationToken ct)
     {
         var current = await authority.AccessAsync(command.WorkspaceId, ct);

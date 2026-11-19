@@ -1,0 +1,316 @@
+{
+  "app": {
+    "title": "Nexora ERP — UI prototype",
+    "description": "A Carbon-inspired UI prototype for Nexora ERP: dashboard, product catalog, and purchase orders, all powered by local mock data."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "catalog": "Product catalog",
+    "partners": "Partners",
+    "definitions": "Master data",
+    "purchaseOrders": "Purchase orders",
+    "purchaseAudit": "Purchase audit",
+    "sales": "Sales & receivables",
+    "inventory": "Inventory",
+    "finance": "Finance",
+    "assistant": "Workspace assistant",
+    "changeLog": "Change log",
+    "settings": "Settings"
+  },
+  "shell": {
+    "searchButton": "Search or jump to…",
+    "sidebarNote": "Local UI prototype · Mock data",
+    "sidebarDisconnected": "No backend connection",
+    "searchDescription": "Search pages, products, partners, or documents; results come from local mock data.",
+    "searchPlaceholder": "Search pages, products, partners, or documents…",
+    "searchEmptyTitle": "No matching results",
+    "searchEmptyBody": "Try a product SKU, document number, or page name; only local mock data is searched.",
+    "searchSelect": "Select",
+    "searchOpen": "Open",
+    "searchClose": "Close",
+    "searchScope": "Demo scope: local mock pages, products, partners, and documents",
+    "language": "Language",
+    "mfa": "MFA enabled · {count} sign-in sessions",
+    "accountSettings": "Account & settings",
+    "securitySettings": "Security settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "prototypeNote": "Local UI prototype · Mock data",
+    "currentWorkspace": "Current workspace: {plan}",
+    "notifications": "Notifications",
+    "viewNotifications": "View notifications",
+    "security": {
+      "title": "Account & security",
+      "description": "Account, MFA, and sign-in sessions are local mock data, shown read-only",
+      "lastLogin": "Last sign-in {time}",
+      "mfaEnabled": "MFA enabled",
+      "mfaDisabled": "MFA disabled",
+      "sessionsTitle": "Sign-in sessions",
+      "sessionsSummary": "{count} total; this device is marked as the current session",
+      "currentSession": "Current session",
+      "settingsTitle": "Security settings",
+      "changePassword": "Change password",
+      "changePasswordDescription": "Update the account password and sign-in alerts",
+      "rebindMfa": "Rebind MFA",
+      "rebindMfaDescription": "Replace the authenticator or recovery codes",
+      "loginHistory": "View sign-in history",
+      "loginHistoryDescription": "Sign-ins and devices from the last 30 days",
+      "open": "Open",
+      "endOthers": "End other sessions",
+      "close": "Close",
+      "endedTitle": "Other sessions ended (demo)",
+      "endedDescription": "The local prototype only removes mock sessions; real sign-ins are unaffected.",
+      "demoTitle": "{action} (demo)",
+      "demoDescription": "The UI prototype has no account operations; this entry point is illustrative only."
+    }
+  },
+  "search": {
+    "groups": {
+      "recent": "Recent",
+      "pages": "Pages",
+      "products": "Products",
+      "partners": "Partners",
+      "definitions": "Master data",
+      "purchaseOrders": "Purchase orders",
+      "salesOrders": "Sales orders",
+      "quotes": "Quotes",
+      "invoices": "Invoices",
+      "documents": "Recent documents",
+      "changeLog": "Change log",
+      "demoErrors": "Error demos"
+    },
+    "pages": {
+      "dashboard": "Workspace overview, purchasing trend, and to-dos",
+      "catalog": "Search, filter, and edit products",
+      "partners": "Supplier, customer, and donor records",
+      "definitions": "Product categories, units, and tax codes",
+      "purchaseOrders": "Order list, lines, and approval status",
+      "purchaseAudit": "Approval, receiving, and change audit",
+      "sales": "Quotes, sales orders, receivables, and invoices",
+      "inventory": "Warehouses, stock positions, and movements",
+      "finance": "General ledger, payables and receivables, and reports",
+      "assistant": "Conversations, streaming answers, and tool approvals",
+      "changeLog": "Product, partner, document, and definition changes",
+      "settings": "Workspace, members, roles, and preferences"
+    },
+    "productCategory": "Product category · {status}",
+    "unit": "Unit · precision {precision}",
+    "taxCode": "{kind} tax code · {rate}",
+    "validUntil": "Valid until {date}",
+    "errors": {
+      "forbidden": {
+        "label": "403 · Access denied",
+        "description": "Demo error page with workspace switching"
+      },
+      "notFound": {
+        "label": "404 · Page not found",
+        "description": "Demo the error page's return-to-dashboard action"
+      },
+      "serverError": {
+        "label": "500 · Server error",
+        "description": "Demo the server-error page"
+      }
+    }
+  },
+  "labels": {
+    "purchaseStatus": {
+      "draft": "Draft",
+      "pending": "Pending approval",
+      "approved": "Approved",
+      "partial": "Partially received",
+      "received": "Received",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "salesStatus": {
+      "draft": "Draft",
+      "pending": "Pending approval",
+      "approved": "Approved",
+      "partial": "Partially fulfilled",
+      "fulfilled": "Fulfilled",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "quoteStatus": {
+      "draft": "Draft",
+      "sent": "Sent",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "expired": "Expired"
+    },
+    "invoiceStatus": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "cancelled": "Voided"
+    },
+    "changeEntity": {
+      "product": "Product",
+      "partner": "Partner",
+      "purchaseOrder": "Purchase order",
+      "salesOrder": "Sales order",
+      "invoice": "Invoice",
+      "definition": "Definition"
+    },
+    "partnerType": {
+      "supplier": "Supplier",
+      "customer": "Customer",
+      "donor": "Donor",
+      "both": "Supplier / Customer"
+    },
+    "definitionStatus": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "taxKind": {
+      "output": "Output",
+      "input": "Input"
+    },
+    "todoPriority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "documentType": {
+      "purchaseOrder": "Purchase order",
+      "goodsReceipt": "Goods receipt",
+      "purchaseInvoice": "Purchase invoice",
+      "payment": "Payment",
+      "salesOrder": "Sales order"
+    },
+    "rawDocumentStatus": {
+      "partiallyReceived": "Partially received",
+      "received": "Received",
+      "confirmed": "Confirmed",
+      "paid": "Paid",
+      "receiptReceived": "Payment received",
+      "pending": "Pending approval",
+      "draft": "Draft",
+      "cancelled": "Cancelled",
+      "partiallyFulfilled": "Partially fulfilled",
+      "overdue": "Overdue",
+      "issued": "Issued",
+      "voided": "Voided"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "newPurchaseOrder": "New purchase order",
+    "headline": "Workspace overview",
+    "overviewMeta": "{plan} · {members} members · updated {time}",
+    "kpi": {
+      "purchase": "Purchases this month",
+      "sales": "Sales this month",
+      "receivablePayable": "Receivables / payables",
+      "pendingPurchases": "Pending purchase orders",
+      "lowStock": "Stock alerts",
+      "activeProducts": "Active products",
+      "purchaseHint": "Demo basis · +{percent}% vs last month",
+      "salesHint": "Demo basis · +{percent}% vs last month",
+      "receivableHint": "Demo basis · {receivables} awaiting receipt · {orders} awaiting payment",
+      "pendingHint": "Demo basis · Needs approval or follow-up",
+      "pendingHintIdle": "Demo basis · Nothing to action",
+      "stockHint": "Demo basis · {percent}% of active products",
+      "productHint": "Demo basis · Across {categories} categories",
+      "orders": "{count} orders",
+      "products": "{count} products"
+    },
+    "trend": {
+      "purchase": "Purchases",
+      "sales": "Sales",
+      "receivable": "Receivables",
+      "purchaseTitle": "Monthly purchases",
+      "salesTitle": "Monthly sales",
+      "receivableTitle": "Month-end receivables",
+      "range": "Jan–Dec 2026 · Unit: ¥1k · Mock data",
+      "chartAria": "{title} bar chart"
+    },
+    "todos": {
+      "title": "My to-dos",
+      "subtitle": "Grouped by approval, draft, and overdue",
+      "completeAll": "Complete all",
+      "groups": {
+        "approval": "Approval",
+        "draft": "Draft",
+        "overdue": "Overdue"
+      },
+      "emptyTitle": "No to-dos",
+      "emptyDescription": "Demo: this workspace has no to-dos (?empty=todos)",
+      "allDoneTitle": "All done",
+      "allDoneDescription": "All to-dos in this workspace are complete. Restore the demo's initial state if needed.",
+      "restore": "Restore all to-dos",
+      "groupEmptyTitle": "No to-dos in this group",
+      "groupEmptyDescription": "{group} is clear. Switch to another group.",
+      "progressAria": "To-do completion"
+    },
+    "documents": {
+      "title": "Recent documents",
+      "subtitle": "Latest purchasing, receiving, sales, invoice, and payment activity",
+      "viewAll": "View all",
+      "emptyTitle": "No documents",
+      "emptyDescription": "Demo: this workspace has no documents (?empty=documents)",
+      "columns": {
+        "id": "Document",
+        "type": "Type",
+        "counterparty": "Counterparty",
+        "status": "Status",
+        "amount": "Amount",
+        "updatedAt": "Updated"
+      },
+      "exportFilename": "dashboard-documents-{date}.csv",
+      "exportButton": "Export report",
+      "exportTitle": "Exported {count} documents",
+      "exportDescription": "The CSV is generated locally in the browser; no backend involved."
+    },
+    "activity": {
+      "title": "Recent activity",
+      "subtitle": "From mock audit records",
+      "all": "All types",
+      "emptyTitle": "No activity",
+      "emptyDescription": "Demo: this workspace has no change records (?empty=activity)",
+      "viewAll": "View all changes"
+    },
+    "refresh": {
+      "button": "Refresh",
+      "title": "Data refreshed",
+      "description": "Mock data was re-read; refreshing the page restores the initial values."
+    },
+    "footer": {
+      "dataBefore": "All data comes from local mock data in",
+      "dataAfter": "and resets after a page refresh.",
+      "emptyBefore": "Empty-state demos: append",
+      "emptySeparator": ", ",
+      "emptyOr": " or ",
+      "emptyAfter": " to the URL."
+    },
+    "stockAria": "Share of active products with low stock"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Announcements, pending purchase and sales approvals, stock alerts, and recent documents (mock data)",
+    "emptyTitle": "No notifications",
+    "emptyDescription": "Nothing needs attention in this workspace",
+    "markAll": "Mark all as read",
+    "unreadCount": "{count} unread",
+    "close": "Close",
+    "readOne": "Mark as read",
+    "todayAt": "Today {time}",
+    "yesterdayAt": "Yesterday {time}",
+    "unread": "Unread",
+    "sources": {
+      "announcement": "Announcement",
+      "purchaseApproval": "Purchase approval",
+      "salesApproval": "Sales approval",
+      "stockAlert": "Stock alert",
+      "recentDocument": "Recent document"
+    },
+    "listSeparator": "; ",
+    "purchaseTitle": "{count} purchase orders await action",
+    "salesTitle": "{count} sales orders await approval",
+    "stockTitle": "{count} products below safety stock",
+    "documentDescription": "{type} · {status}"
+  }
+}

@@ -8,6 +8,13 @@ const { workspace, activeWorkspaceId } = useMockWorkspace()
 const { loading, run: runRefresh } = useMockRefresh()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
 
+const viewItems = [
+  { label: '业务变更记录', value: 'changes', icon: 'i-carbon-list' },
+  { label: '审计中心', value: 'audit', icon: 'i-carbon-security' }
+]
+const view = ref(String(route.query.view ?? 'changes'))
+if (!viewItems.some(item => item.value === view.value)) view.value = 'changes'
+
 const type = ref<'all' | ChangeEntityType>('all')
 const actor = ref('all')
 const pageSize = 10
@@ -99,34 +106,43 @@ async function reloadPage() {
 
         <UDashboardToolbar :ui="{ root: 'flex-wrap gap-3 py-2.5' }">
           <template #left>
-            <USelect
-              v-model="type"
-              :items="typeItems"
+            <UTabs
+              v-model="view"
+              :items="viewItems"
+              :content="false"
               size="sm"
-              class="w-44"
-              data-testid="change-log-type"
+              data-testid="change-log-views"
             />
-            <USelect
-              v-model="actor"
-              :items="actorItems"
-              size="sm"
-              class="w-36"
-              data-testid="change-log-actor"
-            />
-            <UButton
-              v-if="activeFilters"
-              label="重置"
-              icon="i-carbon-reset"
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              data-testid="change-log-reset"
-              @click="resetFilters"
-            />
+            <template v-if="view === 'changes'">
+              <USelect
+                v-model="type"
+                :items="typeItems"
+                size="sm"
+                class="w-44"
+                data-testid="change-log-type"
+              />
+              <USelect
+                v-model="actor"
+                :items="actorItems"
+                size="sm"
+                class="w-36"
+                data-testid="change-log-actor"
+              />
+              <UButton
+                v-if="activeFilters"
+                label="重置"
+                icon="i-carbon-reset"
+                color="neutral"
+                variant="ghost"
+                size="sm"
+                data-testid="change-log-reset"
+                @click="resetFilters"
+              />
+            </template>
           </template>
 
           <template #right>
-            <p class="text-xs text-muted">
+            <p v-if="view === 'changes'" class="text-xs text-muted">
               共 {{ filteredEntries.length }} 条记录
             </p>
             <UTooltip text="刷新记录">
@@ -146,8 +162,9 @@ async function reloadPage() {
       </template>
 
       <template #body>
-        <AppBreadcrumb current="变更记录" class="mb-3" />
-        <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
+        <AppBreadcrumb :current="view === 'audit' ? '审计中心' : '变更记录'" class="mb-3" />
+        <AuditCenter v-if="view === 'audit'" />
+        <UCard v-else class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-3 p-4" data-testid="change-log-skeleton">
             <USkeleton v-for="n in 6" :key="n" class="h-12 w-full" />
           </div>
@@ -213,7 +230,7 @@ async function reloadPage() {
             </div>
           </template>
         </UCard>
-        <p class="mt-2 text-[11px] text-dimmed">
+        <p v-if="view === 'changes'" class="mt-2 text-[11px] text-dimmed">
           本地原型 · 模拟数据 · 变更记录来自 app/mocks/changeLog.ts
         </p>
       </template>

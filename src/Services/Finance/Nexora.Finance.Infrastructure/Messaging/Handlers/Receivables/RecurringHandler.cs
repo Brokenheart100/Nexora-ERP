@@ -8,6 +8,11 @@ namespace Nexora.Finance.Infrastructure;
 public static class RecurringHandler
 {
     [Transactional(Mode = TransactionMiddlewareMode.Eager)]
+    public static async Task<(ScheduleChange, OutgoingMessages)> Handle(SkipInvoiceSchedule command, FinanceDbContext db,
+        ReceivableUseCases service, IRecurringInvoices recurring, CancellationToken ct) =>
+        Wrap(await service.SkipScheduleAsync(command, recurring, ct));
+
+    [Transactional(Mode = TransactionMiddlewareMode.Eager)]
     public static async Task<(ScheduleChange, OutgoingMessages)> Handle(SaveInvoiceSchedule command, FinanceDbContext db,
         ReceivableUseCases service, IRecurringInvoices recurring, CancellationToken ct) =>
         Wrap(await service.SaveScheduleAsync(command, recurring, ct));

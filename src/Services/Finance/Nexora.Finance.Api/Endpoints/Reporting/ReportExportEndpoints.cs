@@ -18,7 +18,7 @@ public static partial class ReportExportEndpoints
     [Authorize, WolverineGet(Root + "/{id:guid}")]
     public static Task<ReportExportView> Detail(Guid workspaceId, Guid id, ReportExports exports, CancellationToken ct) => exports.DetailAsync(workspaceId, id, ct);
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root)]
     public static async Task<Created<ReportExportView>> Queue(Guid workspaceId, ExportRequest request, IMessageBus bus, CancellationToken ct)
     {
@@ -27,7 +27,7 @@ public static partial class ReportExportEndpoints
         return CreatedJob(workspaceId, result);
     }
 
-    [IdempotentWrite]
+    [ApiWrite]
     [Authorize, WolverinePost(Root + "/{id:guid}/rebuild")]
     public static async Task<Created<ReportExportView>> Rebuild(Guid workspaceId, Guid id, RebuildRequest request, IMessageBus bus, CancellationToken ct)
     {

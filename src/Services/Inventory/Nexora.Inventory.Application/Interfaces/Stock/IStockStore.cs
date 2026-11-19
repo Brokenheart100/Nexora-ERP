@@ -14,6 +14,7 @@ public interface IStockStore
     Task<CostPool[]> PoolsAsync(ResourceScope scope, Guid warehouseId, CancellationToken ct, PageWindow? page = null);
     Task<StockMovement[]> MovementsAsync(ResourceScope scope, Guid warehouseId, Guid? itemId, PageWindow page, bool salesOnly, CancellationToken ct);
     Task<StockMovement?> MovementAsync(ResourceScope scope, Guid id, CancellationToken ct);
+    Task<bool> HasMovementsAsync(ResourceScope scope, CancellationToken ct);
     Task<decimal> ReturnedAsync(ResourceScope scope, Guid originalId, CancellationToken ct);
     Task<decimal> PendingReturnsAsync(ResourceScope scope, Guid originalId, CancellationToken ct);
     Task<StockReturn?> ReturnAsync(ResourceScope scope, Guid id, CancellationToken ct);

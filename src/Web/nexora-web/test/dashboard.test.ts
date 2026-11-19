@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { barWidth, delta, monthWindows, previousWindow, statementCheck, topPartners } from '../app/utils/dashboard'
+import { barWidth, delta, monthWindows, previousWindow, statementCheck, topPartners } from '../app/utils/dashboard/dashboard'
 
 describe('monthWindows', () => {
   it('splits the trailing months and clamps to the book start', () => {

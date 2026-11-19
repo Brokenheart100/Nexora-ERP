@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using Nexora.Finance.Application;
+using Nexora.Finance.Contracts.Opening;
 using Nexora.Purchasing.Contracts;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
@@ -29,8 +30,11 @@ public static class FinanceMessaging
             options.LocalQueue("invoice-mail").UseDurableInbox();
             options.PublishMessage<InvoiceMailLeaseExpired>().ToLocalQueue("invoice-mail-leases");
             options.LocalQueue("invoice-mail-leases").UseDurableInbox();
+            options.PublishMessage<ResumeCostsAfterOpening>().ToLocalQueue("opening-stock-sequence");
+            options.LocalQueue("opening-stock-sequence").UseDurableInbox();
             options.ListenToRabbitQueue(ReceiptRoutes.FinanceQueue).UseDurableInbox();
             options.PublishMessage<PurchaseVarianceV1>().ToRabbitExchange(ReceiptRoutes.InventoryExchange);
+            options.PublishMessage<OpeningStockRequestedV1>().ToRabbitExchange(StockOpeningRoutes.Exchange);
             options.Policies.UseDurableOutboxOnAllSendingEndpoints();
         });
     }

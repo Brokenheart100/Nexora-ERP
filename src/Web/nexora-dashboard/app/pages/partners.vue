@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { ChangeEntry, Partner, PartnerStatus, PartnerType } from '~/mocks'
-import { changeLogEntries, partnerStatusColors, partnerStatusLabels, partnerTypeLabels, partners } from '~/mocks'
+import type { ChangeEntry, Partner, PartnerContact, PartnerRole, PartnerStatus, PartnerType } from '~/mocks'
+import {
+  changeLogEntries,
+  partnerRoleLabel,
+  partnerRoleLabels,
+  partnerRolesOf,
+  partnerStatusColors,
+  partnerStatusLabels,
+  partnerTypeFromRoles,
+  partnerTypeLabels,
+  partners
+} from '~/mocks'
 import { z } from 'zod'
 
 const toast = useToast()
@@ -52,7 +62,8 @@ const filteredRows = computed(() => {
   if (isForbidden.value || isError.value || isEmpty.value) return []
   const keyword = search.value.trim().toLowerCase()
   return rows.value.filter((partner) => {
-    if (type.value !== 'all' && partner.type !== type.value) return false
+    if (type.value === 'both' && !(partnerRolesOf(partner).includes('supplier') && partnerRolesOf(partner).includes('customer'))) return false
+    if (type.value !== 'all' && type.value !== 'both' && !partnerRolesOf(partner).includes(type.value)) return false
     if (status.value !== 'all' && partner.status !== status.value) return false
     if (!keyword) return true
     return [partner.name, partner.code, partner.contact, partner.email, partner.phone]
@@ -150,7 +161,7 @@ const detailEntries = computed(() => {
   ].sort((a, b) => b.at.localeCompare(a.at))
 })
 
-const detailTypeLabel = computed(() => detailPartner.value ? partnerTypeLabels[detailPartner.value.type] : '')
+const detailTypeLabel = computed(() => detailPartner.value ? partnerRoleLabel(detailPartner.value) : '')
 const detailStatusLabel = computed(() => detailPartner.value ? partnerStatusLabels[detailPartner.value.status] : '')
 const detailStatusColor = computed(() => detailPartner.value ? partnerStatusColors[detailPartner.value.status] : 'neutral')
 
@@ -159,35 +170,95 @@ const editing = ref<Partner | null>(null)
 const editForm = reactive({
   name: '',
   code: '',
-  type: 'supplier' as PartnerType,
+  roles: [] as PartnerRole[],
   contact: '',
   phone: '',
   email: '',
   taxNo: '',
-  status: 'active' as PartnerStatus
+  status: 'active' as PartnerStatus,
+  province: '',
+  city: '',
+  line: '',
+  postalCode: '',
+  contacts: [] as PartnerContact[]
 })
 
 const partnerEditSchema = z.object({
   name: z.string().trim().min(1, '请填写伙伴名称').max(80, '伙伴名称不能超过 80 个字符'),
-  code: z.string().trim().min(1, '请填写伙伴编码').max(20, '伙伴编码不能超过 20 个字符'),
-  type: z.enum(['supplier', 'customer', 'donor', 'both']),
+  roles: z.array(z.enum(['supplier', 'customer', 'donor'])).min(1, '至少选择一个业务角色'),
   contact: z.string().trim().max(20, '联系人不能超过 20 个字符'),
   phone: z.string().trim().max(30, '联系电话不能超过 30 个字符'),
   email: z.string().trim().refine(value => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), '邮箱格式不正确'),
   taxNo: z.string().trim().max(30, '税号不能超过 30 个字符'),
-  status: z.enum(['active', 'inactive'])
+  status: z.enum(['active', 'inactive']),
+  province: z.string().trim().max(20, '省份不能超过 20 个字符'),
+  city: z.string().trim().max(20, '城市不能超过 20 个字符'),
+  line: z.string().trim().max(80, '详细地址不能超过 80 个字符'),
+  postalCode: z.string().trim().max(10, '邮编不能超过 10 个字符'),
+  contacts: z.array(z.object({
+    id: z.string(),
+    name: z.string().trim().min(1, '联系人姓名不能为空').max(20, '联系人姓名不能超过 20 个字符'),
+    title: z.string().trim().max(20, '联系人职务不能超过 20 个字符'),
+    phone: z.string().trim().max(30, '联系电话不能超过 30 个字符'),
+    email: z.string().trim().refine(value => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), '联系人邮箱格式不正确')
+  })).min(1, '至少保留一个联系人')
 })
+
+const roleOptions: { value: PartnerRole, label: string }[] = [
+  { value: 'supplier', label: '供应商' },
+  { value: 'customer', label: '客户' },
+  { value: 'donor', label: '捐赠人' }
+]
+
+let contactSequence = 0
+function makeContact(name = '', title = '', phone = '', email = ''): PartnerContact {
+  contactSequence += 1
+  return { id: 'local-contact-' + contactSequence, name, title, phone, email }
+}
+
+function resetEditForm() {
+  editForm.name = ''
+  editForm.code = ''
+  editForm.roles = ['supplier']
+  editForm.contact = ''
+  editForm.phone = ''
+  editForm.email = ''
+  editForm.taxNo = ''
+  editForm.status = 'active'
+  editForm.province = '浙江省'
+  editForm.city = '杭州市'
+  editForm.line = ''
+  editForm.postalCode = ''
+  editForm.contacts = [makeContact()]
+}
 
 function openEditor(partner: Partner) {
   editing.value = partner
   editForm.name = partner.name
   editForm.code = partner.code
-  editForm.type = partner.type
+  editForm.roles = partnerRolesOf(partner)
   editForm.contact = partner.contact
   editForm.phone = partner.phone
   editForm.email = partner.email
   editForm.taxNo = partner.taxNo
   editForm.status = partner.status
+  editForm.province = partner.address?.province ?? ''
+  editForm.city = partner.address?.city ?? ''
+  editForm.line = partner.address?.line ?? ''
+  editForm.postalCode = partner.address?.postalCode ?? ''
+  editForm.contacts = (partner.contacts ?? [makeContact(partner.contact, '主联系人', partner.phone, partner.email)])
+    .map(contact => ({ ...contact }))
+  detailOpen.value = false
+  editOpen.value = true
+}
+
+function openCreate() {
+  if (!canEdit.value) {
+    toast.add({ title: '没有新建权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
+    return
+  }
+  editing.value = null
+  resetEditForm()
   detailOpen.value = false
   editOpen.value = true
 }
@@ -196,14 +267,48 @@ function openEditorFromDetail() {
   if (detailPartner.value) openEditor(detailPartner.value)
 }
 
+function toggleRole(role: PartnerRole) {
+  if (editForm.roles.includes(role)) {
+    if (editForm.roles.length === 1) {
+      toast.add({ title: '至少保留一个业务角色', description: '客户、供应商、捐赠人可以同时选择。', color: 'warning' })
+      return
+    }
+    editForm.roles = editForm.roles.filter(item => item !== role)
+    return
+  }
+  editForm.roles = [...editForm.roles, role]
+}
+
+function addContact() {
+  editForm.contacts.push(makeContact())
+}
+
+function removeContact(index: number) {
+  if (editForm.contacts.length === 1) {
+    toast.add({ title: '至少保留一个联系人', description: '请先新增其他联系人再移除。', color: 'warning' })
+    return
+  }
+  editForm.contacts.splice(index, 1)
+}
+
+function nextPartnerCode(roles: PartnerRole[]) {
+  const prefix = roles.length > 1 ? 'PT' : roles[0] === 'customer' ? 'CUS' : roles[0] === 'donor' ? 'DON' : 'SUP'
+  const max = rows.value
+    .filter(item => item.code.startsWith(prefix + '-'))
+    .reduce((value, item) => Math.max(value, Number(item.code.split('-').pop()) || 0), 0)
+  return prefix + '-' + String(max + 1).padStart(3, '0')
+}
+
+function nextPartnerId() {
+  const max = rows.value.reduce((value, item) => Math.max(value, Number(item.id.replace('pt-', '')) || 0), 1000)
+  return 'pt-' + (max + 1)
+}
+
 function saveEditor() {
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
   }
-
-  const partner = editing.value
-  if (!partner) return
 
   const parsed = partnerEditSchema.safeParse(editForm)
   if (!parsed.success) {
@@ -211,21 +316,44 @@ function saveEditor() {
     return
   }
 
-  if (rows.value.some(item => item.code === parsed.data.code && item.id !== partner.id)) {
+  const primary = parsed.data.contacts[0]!
+  const partner = editing.value
+  const code = partner?.code ?? nextPartnerCode(parsed.data.roles)
+  if (rows.value.some(item => item.code === code && item.id !== partner?.id)) {
     toast.add({ title: '伙伴编码已存在', description: '请更换编码后再保存。', color: 'error' })
     return
   }
 
-  const index = rows.value.findIndex(item => item.id === partner.id)
-  if (index < 0) return
-
   const saved: Partner = {
-    ...rows.value[index]!,
-    ...parsed.data,
+    ...(partner ?? {
+      id: nextPartnerId(),
+      code,
+      currency: 'CNY' as const
+    }),
+    name: parsed.data.name,
+    code,
+    roles: parsed.data.roles,
+    type: partnerTypeFromRoles(parsed.data.roles),
+    contact: primary.name,
+    phone: primary.phone,
+    email: primary.email,
+    taxNo: parsed.data.taxNo,
+    status: parsed.data.status,
+    address: {
+      province: parsed.data.province,
+      city: parsed.data.city,
+      line: parsed.data.line,
+      postalCode: parsed.data.postalCode
+    },
+    contacts: parsed.data.contacts.map(contact => ({ ...contact })),
     updatedAt: formatNow()
   }
-  rows.value[index] = saved
-  if (detailPartner.value?.id === saved.id) detailPartner.value = saved
+
+  const index = rows.value.findIndex(item => item.id === saved.id)
+  if (index >= 0) rows.value[index] = saved
+  else rows.value = [saved, ...rows.value]
+  detailPartner.value = saved
+  detailOpen.value = true
 
   localEntries.value.unshift({
     id: 'local-partner-' + Date.now(),
@@ -233,14 +361,18 @@ function saveEditor() {
     entityType: 'partner',
     entityId: saved.id,
     entityName: saved.name,
-    action: '更新',
+    action: partner ? '更新' : '新建',
     actor: '当前用户',
-    summary: '更新伙伴档案信息（本地预览）。',
+    summary: partner ? '更新伙伴档案与多角色信息（本地预览）。' : '新建伙伴档案并设置业务角色（本地预览）。',
     at: formatNow()
   })
 
   editOpen.value = false
-  toast.add({ title: '已保存伙伴档案', description: '仅更新本次预览，刷新后恢复初始样例。', color: 'success' })
+  toast.add({
+    title: partner ? '已保存伙伴档案' : '已新建伙伴档案',
+    description: saved.code + ' · ' + partnerRoleLabel(saved) + ' · 仅本次预览有效。',
+    color: 'success'
+  })
 }
 
 const overflowItems = [[{
@@ -307,6 +439,15 @@ async function reloadPage() {
               size="sm"
             />
             <NotificationButton />
+            <UButton
+              label="新建伙伴"
+              icon="i-carbon-add"
+              color="primary"
+              size="sm"
+              :disabled="!canEdit"
+              data-testid="partners-new"
+              @click="openCreate"
+            />
             <UDropdownMenu :items="overflowItems" :content="{ align: 'end' }">
               <UButton
                 icon="i-carbon-overflow-menu-horizontal"
@@ -424,7 +565,7 @@ async function reloadPage() {
                   :color="partnerTypeColors[row.original.type]"
                   variant="subtle"
                   size="sm"
-                  :label="partnerTypeLabels[row.original.type]"
+                  :label="partnerRoleLabel(row.original)"
                 />
               </template>
               <template #contact-cell="{ row }">
@@ -477,7 +618,10 @@ async function reloadPage() {
           </div>
 
           <template #footer>
-            <div v-if="!showSkeleton && !isError && !isForbidden && !isEmpty" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+            <div
+              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
+              class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
+            >
               <p class="text-xs text-muted">
                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
               </p>
@@ -519,14 +663,17 @@ async function reloadPage() {
               </div>
               <div>
                 <dt class="text-xs text-muted">
-                  类型
+                  业务角色
                 </dt>
-                <dd class="mt-0.5">
+                <dd class="mt-0.5 flex flex-wrap gap-1">
                   <UBadge
-                    :color="partnerTypeColors[detailPartner.type]"
+                    v-for="role in partnerRolesOf(detailPartner)"
+                    :key="role"
+                    :color="role === 'supplier' ? 'info' : role === 'customer' ? 'success' : 'warning'"
                     variant="subtle"
                     size="sm"
-                    :label="detailTypeLabel"
+                    :label="partnerRoleLabels[role]"
+                    data-testid="partners-detail-role"
                   />
                 </dd>
               </div>
@@ -594,6 +741,42 @@ async function reloadPage() {
             </dl>
           </section>
 
+          <section data-testid="partners-detail-address">
+            <h3 class="text-xs font-semibold tracking-wide text-muted">
+              地址
+            </h3>
+            <p class="mt-2 text-sm text-default">
+              {{ detailPartner.address?.province }}{{ detailPartner.address?.city }}{{ detailPartner.address?.line }}
+            </p>
+            <p v-if="detailPartner.address?.postalCode" class="mt-0.5 font-mono text-xs text-muted">
+              邮编 {{ detailPartner.address.postalCode }}
+            </p>
+          </section>
+
+          <section data-testid="partners-detail-contacts">
+            <h3 class="text-xs font-semibold tracking-wide text-muted">
+              联系人（{{ detailPartner.contacts?.length ?? 1 }}）
+            </h3>
+            <ul class="mt-2 divide-y divide-default rounded-sm border border-default">
+              <li
+                v-for="contact in detailPartner.contacts"
+                :key="contact.id"
+                class="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+                data-testid="partners-detail-contact"
+              >
+                <div>
+                  <p class="text-sm text-default">
+                    {{ contact.name }}
+                    <span v-if="contact.title" class="ml-1 text-xs text-muted">{{ contact.title }}</span>
+                  </p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ contact.phone || '未填写电话' }} · {{ contact.email || '未填写邮箱' }}
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </section>
+
           <section data-testid="partners-detail-changelog">
             <h3 class="text-xs font-semibold tracking-wide text-muted">
               变更记录
@@ -630,9 +813,15 @@ async function reloadPage() {
       </template>
     </USlideover>
 
-    <USlideover v-model:open="editOpen" title="编辑伙伴" :ui="{ content: 'sm:max-w-lg' }">
+    <USlideover
+      v-model:open="editOpen"
+      :title="editing ? '编辑伙伴' : '新建伙伴'"
+      :ui="{ content: 'sm:max-w-xl' }"
+    >
       <template #description>
-        <span class="text-sm text-muted">{{ editing?.code }} · 修改后仅作用于本次预览</span>
+        <span class="text-sm text-muted">
+          {{ editing ? editing.code + ' · 档案编号只读' : '保存后自动生成档案编号' }} · 修改后仅作用于本次预览
+        </span>
       </template>
 
       <template #body>
@@ -646,33 +835,15 @@ async function reloadPage() {
           <UFormField label="伙伴名称" name="name" required>
             <UInput v-model="editForm.name" class="w-full" data-testid="partners-edit-name" />
           </UFormField>
+
           <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="伙伴编码" name="code">
-              <UInput v-model="editForm.code" class="w-full" data-testid="partners-edit-code" />
-            </UFormField>
-            <UFormField label="伙伴类型" name="type">
-              <USelect
-                v-model="editForm.type"
-                :items="[{ label: '供应商', value: 'supplier' }, { label: '客户', value: 'customer' }, { label: '捐赠人', value: 'donor' }, { label: '供应商 / 客户', value: 'both' }]"
-                class="w-full"
-                data-testid="partners-edit-type"
+            <UFormField label="档案编号">
+              <UInput
+                :model-value="editing?.code ?? '保存后自动生成'"
+                class="w-full font-mono"
+                readonly
+                data-testid="partners-edit-code"
               />
-            </UFormField>
-          </div>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="联系人" name="contact">
-              <UInput v-model="editForm.contact" class="w-full" data-testid="partners-edit-contact" />
-            </UFormField>
-            <UFormField label="联系电话" name="phone">
-              <UInput v-model="editForm.phone" class="w-full" data-testid="partners-edit-phone" />
-            </UFormField>
-          </div>
-          <UFormField label="邮箱" name="email">
-            <UInput v-model="editForm.email" class="w-full" data-testid="partners-edit-email" />
-          </UFormField>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="税号" name="taxNo">
-              <UInput v-model="editForm.taxNo" class="w-full" data-testid="partners-edit-taxno" />
             </UFormField>
             <UFormField label="状态" name="status">
               <USelect
@@ -682,6 +853,112 @@ async function reloadPage() {
                 data-testid="partners-edit-status"
               />
             </UFormField>
+          </div>
+
+          <UFormField label="业务角色（可多选）" name="roles" required>
+            <div class="flex flex-wrap gap-2" data-testid="partners-edit-roles">
+              <UButton
+                v-for="option in roleOptions"
+                :key="option.value"
+                :label="option.label"
+                size="sm"
+                :color="editForm.roles.includes(option.value) ? 'primary' : 'neutral'"
+                :variant="editForm.roles.includes(option.value) ? 'solid' : 'outline'"
+                :data-testid="'partners-edit-role-' + option.value"
+                @click="toggleRole(option.value)"
+              />
+            </div>
+            <p class="mt-1 text-[11px] text-muted">
+              同一主体可同时是供应商、客户或捐赠人；停用后会退出新单据的选择项，历史单据仍保留原名称。
+            </p>
+          </UFormField>
+
+          <UFormField label="税号" name="taxNo">
+            <UInput v-model="editForm.taxNo" class="w-full" data-testid="partners-edit-taxno" />
+          </UFormField>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-medium text-default">
+                地址
+              </p>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <UFormField label="省份" name="province">
+                <UInput v-model="editForm.province" class="w-full" data-testid="partners-edit-province" />
+              </UFormField>
+              <UFormField label="城市" name="city">
+                <UInput v-model="editForm.city" class="w-full" data-testid="partners-edit-city" />
+              </UFormField>
+            </div>
+            <UFormField label="详细地址" name="line">
+              <UInput v-model="editForm.line" class="w-full" data-testid="partners-edit-line" />
+            </UFormField>
+            <UFormField label="邮编" name="postalCode">
+              <UInput v-model="editForm.postalCode" class="w-full" data-testid="partners-edit-postal" />
+            </UFormField>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-medium text-default">
+                联系人（{{ editForm.contacts.length }}）
+              </p>
+              <UButton
+                label="新增联系人"
+                icon="i-carbon-add"
+                size="xs"
+                color="neutral"
+                variant="outline"
+                data-testid="partners-edit-contact-add"
+                @click="addContact"
+              />
+            </div>
+            <div
+              v-for="(contact, index) in editForm.contacts"
+              :key="contact.id"
+              class="rounded-sm border border-default p-3"
+              :data-testid="'partners-edit-contact-' + index"
+            >
+              <div class="grid gap-3 sm:grid-cols-2">
+                <UFormField :label="index === 0 ? '主联系人' : '联系人 ' + (index + 1)" required>
+                  <UInput
+                    v-model="contact.name"
+                    class="w-full"
+                    :data-testid="index === 0 ? 'partners-edit-contact' : 'partners-edit-contact-name-' + index"
+                  />
+                </UFormField>
+                <UFormField label="职务">
+                  <UInput v-model="contact.title" class="w-full" :data-testid="'partners-edit-contact-title-' + index" />
+                </UFormField>
+                <UFormField label="联系电话">
+                  <UInput
+                    v-model="contact.phone"
+                    class="w-full"
+                    :data-testid="index === 0 ? 'partners-edit-phone' : 'partners-edit-contact-phone-' + index"
+                  />
+                </UFormField>
+                <UFormField label="邮箱">
+                  <UInput
+                    v-model="contact.email"
+                    class="w-full"
+                    :data-testid="index === 0 ? 'partners-edit-email' : 'partners-edit-contact-email-' + index"
+                  />
+                </UFormField>
+              </div>
+              <div class="mt-2 flex justify-end">
+                <UButton
+                  label="移除"
+                  icon="i-carbon-trash-can"
+                  size="xs"
+                  color="error"
+                  variant="ghost"
+                  :disabled="editForm.contacts.length === 1"
+                  :data-testid="'partners-edit-contact-remove-' + index"
+                  @click="removeContact(index)"
+                />
+              </div>
+            </div>
           </div>
         </UForm>
       </template>
@@ -695,7 +972,7 @@ async function reloadPage() {
             @click="editOpen = false"
           />
           <UButton
-            label="保存"
+            :label="editing ? '保存' : '创建伙伴'"
             type="submit"
             form="partner-editor"
             color="primary"

@@ -58,6 +58,9 @@ public sealed class StockStore(InventoryDbContext db) : IStockStore
     public Task<StockMovement?> MovementAsync(ResourceScope scope, Guid id, CancellationToken ct) =>
         db.Movements.SingleOrDefaultAsync(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId && x.Id == id, ct);
 
+    public Task<bool> HasMovementsAsync(ResourceScope scope, CancellationToken ct) =>
+        db.Movements.AnyAsync(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId, ct);
+
     public Task<decimal> ReturnedAsync(ResourceScope scope, Guid originalId, CancellationToken ct) =>
         db.Movements.Where(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId && x.ReversesId == originalId)
             .SumAsync(x => -x.Quantity, ct);

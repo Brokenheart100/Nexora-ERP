@@ -10,17 +10,17 @@ public sealed partial class ReceivableUseCases
     {
         var (current, _) = await access.ReadAsync(workspace, ct);
         current.Demand(LedgerPermissions.Post);
-        await InvoiceDocumentAsync(current.Scope, invoiceId, ct);
-        return (await dispatches.ListAsync(current.Scope, invoiceId, ct)).Select(DispatchViewOf).ToArray();
+        await DeliverableInvoiceAsync(current.Scope, invoiceId, ct);
+        return (await dispatches.ListAsync(current.Scope, invoiceId, false, ct)).Select(DispatchViewOf).ToArray();
     }
 
     public async Task<DispatchView> DispatchDetailAsync(Guid workspace, Guid invoiceId, Guid dispatchId, IInvoiceDispatches dispatches, CancellationToken ct)
     {
         var (current, _) = await access.ReadAsync(workspace, ct);
         current.Demand(LedgerPermissions.Post);
-        await InvoiceDocumentAsync(current.Scope, invoiceId, ct);
+        await DeliverableInvoiceAsync(current.Scope, invoiceId, ct);
         var dispatch = await DispatchAsync(current.Scope, dispatchId, dispatches, ct);
-        if (dispatch.InvoiceId != invoiceId) throw new ResourceNotFoundException();
+        if (dispatch.DocumentId != invoiceId) throw new ResourceNotFoundException();
         return DispatchViewOf(dispatch);
     }
 
@@ -30,7 +30,7 @@ public sealed partial class ReceivableUseCases
         var (current, _) = await access.LockAsync(command.WorkspaceId, LedgerPermissions.Post, ct);
         var replay = await mutations.ReplayAsync(current, command.OperationId, action, command, ct);
         if (replay is not null) return (DispatchViewOf(await DispatchAsync(current.Scope, replay.TargetId!.Value, dispatches, ct)), null);
-        var invoice = await InvoiceDocumentAsync(current.Scope, command.InvoiceId, ct);
+        var invoice = await DeliverableInvoiceAsync(current.Scope, command.InvoiceId, ct);
         var recipient = await RecipientAsync(current.Scope, invoice, command.Recipient, ct);
         var dispatch = new InvoiceDispatch(invoice, recipient, clock.GetUtcNow(), null);
         dispatches.Add(dispatch);
@@ -54,13 +54,13 @@ public sealed partial class ReceivableUseCases
                 dispatch.Abandon(now);
                 break;
             case "retry":
-                var original = await InvoiceDocumentAsync(current.Scope, dispatch.InvoiceId, ct);
+                var original = await InvoiceDocumentAsync(current.Scope, dispatch.DocumentId, ct);
                 await RecipientAsync(current.Scope, original, dispatch.Recipient, ct);
                 dispatch.Retry(now);
                 delivery = DeliveryOf(dispatch);
                 break;
             case "resend":
-                var invoice = await InvoiceDocumentAsync(current.Scope, dispatch.InvoiceId, ct);
+                var invoice = await InvoiceDocumentAsync(current.Scope, dispatch.DocumentId, ct);
                 var recipient = await RecipientAsync(current.Scope, invoice, dispatch.Recipient, ct);
                 var replacement = new InvoiceDispatch(invoice, recipient, now, dispatch.Id);
                 dispatch.MarkResent(replacement.Id, now);
@@ -74,22 +74,34 @@ public sealed partial class ReceivableUseCases
         return (DispatchViewOf(dispatch), delivery);
     }
 
-    public async Task<DispatchStart> StartMailAsync(DeliverInvoiceMail command, IChartStore chart, IInvoiceDispatches dispatches, CancellationToken ct)
+    public async Task<DispatchStart> StartMailAsync(DeliverInvoiceMail command, IChartStore chart,
+        IInvoiceDispatches dispatches, DonationReceipts donations, CancellationToken ct)
     {
         var scope = new ResourceScope(command.TenantId, command.WorkspaceId);
-        await chart.LockBookAsync(scope, ct);
-        var dispatch = await DispatchAsync(scope, command.Id, dispatches, ct);
-        if (!dispatch.Start(command.Attempt, clock.GetUtcNow())) return new(null);
-        var invoice = await InvoiceDocumentAsync(scope, dispatch.InvoiceId, ct);
+        var book = await chart.LockBookAsync(scope, ct) ?? throw new ResourceNotFoundException();
+        var dispatch = await dispatches.FindAsync(scope, command.Id, ct) ?? throw new ResourceNotFoundException();
+        var now = clock.GetUtcNow();
+        if (!dispatch.Start(command.Attempt, now)) return new(null);
+        if (dispatch.IsDonation)
+        {
+            var donation = await donations.FindAsync(scope, dispatch.DocumentId, ct);
+            if (donation.ReversedById is not null || donation.JournalId != dispatch.JournalId)
+            {
+                dispatch.Finish(command.Attempt, DispatchState.Failed, "The active donation no longer matches the delivery.", now);
+                return new(null);
+            }
+            return new(new DonationDispatchWork(dispatch.Recipient, DonationReceipts.View(donation, book)), dispatch.LeaseUntilUtc);
+        }
+        var invoice = await InvoiceDocumentAsync(scope, dispatch.DocumentId, ct);
         if (invoice.JournalId != dispatch.JournalId) throw new LedgerRuleException("The invoice no longer matches the delivery.");
-        return new(new(dispatch.Recipient, invoice.Terms), dispatch.LeaseUntilUtc);
+        return new(new InvoiceDispatchWork(dispatch.Recipient, invoice.Terms), dispatch.LeaseUntilUtc);
     }
 
     public async Task FinishMailAsync(DeliverInvoiceMail command, DispatchOutcome? outcome, IChartStore chart, IInvoiceDispatches dispatches, CancellationToken ct)
     {
         var scope = new ResourceScope(command.TenantId, command.WorkspaceId);
         await chart.LockBookAsync(scope, ct);
-        var dispatch = await DispatchAsync(scope, command.Id, dispatches, ct);
+        var dispatch = await dispatches.FindAsync(scope, command.Id, ct) ?? throw new ResourceNotFoundException();
         var now = clock.GetUtcNow();
         if (outcome is null) dispatch.Expire(command.Attempt, now);
         else dispatch.Finish(command.Attempt, outcome.State, outcome.Detail, now);
@@ -105,8 +117,8 @@ public sealed partial class ReceivableUseCases
     }
 
     private static async Task<InvoiceDispatch> DispatchAsync(ResourceScope scope, Guid id, IInvoiceDispatches dispatches, CancellationToken ct) =>
-        await dispatches.FindAsync(scope, id, ct) ?? throw new ResourceNotFoundException();
+        await dispatches.FindAsync(scope, id, ct) is { IsDonation: false } invoice ? invoice : throw new ResourceNotFoundException();
     private static DeliverInvoiceMail DeliveryOf(InvoiceDispatch x) => new(x.TenantId, x.WorkspaceId, x.Id, x.Attempt);
-    private static DispatchView DispatchViewOf(InvoiceDispatch x) => new(x.Id, x.InvoiceId, x.Recipient,
+    private static DispatchView DispatchViewOf(InvoiceDispatch x) => new(x.Id, x.DocumentId, x.Recipient,
         x.State.ToString().ToLowerInvariant(), x.Attempt, x.Version, x.PreviousId, x.ResentAsId, x.UpdatedAtUtc, x.Detail);
 }

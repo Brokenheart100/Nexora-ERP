@@ -15,10 +15,10 @@ internal static class MasterDataExceptionHandling
         app.UseExceptionHandler(handler => handler.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-            var conditional = error is RevisionConflictException && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
+            var conditional = error is (RevisionConflictException or DbUpdateConcurrencyException) && context.Items.ContainsKey(ApiIdempotency.ConditionalRevision);
             var status = error switch
             {
-                RevisionConflictException when conditional => 412,
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => 412,
                 ResourceNotFoundException => 404,
                 AccessDeniedException => 403,
                 CatalogRuleException or ArgumentException => 400,
@@ -31,7 +31,7 @@ internal static class MasterDataExceptionHandling
             var code = error switch
             {
                 IdempotencyConflictException => "masterdata.idempotency_conflict",
-                RevisionConflictException when conditional => "masterdata.precondition_failed",
+                RevisionConflictException or DbUpdateConcurrencyException when conditional => "masterdata.precondition_failed",
                 RevisionConflictException or DbUpdateConcurrencyException => "masterdata.version_conflict",
                 BusinessConflictException => "masterdata.state_conflict",
                 CatalogRuleException => "masterdata.validation",

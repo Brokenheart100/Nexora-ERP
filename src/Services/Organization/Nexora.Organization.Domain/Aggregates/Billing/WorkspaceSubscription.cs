@@ -25,6 +25,9 @@ public sealed class WorkspaceSubscription
     public DateTimeOffset? PeriodEndUtc { get; private set; }
     public DateTimeOffset UpdatedAtUtc { get; private set; }
     public long Version { get; private set; }
+    public bool HasSavedTestCard { get; private set; }
+
+    public void SaveLocalTestCard() => HasSavedTestCard = true;
 
     public static WorkspaceSubscription Start(IdentityReference owner, BillingPlan plan, DateTimeOffset now) => new()
     {

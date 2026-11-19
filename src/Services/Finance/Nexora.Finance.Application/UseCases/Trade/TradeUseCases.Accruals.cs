@@ -5,6 +5,16 @@ namespace Nexora.Finance.Application;
 
 public sealed partial class TradeUseCases
 {
+    public async Task ResumeAfterOpeningAsync(ResumeCostsAfterOpening command, CancellationToken ct)
+    {
+        var scope = new ResourceScope(command.TenantId, command.WorkspaceId);
+        var book = await chart.LockBookAsync(scope, ct) ?? throw new ResourceNotFoundException();
+        var receipt = await store.ReceiptAsync(scope, command.ReceiptId, ct) ?? throw new ResourceNotFoundException();
+        if (!receipt.Posted || receipt.Sequence != 1 || receipt.Fact.Stock is null)
+            throw new LedgerRuleException("Opening stock must be posted before resuming the cost sequence.");
+        await AccrueAndContinueAsync(scope, book, receipt, ct);
+    }
+
     public async Task<TradeChange> ProcessAsync(ProcessAccrual command, CancellationToken ct)
     {
         const string action = "trade.receipt.accrued";

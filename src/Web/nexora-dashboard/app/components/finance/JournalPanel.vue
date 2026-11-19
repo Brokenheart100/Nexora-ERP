@@ -267,7 +267,16 @@ function postSelected() {
         <span class="text-[13px] font-medium tabular-nums text-highlighted">{{ row.original.id }}</span>
       </template>
       <template #description-cell="{ row }">
-        <span class="line-clamp-1 text-[13px] text-highlighted">{{ row.original.description }}</span>
+        <div class="min-w-0">
+          <span class="line-clamp-1 text-[13px] text-highlighted">{{ row.original.description }}</span>
+          <span
+            v-if="row.original.source === 'external'"
+            class="mt-0.5 block truncate text-[11px] text-muted"
+            data-testid="journal-source"
+          >
+            外部 · {{ row.original.provider }} / {{ row.original.externalId }}
+          </span>
+        </div>
       </template>
       <template #debitTotal-cell="{ row }">
         {{ money(row.original.debitTotal) }}
@@ -351,6 +360,17 @@ function postSelected() {
               size="sm"
               data-testid="journal-detail-balance"
             />
+          </div>
+
+          <div
+            v-if="selected.source === 'external'"
+            class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-sm border border-default bg-elevated/30 px-3 py-2 text-xs"
+            data-testid="journal-detail-source"
+          >
+            <span class="text-muted">来源</span>
+            <span class="font-medium text-highlighted">外部凭证</span>
+            <span class="text-muted">{{ selected.provider }} · {{ selected.externalId }}</span>
+            <span v-if="selected.postingNumber" class="text-muted">过账号 {{ selected.postingNumber }}</span>
           </div>
 
           <div class="rounded-sm border border-default">

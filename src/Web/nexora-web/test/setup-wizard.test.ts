@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resumeStepIndex, setupComplete, setupSteps } from '../app/utils/workspaceSetup'
+import { resumeStepIndex, setupComplete, setupSteps } from '../app/utils/workspace/workspaceSetup'
 
 describe('setupSteps', () => {
   it('derives company, book and tax progress from server state', () => {

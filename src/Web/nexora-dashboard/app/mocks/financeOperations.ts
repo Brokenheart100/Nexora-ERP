@@ -2,7 +2,9 @@ import type {
   OpeningBalancePreview,
   OpeningBalanceRow,
   OpeningSubledgerBatch,
+  OpeningResultRecord,
   OpeningSubledgerCheck,
+  OpeningSubledgerPostingResult,
   OpeningSubledgerPreview,
   OpeningSubledgerSource,
   ReportExportKind,
@@ -269,6 +271,82 @@ const matchedSources = openingSubledgerSources.map(source => source.kind === 'st
   ? { ...source, ledgerAmount: source.amount, difference: 0, matched: true }
   : { ...source })
 
+type OpeningRecordSeed = Omit<OpeningResultRecord, 'id' | 'docNo' | 'at'> & { docNo?: string }
+
+function openingRecordSeed(
+  kind: OpeningResultRecord['kind'],
+  amount: number,
+  sourceId: string,
+  detail: string,
+  extra?: Partial<OpeningRecordSeed>
+): OpeningRecordSeed {
+  const source = openingSubledgerSources.find(item => item.id === sourceId)
+  return {
+    kind,
+    amount,
+    sourceId,
+    sourceReference: source?.reference ?? '—',
+    sourceLabel: source?.label ?? '未知来源',
+    detail,
+    status: kind === 'journal' ? '已过账' : '已生成',
+    ...extra
+  }
+}
+
+/**
+ * 期初过账生成的具体模拟记录：凭证、库存流水、应收应付单据与银行流水。
+ * 结果中的编号与数量全部由这些记录汇总，保证界面数量与明细一致。
+ */
+export function buildOpeningResultRecords(batchId: string, journalIds: string[], at: string): OpeningResultRecord[] {
+  const batchNo = batchId.slice(-4)
+  const seeds: OpeningRecordSeed[] = [
+    openingRecordSeed('journal', 644800, 'src-stock-east', '库存商品 1405 / 权益对方科目 3103', { docNo: journalIds[0] }),
+    openingRecordSeed('journal', 486200, 'src-ar-yunshan', '应收账款 1122 / 权益对方科目 3103', { docNo: journalIds[1] }),
+    openingRecordSeed('journal', 528400, 'src-ap-suzhou', '应付账款 2202 / 权益对方科目 3103', { docNo: journalIds[2] }),
+    openingRecordSeed('journal', 1297040, 'src-bank-cmb', '银行存款 1002 / 权益对方科目 3103', { docNo: journalIds[3] }),
+    openingRecordSeed('stock', 486400, 'src-stock-east', '入库 12 个 SKU · 1,842 件', { docNo: 'STK-OPEN-' + batchNo + '-0001', status: '已入库' }),
+    openingRecordSeed('stock', 158400, 'src-stock-south', '入库 6 个 SKU · 286 件', { docNo: 'STK-OPEN-' + batchNo + '-0002', status: '已入库' }),
+    openingRecordSeed('receivable', 62400, 'src-ar-yunshan', '期初未结发票 · 到期 2026-02-28', { docNo: 'INV-OPEN-' + batchNo + '-0001' }),
+    openingRecordSeed('receivable', 58000, 'src-ar-yunshan', '期初未结发票 · 到期 2026-03-15', { docNo: 'INV-OPEN-' + batchNo + '-0002' }),
+    openingRecordSeed('receivable', 66000, 'src-ar-yunshan', '期初未结发票 · 到期 2026-04-10', { docNo: 'INV-OPEN-' + batchNo + '-0003' }),
+    openingRecordSeed('receivable', 149900, 'src-ar-yuanhang', '期初未结发票 · 到期 2026-02-20', { docNo: 'INV-OPEN-' + batchNo + '-0004' }),
+    openingRecordSeed('receivable', 149900, 'src-ar-yuanhang', '期初未结发票 · 到期 2026-03-20', { docNo: 'INV-OPEN-' + batchNo + '-0005' }),
+    openingRecordSeed('payable', 114200, 'src-ap-suzhou', '期初未结账单 · 到期 2026-02-10', { docNo: 'BILL-OPEN-' + batchNo + '-0001' }),
+    openingRecordSeed('payable', 114200, 'src-ap-suzhou', '期初未结账单 · 到期 2026-03-10', { docNo: 'BILL-OPEN-' + batchNo + '-0002' }),
+    openingRecordSeed('payable', 150000, 'src-ap-liancheng', '期初未结账单 · 到期 2026-02-25', { docNo: 'BILL-OPEN-' + batchNo + '-0003' }),
+    openingRecordSeed('payable', 150000, 'src-ap-liancheng', '期初未结账单 · 到期 2026-03-25', { docNo: 'BILL-OPEN-' + batchNo + '-0004' }),
+    openingRecordSeed('bank', 1268400, 'src-bank-cmb', '期初余额转入招商银行基本户', { docNo: 'BM-OPEN-' + batchNo + '-0001', status: '已入账' }),
+    openingRecordSeed('bank', 28640, 'src-bank-boc', '期初余额转入中国银行一般户', { docNo: 'BM-OPEN-' + batchNo + '-0002', status: '已入账' })
+  ]
+  return seeds.map((seed, index) => ({
+    ...seed,
+    id: 'orec-' + batchNo + '-' + String(index + 1).padStart(2, '0'),
+    docNo: seed.docNo ?? '',
+    at
+  }))
+}
+
+export function buildOpeningSubledgerResult(
+  batchId: string,
+  journalIds: string[],
+  postedAt: string,
+  passed: number,
+  checks: number
+): OpeningSubledgerPostingResult {
+  const records = buildOpeningResultRecords(batchId, journalIds, postedAt)
+  return {
+    journalIds: records.filter(record => record.kind === 'journal').map(record => record.docNo),
+    stockMovements: records.filter(record => record.kind === 'stock').length,
+    receivableDocs: records.filter(record => record.kind === 'receivable').length,
+    payableDocs: records.filter(record => record.kind === 'payable').length,
+    bankMovements: records.filter(record => record.kind === 'bank').length,
+    checks,
+    passed,
+    postedAt,
+    records
+  }
+}
+
 export const openingSubledgerBatches: OpeningSubledgerBatch[] = [
   {
     id: 'OB-2026-0001',
@@ -294,16 +372,13 @@ export const openingSubledgerBatches: OpeningSubledgerBatch[] = [
     sources: matchedSources,
     checks: buildOpeningSubledgerPreview(matchedSources).checks,
     issues: [],
-    result: {
-      journalIds: ['JE-OPEN-2026-0001', 'JE-OPEN-2026-0002', 'JE-OPEN-2026-0003', 'JE-OPEN-2026-0004'],
-      stockMovements: 2,
-      receivableDocs: 6,
-      payableDocs: 4,
-      bankMovements: 2,
-      checks: 4,
-      passed: 4,
-      postedAt: '2026-11-10 10:18'
-    }
+    result: buildOpeningSubledgerResult(
+      'OB-2026-0001',
+      ['JE-OPEN-2026-0001', 'JE-OPEN-2026-0002', 'JE-OPEN-2026-0003', 'JE-OPEN-2026-0004'],
+      '2026-11-10 10:18',
+      4,
+      4
+    )
   }
 ]
 

@@ -6,6 +6,8 @@ import { useUiStore } from '~/stores/ui'
 const open = ref(false)
 const ui = useUiStore()
 const isDesktop = useMediaQuery('(min-width: 1024px)', { ssrWidth: 1440 })
+const { t } = useI18n()
+const { localeModel, localeOptions } = useLocaleSwitch()
 const { workspace } = useMockWorkspace()
 const { groups: searchGroups } = useDashboardSearch()
 const route = useRoute()
@@ -16,35 +18,35 @@ const pendingOrderCount = computed(() => purchaseOrders.filter(order => order.wo
 const pendingSalesCount = computed(() => salesOrders.filter(order => order.workspaceId === workspace.value.id && order.status === 'pending').length)
 
 const links = computed<NavigationMenuItem[]>(() => [{
-  label: '工作台',
+  label: t('nav.dashboard'),
   icon: 'i-carbon-dashboard',
   to: '/',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '商品目录',
+  label: t('nav.catalog'),
   icon: 'i-carbon-catalog',
   to: '/catalog',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '伙伴档案',
+  label: t('nav.partners'),
   icon: 'i-carbon-partnership',
   to: '/partners',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '主数据定义',
+  label: t('nav.definitions'),
   icon: 'i-carbon-list',
   to: '/definitions',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '采购订单',
+  label: t('nav.purchaseOrders'),
   icon: 'i-carbon-purchase',
   to: '/purchase-orders',
   badge: pendingOrderCount.value || undefined,
@@ -52,14 +54,14 @@ const links = computed<NavigationMenuItem[]>(() => [{
     open.value = false
   }
 }, {
-  label: '采购审计',
+  label: t('nav.purchaseAudit'),
   icon: 'i-carbon-document-view',
   to: '/purchase-audit',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '销售与应收',
+  label: t('nav.sales'),
   icon: 'i-carbon-shopping-cart',
   to: '/sales',
   badge: pendingSalesCount.value || undefined,
@@ -67,28 +69,35 @@ const links = computed<NavigationMenuItem[]>(() => [{
     open.value = false
   }
 }, {
-  label: '库存管理',
+  label: t('nav.inventory'),
   icon: 'i-carbon-inventory-management',
   to: '/inventory',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '财务',
+  label: t('nav.finance'),
   icon: 'i-carbon-finance',
   to: '/finance',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '变更记录',
+  label: t('nav.changeLog'),
   icon: 'i-carbon-time',
   to: '/change-log',
   onSelect: () => {
     open.value = false
   }
 }, {
-  label: '设置',
+  label: t('nav.assistant'),
+  icon: 'i-carbon-bot',
+  to: '/assistant',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
+  label: t('nav.settings'),
   icon: 'i-carbon-settings',
   to: '/settings',
   onSelect: () => {
@@ -125,7 +134,7 @@ watch(() => route.path, (path) => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton
-          label="搜索或跳转…"
+          :label="t('shell.searchButton')"
           :collapsed="collapsed"
           :kbds="collapsed ? [] : [{ value: '⌘' }, { value: 'K' }]"
           :tooltip="collapsed"
@@ -143,13 +152,26 @@ watch(() => route.path, (path) => {
         />
 
         <p v-if="!collapsed && isDesktop" class="mt-auto px-2 text-[11px] leading-5 text-dimmed">
-          本地 UI 原型 · 模拟数据<br>
-          不连接后端服务
+          {{ t('shell.sidebarNote') }}<br>
+          {{ t('shell.sidebarDisconnected') }}
         </p>
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
+        <div class="w-full space-y-1">
+          <USelect
+            v-if="!collapsed"
+            v-model="localeModel"
+            :items="localeOptions"
+            icon="i-carbon-language"
+            size="xs"
+            variant="ghost"
+            class="w-full"
+            :aria-label="t('shell.language')"
+            data-testid="locale-switch"
+          />
+          <UserMenu :collapsed="collapsed" />
+        </div>
       </template>
     </UDashboardSidebar>
 
@@ -157,17 +179,17 @@ watch(() => route.path, (path) => {
 
     <UDashboardSearch
       :groups="searchGroups"
-      description="搜索页面、商品、伙伴或单据；结果来自本地模拟数据。"
-      placeholder="搜索页面、商品、伙伴或单据…"
+      :description="t('shell.searchDescription')"
+      :placeholder="t('shell.searchPlaceholder')"
       :color-mode="false"
     >
       <template #empty>
         <div class="px-6 py-10 text-center" data-testid="command-empty">
           <p class="text-sm font-medium text-highlighted">
-            没有匹配结果
+            {{ t('shell.searchEmptyTitle') }}
           </p>
           <p class="mt-1 text-xs text-muted">
-            试试商品 SKU、单据号或页面名称；当前仅检索本地模拟数据。
+            {{ t('shell.searchEmptyBody') }}
           </p>
         </div>
       </template>
@@ -178,15 +200,15 @@ watch(() => route.path, (path) => {
         >
           <span>
             <UKbd value="↑" />
-            <UKbd value="↓" /> 选择
+            <UKbd value="↓" /> {{ t('shell.searchSelect') }}
           </span>
           <span>
-            <UKbd value="↵" /> 打开
+            <UKbd value="↵" /> {{ t('shell.searchOpen') }}
           </span>
           <span>
-            <UKbd value="Esc" /> 关闭
+            <UKbd value="Esc" /> {{ t('shell.searchClose') }}
           </span>
-          <span class="ml-auto">演示范围：本地模拟页面、商品、伙伴与单据</span>
+          <span class="ml-auto">{{ t('shell.searchScope') }}</span>
         </div>
       </template>
     </UDashboardSearch>

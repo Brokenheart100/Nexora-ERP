@@ -1,6 +1,12 @@
 namespace Nexora.Finance.Application;
 
+public sealed record ImportJournal(Guid WorkspaceId, Guid OperationId, string Provider, string ExternalId, JournalDraftInput Draft);
+public sealed record DecideImportedJournals(Guid WorkspaceId, Guid OperationId, string Decision, ImportedJournalVersion[] Journals);
+
 public sealed record StartJournal(Guid WorkspaceId, Guid OperationId, string Kind, string? SourceNumber, JournalDraftInput Draft);
+
+public sealed record ImportOpeningBalances(Guid WorkspaceId, Guid OperationId, DateOnly On, string Memo, string File,
+    string FileHash, long ChartRevision);
 
 public sealed record EditJournal(Guid WorkspaceId, Guid OperationId, Guid JournalId, long ExpectedVersion, JournalDraftInput Draft);
 

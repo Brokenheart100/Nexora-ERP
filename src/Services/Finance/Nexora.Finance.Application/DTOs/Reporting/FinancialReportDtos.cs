@@ -10,6 +10,9 @@ public sealed record ReportLine(StatementRow Row, decimal? Previous, decimal? Di
 public sealed record ReportTotal(string Key, decimal Amount, decimal? Previous, decimal? Difference);
 
 public sealed record FinancialReport(string Kind, string Basis, string Currency, int MinorUnits, StatementPeriod Period,
-    StatementPeriod? PreviousPeriod, long Watermark, ReportLine[] Lines, ReportTotal[] Totals);
+    StatementPeriod? PreviousPeriod, long Watermark, ReportLine[] Lines, ReportTotal[] Totals, PartnerEquityView[]? Partners = null);
+
+public sealed record PartnerEquityView(string Code, string Name, decimal Share, decimal Opening, decimal Contributions,
+    decimal Drawings, decimal ProfitShare, decimal Closing);
 
 public sealed record FinancialDrill(StatementPeriod Period, long Watermark, bool HasMore, ReportPosting[] Postings);

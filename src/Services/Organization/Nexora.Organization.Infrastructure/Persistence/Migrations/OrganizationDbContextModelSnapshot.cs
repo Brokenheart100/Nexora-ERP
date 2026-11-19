@@ -120,6 +120,12 @@ namespace Nexora.Organization.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BillingAccountId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("CheckoutPeriodEndUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CheckoutSubscriptionVersion")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(3)
@@ -147,9 +153,13 @@ namespace Nexora.Organization.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)");
 
                     b.Property<string>("Status")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("UsesSavedTestCard")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("WorkspaceId")
                         .HasColumnType("uuid");
@@ -623,6 +633,9 @@ namespace Nexora.Organization.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("HasSavedTestCard")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Issuer")
                         .IsRequired()

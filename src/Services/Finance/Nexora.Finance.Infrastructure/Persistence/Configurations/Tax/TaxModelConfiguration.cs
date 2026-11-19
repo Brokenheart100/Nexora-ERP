@@ -33,5 +33,18 @@ internal static class TaxModelConfiguration
         assessments.Property(x => x.SnapshotJson).HasColumnType("jsonb");
         assessments.HasOne<AccountingBook>().WithMany().HasForeignKey(x => new { x.TenantId, x.WorkspaceId })
             .HasPrincipalKey(x => new { x.TenantId, x.WorkspaceId }).OnDelete(DeleteBehavior.Restrict);
+
+        model.Entity<AccountingBook>().Property(x => x.TaxCycle).HasDefaultValue(TaxCycle.Monthly);
+        model.Entity<AccountingBook>().Property(x => x.TaxBasis).HasDefaultValue(TaxBasis.Accrual);
+        var filings = model.Entity<TaxFiling>();
+        filings.ToTable("tax_filings").HasIndex(x => new { x.TenantId, x.WorkspaceId, x.From, x.Through, x.Version }).IsUnique();
+        filings.Property(x => x.Fingerprint).HasMaxLength(64);
+        filings.Property(x => x.Reference).HasMaxLength(100);
+        filings.Property(x => x.Reason).HasMaxLength(300);
+        filings.Property(x => x.SnapshotJson).HasColumnType("jsonb");
+        filings.Property(x => x.FiledByIssuer).HasMaxLength(500);
+        filings.Property(x => x.FiledBySubject).HasMaxLength(200);
+        filings.HasOne<AccountingBook>().WithMany().HasForeignKey(x => new { x.TenantId, x.WorkspaceId })
+            .HasPrincipalKey(x => new { x.TenantId, x.WorkspaceId }).OnDelete(DeleteBehavior.Restrict);
     }
 }

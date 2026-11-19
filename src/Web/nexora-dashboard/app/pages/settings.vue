@@ -5,7 +5,7 @@ const setup = useWorkspaceSetupStore()
 const route = useRoute()
 const { workspace } = useMockWorkspace()
 
-const tabIds = ['company', 'members', 'invitations', 'roles', 'departments', 'billing', 'audit'] as const
+const tabIds = ['company', 'members', 'invitations', 'roles', 'departments', 'governance', 'billing', 'audit'] as const
 type SettingsTab = (typeof tabIds)[number]
 const tab = ref<SettingsTab>('company')
 
@@ -20,6 +20,7 @@ const tabItems = [
   { label: '邀请', value: 'invitations', icon: 'i-carbon-email' },
   { label: '角色', value: 'roles', icon: 'i-carbon-user-role' },
   { label: '部门', value: 'departments', icon: 'i-carbon-tree-view-alt' },
+  { label: '治理', value: 'governance', icon: 'i-carbon-flow' },
   { label: '订阅', value: 'billing', icon: 'i-carbon-receipt' },
   { label: '审计', value: 'audit', icon: 'i-carbon-document' }
 ]
@@ -31,6 +32,7 @@ const tabHint = computed(() => {
     invitations: '查看邀请状态，复制链接、重发过期邀请或撤销。',
     roles: '按模块勾选角色权限；按部门、仓库与财务期间配置数据范围，范围变更需独立审批。',
     departments: '维护部门树与成员归属。',
+    governance: '工作区创建与个人账本链接、邀请独立审批、成员业务角色、自定义角色授权范围与公告可见范围。',
     billing: '对比套餐、查看用量并演示升级或取消。',
     audit: '按操作者、类型与时间筛选，支持分页与 CSV 导出。'
   }
@@ -116,6 +118,7 @@ function resetDemoData() {
           <SettingsInvitationsPanel v-else-if="tab === 'invitations'" />
           <SettingsRolesPanel v-else-if="tab === 'roles'" />
           <SettingsDepartmentsPanel v-else-if="tab === 'departments'" />
+          <SettingsGovernanceCenter v-else-if="tab === 'governance'" />
           <SettingsBillingPanel v-else-if="tab === 'billing'" />
           <SettingsAuditPanel v-else />
         </div>

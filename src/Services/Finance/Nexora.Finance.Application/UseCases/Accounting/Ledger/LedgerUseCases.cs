@@ -25,7 +25,7 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
             throw new LedgerRuleException("Opening balances must be posted before other journals.");
         var draft = RequiredDraft(command.Draft);
         current.DemandOn(LedgerPermissions.Draft, draft.On);
-        await DemandOpenAsync(current.Scope, draft.On, ct);
+        await DemandOpenAsync(current.Scope, book, draft.On, ct);
         var lines = await ResolveLinesAsync(current.Scope, kind, draft.Lines, ct);
         var journal = Journal.Start(book, kind, source, key, draft.On, draft.Memo, Actor(current), lines, clock.GetUtcNow(), ParseCashActivity(draft.CashActivity));
         store.Add(journal);
@@ -43,8 +43,8 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
         var draft = RequiredDraft(command.Draft);
         current.DemandOn(LedgerPermissions.Draft, journal.On);
         current.DemandOn(LedgerPermissions.Draft, draft.On);
-        await DemandOpenAsync(current.Scope, journal.On, ct);
-        await DemandOpenAsync(current.Scope, draft.On, ct);
+        await DemandOpenAsync(current.Scope, book, journal.On, ct);
+        await DemandOpenAsync(current.Scope, book, draft.On, ct);
         var lines = await ResolveLinesAsync(current.Scope, journal.Kind, draft.Lines, ct);
         journal.Edit(book, draft.On, draft.Memo, lines, Actor(current), ParseCashActivity(draft.CashActivity));
         return Record(current, command.OperationId, action, command, journal);
@@ -64,7 +64,7 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
         if (replay is not null) return Change(replay);
         var journal = await LoadAsync(current.Scope, command.JournalId, command.ExpectedVersion, ct);
         current.DemandOn(permission, journal.On);
-        if (command.Decision != "cancel") await DemandOpenAsync(current.Scope, journal.On, ct);
+        if (command.Decision != "cancel") await DemandOpenAsync(current.Scope, book, journal.On, ct);
         switch (command.Decision)
         {
             case "submit":
@@ -74,24 +74,29 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
                 journal.Cancel(Actor(current));
                 break;
             case "post":
-                if (journal.Kind == JournalKind.Reversal)
-                {
-                    current.Demand(LedgerPermissions.Reverse);
-                    // A reversal retains the original posted account IDs and line snapshots.
-                    journal.Post(Actor(current), book.NextPostingNumber(), clock.GetUtcNow());
-                    break;
-                }
-                if (journal.Kind == JournalKind.Opening && await store.HasPostingsAsync(current.Scope, ct))
-                    throw new LedgerRuleException("Opening balances must be posted before other journals.");
-                if (journal.Kind == JournalKind.Manual && (await store.SourceAsync(current.Scope, "opening", ct)) is { State: not JournalState.Posted })
-                    throw new LedgerRuleException("Complete or cancel pending opening balances before posting.");
-                var accounts = await DemandPostingAccountsAsync(current.Scope, journal.Kind, journal.Lines.Select(x => x.AccountId).ToArray(), ct);
-                journal.Post(Actor(current), book.NextPostingNumber(), clock.GetUtcNow());
-                if (accounts.Any(x => !x.IsUsed)) book.AdvanceChart();
-                foreach (var account in accounts) account.MarkUsed();
+                await PostPendingAsync(current, book, journal, ct);
                 break;
         }
         return Record(current, command.OperationId, action, command, journal);
+    }
+
+    private async Task PostPendingAsync(BookAccess current, AccountingBook book, Journal journal, CancellationToken ct)
+    {
+        if (journal.Kind == JournalKind.Reversal)
+        {
+            current.Demand(LedgerPermissions.Reverse);
+            journal.Post(Actor(current), book.NextPostingNumber(), clock.GetUtcNow());
+            return;
+        }
+        if (journal.Kind == JournalKind.Opening && await store.HasPostingsAsync(current.Scope, ct))
+            throw new LedgerRuleException("Opening balances must be posted before other journals.");
+        if (journal.Kind is (JournalKind.Manual or JournalKind.Imported)
+            && (await store.SourceAsync(current.Scope, "opening", ct)) is { State: not JournalState.Posted })
+            throw new LedgerRuleException("Complete or cancel pending opening balances before posting.");
+        var accounts = await DemandPostingAccountsAsync(current.Scope, journal.Kind, journal.Lines.Select(x => x.AccountId).ToArray(), ct);
+        journal.Post(Actor(current), book.NextPostingNumber(), clock.GetUtcNow());
+        if (accounts.Any(x => !x.IsUsed)) book.AdvanceChart();
+        foreach (var account in accounts) account.MarkUsed();
     }
 
     public async Task<LedgerChange> ReverseAsync(ReverseJournal command, CancellationToken ct)
@@ -105,7 +110,7 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
         current.DemandOn(LedgerPermissions.Draft, command.On);
         if (await store.SourceAsync(current.Scope, $"reversal:{original.Id:N}", ct) is not null)
             throw new LedgerRuleException("This journal has already been reversed.");
-        await DemandOpenAsync(current.Scope, command.On, ct);
+        await DemandOpenAsync(current.Scope, book, command.On, ct);
         var reversal = original.RequestReversal(book, command.On, Reason(command.Reason), Actor(current), clock.GetUtcNow());
         store.Add(reversal);
         return Record(current, command.OperationId, action, command, reversal);
@@ -129,11 +134,14 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
             throw new LedgerRuleException("A journal account is archived, restricted, or invalid for opening balances.");
         return accounts;
     }
-    private async Task DemandOpenAsync(ResourceScope scope, DateOnly date, CancellationToken ct)
+    private async Task DemandOpenAsync(ResourceScope scope, AccountingBook book, DateOnly date, CancellationToken ct)
     {
         if (date.Year is < 1900 or > 9998) throw new ArgumentException("Invalid accounting date.");
+        if (await store.HasApplyingOpeningSubledgersAsync(scope, ct))
+            throw new LedgerRuleException("Wait for the approved opening subledger batch to post.");
+        book.DemandTaxDateOpen(date);
         var period = await store.PeriodAsync(scope, FiscalPeriod.MonthOf(date), ct)
-            ?? throw new LedgerRuleException("The accounting period has not been opened.");
+            ?? throw new LedgerRuleException("The accounting period has not been opened.", "finance.period_not_open");
         period.RequireOpen();
     }
     private async Task<Journal> LoadAsync(ResourceScope scope, Guid id, long expected, CancellationToken ct)
@@ -163,7 +171,8 @@ public sealed partial class LedgerUseCases(IBookAccess access, IBookStore books,
     private static JournalActor Actor(BookAccess current) => new(current.Actor.Issuer, current.Actor.Subject);
     private static PeriodView View(FiscalPeriod period) => new(period.Month, period.State.ToString().ToLowerInvariant(), period.Version, period.ClosingWatermark);
     private static JournalSummary Summary(Journal journal) => new(journal.Id, journal.Kind.ToString().ToLowerInvariant(), journal.SourceNumber,
-        journal.On, journal.Memo, journal.State.ToString().ToLowerInvariant(), journal.Version, journal.PostingNumber, journal.ReversesId);
+        journal.On, journal.Memo, journal.State.ToString().ToLowerInvariant(), journal.Version, journal.PostingNumber, journal.ReversesId,
+        journal.ImportProvider, journal.ExternalId);
     private static void DemandVersion(long actual, long expected)
     {
         if (actual != expected) throw new RevisionConflictException("The journal or period version changed. Refresh and retry.");

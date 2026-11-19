@@ -11,7 +11,8 @@ public sealed class InvoiceDispatchStore(FinanceDbContext db) : IInvoiceDispatch
         db.Set<InvoiceDispatch>().Where(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId);
     public Task<InvoiceDispatch?> FindAsync(ResourceScope scope, Guid id, CancellationToken ct) =>
         Scoped(scope).SingleOrDefaultAsync(x => x.Id == id, ct);
-    public Task<InvoiceDispatch[]> ListAsync(ResourceScope scope, Guid invoiceId, CancellationToken ct) =>
-        Scoped(scope).AsNoTracking().Where(x => x.InvoiceId == invoiceId).OrderByDescending(x => x.Id).Take(100).ToArrayAsync(ct);
+    public Task<InvoiceDispatch[]> ListAsync(ResourceScope scope, Guid documentId, bool isDonation, CancellationToken ct) =>
+        Scoped(scope).AsNoTracking().Where(x => x.DocumentId == documentId && x.IsDonation == isDonation)
+            .OrderByDescending(x => x.Id).Take(100).ToArrayAsync(ct);
     public void Add(InvoiceDispatch dispatch) => db.Add(dispatch);
 }

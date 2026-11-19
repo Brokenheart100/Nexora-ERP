@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Nexora.Finance.Domain;
 
 namespace Nexora.Finance.Application;
@@ -8,4 +9,7 @@ public sealed record SubmitCustomerDocument(Guid WorkspaceId, Guid OperationId, 
 
 public sealed record ReviseCustomerInvoice(Guid WorkspaceId, Guid OperationId, Guid Id, long ExpectedVersion, CustomerDraft Draft);
 
-public sealed record DecideCustomerDocument(Guid WorkspaceId, Guid OperationId, Guid Id, long ExpectedVersion, bool Approve);
+public sealed record DecideCustomerDocument(Guid WorkspaceId, Guid OperationId, Guid Id, long ExpectedVersion, bool Approve,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ExpectedNumber = null);
+
+public sealed record ConfigureInvoiceNumbering(Guid WorkspaceId, Guid OperationId, long ExpectedVersion, string? Pattern, long StartingNumber);

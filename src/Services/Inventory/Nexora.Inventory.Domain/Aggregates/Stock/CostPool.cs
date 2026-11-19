@@ -22,6 +22,21 @@ public sealed class CostPool
         UnitId = terms.UnitId;
         Currency = terms.Currency;
     }
+
+    public static CostPool Open(Guid tenantId, Guid workspaceId, Guid warehouseId, Guid itemId,
+        Guid unitId, string currency, decimal quantity, decimal value)
+    {
+        var precision = currency == "JPY" ? 0 : 2;
+        if (unitId == Guid.Empty || currency is not ("CNY" or "USD" or "EUR" or "JPY") ||
+            quantity is <= 0 or > 1_000_000m || Math.Round(quantity, 6) != quantity ||
+            value is < 0 or > 1_000_000_000_000m || Math.Round(value, precision) != value)
+            throw new StockRuleException("Invalid opening stock quantity, value or currency.");
+        return new CostPool
+        {
+            TenantId = tenantId, WorkspaceId = workspaceId, WarehouseId = warehouseId, ItemId = itemId,
+            UnitId = unitId, Currency = currency, Quantity = quantity, Value = value, Sequence = 1
+        };
+    }
     public Guid TenantId { get; private set; }
     public Guid WorkspaceId { get; private set; }
     public Guid WarehouseId { get; private set; }
@@ -76,7 +91,7 @@ public sealed class CostPool
     public decimal Issue(decimal quantity, int minorUnits)
     {
         if (quantity <= 0 || quantity > Available || Math.Round(quantity, 6) != quantity)
-            throw new StockRuleException("Insufficient available stock for this issue.");
+            throw new StockRuleException("Insufficient available stock for this issue.", "inventory.insufficient_stock");
         var cost = quantity == Quantity ? Value : Math.Round(Value / Quantity * quantity, minorUnits, MidpointRounding.AwayFromZero);
         Quantity -= quantity;
         Value -= cost;

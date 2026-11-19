@@ -1,0 +1,663 @@
+{
+  "generatedAt": "2026-11-19T07:47:20.974Z",
+  "base": "http://localhost:3001",
+  "viewport": "1440x1000",
+  "total": 130,
+  "passed": 130,
+  "failed": 0,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "results": [
+    {
+      "ok": true,
+      "label": "C13 仓网与调拨页签渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 初始 3 个仓库",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 华东仓收货人为陈立",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 仓库卡片展示收货权限",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 仓库详情展示当前收货人",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 更换收货人后详情更新",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新收货人获得权限",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 权限变化提示同步",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 仓库卡片收货人同步",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新建仓库后共 4 个",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新仓库卡片显示名称",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新仓库指定收货人",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 初始 2 张盘点单",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 盘点明细含账面、实盘、差异、原因",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 盘点明细展示行差异",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 盘点差异原因可见",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 提交后提示切换审批人",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 处理记录写入提交复核",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 审批后记录复核完成",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 确认后库存按实盘数回写",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 差异生成 adjust 流水",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 初始 1 张调拨单",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新建调拨后共 2 张",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 新调拨单号 TR-2026-0002",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 调拨初始为草稿",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 确认出库后进入在途",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 在途数量为 2",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 在途成本已计算",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 在途时展示目标仓可用量",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 目标收货人确认后完成",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 两端流水由同一调拨单追溯",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 调拨流水保留同单号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 出库减源仓、入库增目标仓",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C13 重复确认入库不重复增减",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 资金管理页签渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 初始 5 个资金账户",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 默认账户标记与余额可见",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 新建资金账户后共 6 个",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 新账户显示名称与科目",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 划转生成方向相反的两条流水",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 两条划转流水分别生成编号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 制单人不能复核自己的流水",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 划转两腿均独立复核过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 划转源账户余额减少",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 划转目标账户余额增加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 导入预览有效行 3",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 导入预览重复行 1",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 导入预览问题行 2",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 导入提交生成批次",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 对账单行分次匹配显示部分匹配",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 剩余金额匹配后完成",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 超额匹配给出明确反馈",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 对账单行排除后保留原因状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 排除行可恢复",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 对账差异归零后可保存草稿",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 保存待完成对账记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 对账需独立确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 独立确认对账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 对账报告展示余额与零差异",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 最近一次对账可按原因撤销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C14 回归库存页可访问",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 就绪检查初始通过 2/4",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 就绪检查展示已过账缺凭证",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 就绪检查展示待入账库存成本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 待处理事项未清零时关账被阻断",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 补记库存成本后就绪检查通过 3/4",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 库存成本补记记录保留金额与截止日",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 凭证生命周期页签渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 2026-12 折旧凭证初始为草稿",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 草稿提交后进入待复核",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 非复核人不能过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 业务主管独立复核后凭证已过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 冲销生成红字凭证并回链原单",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 原凭证状态变为已冲销",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 薪酬草稿完成提交与独立过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 异常扫描定位已过账未关联凭证",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 补齐业务关联后异常清零",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 移除关联后重新进入异常列表",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 重复关联同一业务单据被拦截",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 改选其他业务单据后异常清零",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 科目表初始 32 个科目",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 零余额科目可归档",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 归档科目可恢复",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 模板、结构、快照均可导出 CSV",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 科目导入预览逐行展示错误",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 科目导入提交汇总成功与跳过行数",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 导入后科目表新增 2 个科目",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 两个有余额科目合并被拒绝",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 零余额科目可并入目标科目",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 合并后源科目移出科目表",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 2026-10 检查通过后关闭",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 2026-11 成本补记与关联齐全后关闭",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 2026-12 凭证全部过账后关闭",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 年结检查显示 12/12 期间已关账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 合伙人配置展示 3 位合伙人",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 合伙人份额初始合计 100%",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 修改份额后实时显示合计 105%",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 份额非 100% 时保存被拒绝",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 年结预览展示合伙人分摊金额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 恢复 100% 后合伙人配置可保存",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 年结申请提交后进入待确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 业务主管独立确认年结",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 年结生成结转凭证入口",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 年结结转凭证可回链查看",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 已年结年度不能直接重开月份",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 业务主管可重开已年结年度",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C15 重开年度后可按原因重开月份",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 初始 7 个税率版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 税率版本详情展示税种与版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 停用税率版本写入停用日期",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 新建税率版本后版本数增加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 新版本按生效日期展示",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 新建税组后税组数增加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 新税组展示名称与组合",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 停用税组可重新启用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 启用税组可再次停用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 商品与往来单位税组绑定生效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 默认含税 1,130 拆税为 1,000 + 130",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 新税率只影响生效日期后的计算",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 计算快照记录适用税率版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 税历展示 2026-11 待申报税额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 税期详情展示未申报状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 申报前账簿未锁定",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 首次申报生成申报编号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 首次申报后账簿锁定",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 重新预览生成税额差异 +1,650",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 更正申报必须填写原因",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 更正申报生成新编号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 更正记录追溯原申报",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C16 税期状态更新为已更正",
+      "detail": ""
+    }
+  ]
+}

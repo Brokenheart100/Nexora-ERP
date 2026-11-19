@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody, sendNoContent } from 'h3'
-import { revokeCliToken } from '../../../../utils/bff-cli'
+import { revokeCliToken } from '../../../../utils/auth/bff-cli'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ token?: unknown, tokenTypeHint?: unknown }>(event).catch(() => undefined)

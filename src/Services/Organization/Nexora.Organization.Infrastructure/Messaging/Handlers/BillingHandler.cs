@@ -1,11 +1,29 @@
 using Nexora.BuildingBlocks.Application;
 using Nexora.Organization.Application;
 using Wolverine.Attributes;
+using Wolverine.Persistence;
 
 namespace Nexora.Organization.Infrastructure.Messaging;
 
 public static class BillingHandler
 {
+    [Transactional(Mode = TransactionMiddlewareMode.Eager)]
+    public static async Task<LocalCheckoutIntent> Handle(BeginLocalCheckout command, OrganizationDbContext db,
+        BillingUseCases useCases, ILocalCheckoutTicket ticket, TimeProvider clock, CancellationToken ct)
+    {
+        var outcome = await useCases.BeginLocalCheckoutAsync(command, ticket, ct);
+        Record(outcome, command.Actor, db, clock);
+        return outcome.Result;
+    }
+
+    [Transactional(Mode = TransactionMiddlewareMode.Eager)]
+    public static async Task<BillingView> Handle(ConfirmLocalCheckout command, OrganizationDbContext db,
+        BillingUseCases useCases, ILocalCheckoutTicket ticket, TimeProvider clock, CancellationToken ct)
+    {
+        var outcome = await useCases.ConfirmLocalCheckoutAsync(command, ticket, ct);
+        Record(outcome, command.Actor, db, clock);
+        return outcome.Result;
+    }
     [Transactional]
     public static async Task<BillingView> Handle(SelectBillingPlan command, OrganizationDbContext db, BillingUseCases useCases,
         TimeProvider clock, CancellationToken cancellationToken)

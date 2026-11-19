@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Alba;
 using Alba.Security;
 using Microsoft.AspNetCore.Hosting;
@@ -66,6 +67,23 @@ public sealed partial class WorkspaceSliceTests : IAsyncLifetime
     [Fact]
     public async Task Http_validation_authorization_idempotency_transaction_and_durable_delivery()
     {
+        var document = await org.Scenario(s =>
+        {
+            s.Get.Url("/openapi/v1.json");
+            s.StatusCodeShouldBe(200);
+        });
+        var spec = document.ReadAsJson<JsonElement>();
+        var invitation = spec.GetProperty("paths").GetProperty("/api/workspaces/{id}/invitations").GetProperty("post");
+        var schema = invitation.GetProperty("requestBody").GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        if (schema.TryGetProperty("$ref", out var reference))
+            schema = spec.GetProperty("components").GetProperty("schemas").GetProperty(reference.GetString()!.Split('/')[^1]);
+        Assert.True(schema.GetProperty("properties").TryGetProperty("operationId", out _));
+        Assert.True(schema.GetProperty("properties").TryGetProperty("expectedVersion", out _));
+        var required = schema.GetProperty("required").EnumerateArray().Select(field => field.GetString()).ToArray();
+        Assert.Contains("email", required);
+        Assert.DoesNotContain("operationId", required);
+        Assert.DoesNotContain("expectedVersion", required);
+
         await org.Scenario(s =>
         {
             s.WithClaim(Issuer); s.WithClaim(Alice);
@@ -91,13 +109,40 @@ public sealed partial class WorkspaceSliceTests : IAsyncLifetime
         await org.Scenario(s => { s.WithClaim(Issuer); s.WithClaim(Bob); s.Get.Url($"/api/workspaces/{created.Id}"); s.StatusCodeShouldBe(404); });
         await Eventually(async () => await ReadProjection(created.Id) == 1);
 
+        await using var authority = org.Services.CreateAsyncScope();
+        var organizationDb = authority.ServiceProvider.GetRequiredService<OrganizationDbContext>();
+        var source = await organizationDb.Workspaces.AsNoTracking().SingleAsync(x => x.Id == created.Id);
+        var creation = new WorkspaceCreatedV1(created.Id, created.TenantId, created.Id, created.Name, created.CountryCode,
+            created.BaseCurrency, source.CreatedAtUtc, created.Version);
         // Re-enter the real handler transaction with the same business fact, deliberately bypassing transport Inbox deduplication.
         await using (var duplicateScope = reports.Services.CreateAsyncScope())
         {
-            await duplicateScope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(new WorkspaceCreatedV1(created.Id, created.TenantId,
-                created.Id, created.Name, "CN", "CNY", DateTimeOffset.UtcNow, 1));
+            await duplicateScope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync(creation);
         }
         await Eventually(async () => await ReadProjection(created.Id) == 1);
+
+        // Simulate a missing read row in the isolated Reporting test database and rebuild it from the original fact.
+        await using (var isolated = reports.Services.CreateAsyncScope())
+        {
+            var db = isolated.ServiceProvider.GetRequiredService<ReportingDbContext>();
+            Assert.Equal(1, await db.Workspaces.Where(x => x.WorkspaceId == created.Id).ExecuteDeleteAsync());
+        }
+        Assert.Equal(0, await ReadProjection(created.Id));
+        await using (var publisher = org.Services.CreateAsyncScope())
+        {
+            var bus = publisher.ServiceProvider.GetRequiredService<IMessageBus>();
+            await bus.PublishAsync(creation);
+            await bus.PublishAsync(creation);
+        }
+        await Eventually(async () => await ReadProjection(created.Id) == 1);
+        await using (var restored = reports.Services.CreateAsyncScope())
+        {
+            var db = restored.ServiceProvider.GetRequiredService<ReportingDbContext>();
+            var projection = await db.Workspaces.SingleAsync(x => x.WorkspaceId == created.Id);
+            Assert.Equal(creation.EventId, projection.LastEventId);
+            Assert.Equal(creation.TenantId, projection.TenantId);
+            Assert.Equal(creation.Version, projection.Version);
+        }
 
         await broker.StopAsync();
         var offline = new CreateWorkspaceRequest(Guid.NewGuid(), "消息队列离线时提交");

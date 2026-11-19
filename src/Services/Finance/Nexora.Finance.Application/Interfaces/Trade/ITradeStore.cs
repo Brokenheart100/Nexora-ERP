@@ -9,7 +9,7 @@ public interface ITradeStore
     Task<BankAccount[]> BanksAsync(ResourceScope scope, CancellationToken ct);
     Task<BankAccount?> BankAsync(ResourceScope scope, Guid id, CancellationToken ct);
     Task<TradeDocument?> DocumentAsync(ResourceScope scope, Guid id, CancellationToken ct);
-    Task<TradeDocument[]> DocumentsAsync(ResourceScope scope, int page, CancellationToken ct);
+    Task<TradeDocument[]> DocumentsAsync(ResourceScope scope, int page, CancellationToken ct, bool postedBillsOnly = false);
     Task<BankMovement?> MovementAsync(ResourceScope scope, Guid id, CancellationToken ct);
     Task<BankMovement[]> MovementsAsync(ResourceScope scope, Guid bankId, int page, CancellationToken ct);
     Task<BankMovement[]> DocumentMovementsAsync(ResourceScope scope, Guid id, CancellationToken ct);

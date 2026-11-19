@@ -22,9 +22,11 @@ public static class ApiOpenApi
                     AddProblem(operation, 401);
                     AddProblem(operation, 403);
                 }
-                if (metadata.OfType<IdempotentWriteAttribute>().FirstOrDefault() is { } contract)
+                if (metadata.OfType<ApiWriteAttribute>().FirstOrDefault() is { } contract)
                 {
-                    AddHeader(operation, ApiIdempotency.Header, "Non-empty UUID. When operationId is also supplied, both values must agree.");
+                    DescribeHeaderAlternatives(operation, contract);
+                    if (contract.Idempotent)
+                        AddHeader(operation, ApiIdempotency.Header, "Non-empty UUID. When operationId is also supplied, both values must agree.");
                     AddProblem(operation, 400);
                     AddProblem(operation, 409);
                     if (contract.RevisionField is { } field)
@@ -33,9 +35,10 @@ public static class ApiOpenApi
                         AddProblem(operation, 412);
                     }
                 }
-                if (operation.Responses?.TryGetValue("201", out var result) == true && result is OpenApiResponse created)
-                    (created.Headers ??= new Dictionary<string, IOpenApiHeader>())[HeaderNames.Location] = new OpenApiHeader
-                    { Description = "URI of the created resource.", Schema = new OpenApiSchema { Type = JsonSchemaType.String } };
+                AddResponseHeader(operation, "201", HeaderNames.Location, "URI of the created resource.");
+                AddResponseHeader(operation, "202", HeaderNames.Location, "URI for checking progress.");
+                if (metadata.OfType<RevisionTaggedAttribute>().Any())
+                    AddResponseHeader(operation, "200", HeaderNames.ETag, "Quoted revision for the current resource.");
                 return Task.CompletedTask;
             });
             configure?.Invoke(options);
@@ -44,8 +47,31 @@ public static class ApiOpenApi
     private static void AddHeader(OpenApiOperation operation, string name, string description) =>
         (operation.Parameters ??= []).Add(new OpenApiParameter
         {
-            Name = name, In = ParameterLocation.Header, Schema = new OpenApiSchema { Type = JsonSchemaType.String }, Description = description
+            Name = name,
+            In = ParameterLocation.Header,
+            Schema = new OpenApiSchema { Type = JsonSchemaType.String },
+            Description = description
         });
+
+    private static void DescribeHeaderAlternatives(OpenApiOperation operation, ApiWriteAttribute contract)
+    {
+        if (operation.RequestBody is not OpenApiRequestBody { Content: { } content } body) return;
+        var alternatives = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (contract.Idempotent) alternatives.Add("operationId", ApiIdempotency.Header);
+        if (contract.RevisionField is { } field) alternatives.Add(field, HeaderNames.IfMatch);
+
+        foreach (var media in content.Values)
+        {
+            var original = (media.Schema as OpenApiSchemaReference)?.Target ?? media.Schema;
+            if (original is not OpenApiSchema { Required: { Count: > 0 } required } schema) continue;
+            var copy = (OpenApiSchema)schema.CreateShallowCopy();
+            copy.Required = required.Where(field => !alternatives.ContainsKey(field)).ToHashSet(StringComparer.Ordinal);
+            media.Schema = copy;
+        }
+        body.Description = "Supply each of the following values in the body or its corresponding header. "
+            + "When both are present, the values must agree. "
+            + string.Join(", ", alternatives.Select(pair => $"{pair.Key} ({pair.Value})")) + ".";
+    }
 
     private static void AddProblem(OpenApiOperation operation, int status)
     {
@@ -70,6 +96,13 @@ public static class ApiOpenApi
                 }
             }
         });
+    }
+
+    private static void AddResponseHeader(OpenApiOperation operation, string status, string name, string description)
+    {
+        if (operation.Responses?.TryGetValue(status, out var result) != true || result is not OpenApiResponse response) return;
+        (response.Headers ??= new Dictionary<string, IOpenApiHeader>())[name] = new OpenApiHeader
+        { Description = description, Schema = new OpenApiSchema { Type = JsonSchemaType.String } };
     }
 
     public static void MapBusinessOpenApi(this WebApplication app)

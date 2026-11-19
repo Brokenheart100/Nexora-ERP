@@ -60,11 +60,7 @@ useIntersectionObserver(card, ([entry]) => {
         </div>
 
         <div v-else ref="card" class="space-y-4">
-          <UCard
-            class="rounded-sm"
-            :class="entered ? 'nx-reveal' : ''"
-            :ui="{ body: 'p-6 sm:p-8' }"
-          >
+          <UCard class="rounded-sm" :class="entered ? 'nx-reveal' : ''" :ui="{ body: 'p-6 sm:p-8' }">
             <div class="flex flex-wrap items-start gap-4">
               <div class="flex size-12 items-center justify-center rounded-sm bg-primary/10 text-primary">
                 <UIcon :name="icon" class="size-6" />

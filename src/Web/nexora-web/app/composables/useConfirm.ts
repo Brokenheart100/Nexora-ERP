@@ -1,4 +1,4 @@
-import ConfirmDialog from '~/components/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 
 export interface ConfirmOptions {
   title: string

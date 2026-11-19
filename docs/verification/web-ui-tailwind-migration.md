@@ -2,7 +2,7 @@
 
 - 日期：2026-11-15
 - 状态：Phase 0 已完成（基线 + 护栏）；Phase 1 已完成（新增样式搬 scoped，main.css 2208 → 2000 行）；Phase 2 已完成（域级语义类 5 类迁移，main.css 2000 → 1895 行）；Phase 3 已完成（壳层与页面语义迁 scoped / utility，main.css 1895 → 732 行）；Phase 4 已完成（表单基础与原生控件迁 Nuxt UI 组件，main.css 732 → 535 行）；Phase 5 已完成（表格与详情规则迁 scoped / UTable，main.css 535 → 393 行）；Phase 6 已完成（tokens 拆分到 tokens.css、全部分区删除，main.css 393 → 3 行；.card 迁 utility / 页面 scoped；链接颜色 @layer base 修复）；Phase 7 已完成（全量 45 项 e2e、截图矩阵补齐移动暗色与财务报表打印页）。Tailwind 迁移完成。
-- 关联：[迁移 TODO](../../todolist.md)、[ADR 0020](../adr/0020-frontend-design-system-layering.md)、[Phase 1–7 记录](./web-ui-design-system-phase1-2.md)。
+- 原 Tailwind 迁移清单可用 `git show 9454dac2b25fe62104827c7cb347b84adf9463d0:todolist.md` 查看。[ADR 0020](../adr/0020-frontend-design-system-layering.md) · [Phase 1–7 记录](./web-ui-design-system-phase1-2.md)
 
 ## 终态定义
 
@@ -177,7 +177,7 @@ Phase 0 起 e2e 不再使用 main.css 类选择器。`workspace.spec.ts` 仅有�
 
 - 全量 e2e：45 passed（16.1m；workspace.spec.ts 单文件约 13.7m），覆盖 workspace / email-onboarding / pwa / billing-subx / readiness / runtime-status / session-policy。
 - 截图矩阵：累计 `artifacts/ui-tailwind-baseline/`（Phase 0，35 张）、`ui-tailwind-phase2/`（5）、`phase3/`（15）、`phase4/`（6）、`phase5/`（8）、`phase6/`（15）、`phase7/`（4）。Phase 7 补齐：`90-workspaces-mobile-dark`（390×844 暗色移动端，无横向溢出）、`91-setup-dark`（初始化向导暗色卡片）、`92-login-dark`（未登录登录卡暗色）、`93-reports-print`（设置 `html[data-print-financial]` + print media：仅保留报表内容，壳层 / 侧栏 / 表单与按钮按打印规则隐藏，表格全宽）。覆盖 8 类页面 × light/dark 桌面、workspaces 移动 light/dark 与财务报表打印布局。
-- 文档：本记录、`todolist.md`、ADR 0020（状态「Tailwind 迁移完成」）、`docs/计划.md` 同步回填。
+- 本记录、原 Tailwind 迁移清单、ADR 0020（状态「Tailwind 迁移完成」）和 `docs/计划.md` 已同步回填。
 - 收尾：`aspire stop` 正常停止 AppHost；工作区保留并发会话改动不纳入本次提交。
 - 已知外观差异与边界（保持）：审计页签 active 硬编码浅色（Phase 2 决策）；模块页 console rail 窄列换行（基线行为）；`UInput type=date` 保留原生日期选择器；财务报表保留自定义表格；`tokens.css` 兼文档 base / 打印隔离层（ADR 终态偏差已记录）。
 

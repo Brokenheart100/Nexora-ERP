@@ -80,7 +80,11 @@ if ($client.authenticationFlowBindingOverrides.browser -ne $flow.id) {
 $amrSteps = @($steps | Where-Object { $_.providerId -in @('auth-username-password-form', 'auth-otp-form', $provider) })
 $amrMaxAge = '3600'
 foreach ($step in $amrSteps) {
-    $reference = if ($step.providerId -eq 'auth-username-password-form') { 'pwd' } else { 'otp' }
+    $reference = switch ($step.providerId) {
+        'auth-username-password-form' { 'pwd' }
+        'auth-otp-form' { 'otp' }
+        default { 'email' }
+    }
     $detail = Invoke-Realm "/authentication/executions/$($step.id)"
     $configId = $detail.authenticatorConfig
     if ($configId) {

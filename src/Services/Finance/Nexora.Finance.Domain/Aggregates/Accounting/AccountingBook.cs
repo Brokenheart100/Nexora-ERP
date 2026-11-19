@@ -38,6 +38,46 @@ public sealed class AccountingBook
     public long ChartRevision { get; private set; } = 1;
     public bool HasAccountingActivity { get; private set; }
     public long LastPostingNumber { get; private set; }
+    public TaxCycle TaxCycle { get; private set; } = TaxCycle.Monthly;
+    public TaxBasis TaxBasis { get; private set; }
+    public long TaxCalendarVersion { get; private set; }
+    public DateOnly? TaxLockedThrough { get; private set; }
+    public string? InvoiceNumberPattern { get; private set; }
+    public long InvoiceNumberStart { get; private set; } = 1;
+    public long InvoiceNumberVersion { get; private set; }
+
+    public void ConfigureInvoiceNumbers(string? pattern, long start)
+    {
+        var normalized = FiscalInvoiceNumber.Normalize(pattern, start);
+        if (start < InvoiceNumberStart) throw new LedgerRuleException("The invoice starting number can only increase.");
+        if (InvoiceNumberPattern == normalized && InvoiceNumberStart == start) return;
+        InvoiceNumberPattern = normalized;
+        InvoiceNumberStart = start;
+        InvoiceNumberVersion++;
+    }
+
+    public void ChangeTaxCalendar(TaxCycle cycle, TaxBasis basis)
+    {
+        if (cycle is not (TaxCycle.Monthly or TaxCycle.Quarterly)) throw new ArgumentException("Invalid tax cycle.");
+        if (basis is not (TaxBasis.Accrual or TaxBasis.Cash)) throw new ArgumentException("Invalid tax basis.");
+        if (TaxCycle == cycle && TaxBasis == basis) return;
+        TaxCycle = cycle;
+        TaxBasis = basis;
+        TaxCalendarVersion++;
+    }
+
+    public void LockForTax(DateOnly through)
+    {
+        if (TaxLockedThrough is null || through > TaxLockedThrough) TaxLockedThrough = through;
+    }
+
+    public bool IsTaxLocked(DateOnly date) => TaxLockedThrough is DateOnly through && date <= through;
+
+    public void DemandTaxDateOpen(DateOnly date)
+    {
+        if (IsTaxLocked(date)) throw new LedgerRuleException("The posting date is locked by a tax filing.", "finance.tax_period_locked");
+    }
+
     public void AdvanceChart() => ChartRevision++;
     public void RegisterAccountingActivity() => HasAccountingActivity = true;
     public long NextPostingNumber() => ++LastPostingNumber;

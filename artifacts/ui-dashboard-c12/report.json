@@ -1,0 +1,316 @@
+{
+  "base": "http://localhost:3001",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "assertions": [
+    {
+      "name": "C10 页面 200",
+      "ok": true
+    },
+    {
+      "name": "C10 种子 4 张",
+      "ok": true
+    },
+    {
+      "name": "C10 详情来源",
+      "ok": true
+    },
+    {
+      "name": "C10 详情外部编号",
+      "ok": true
+    },
+    {
+      "name": "C10 制单人对草稿可提交",
+      "ok": true
+    },
+    {
+      "name": "C10 制单人无独立过账入口",
+      "ok": true
+    },
+    {
+      "name": "C10 提交后待复核",
+      "ok": true
+    },
+    {
+      "name": "C10 提交后版本 v2",
+      "ok": true
+    },
+    {
+      "name": "C10 待复核计数 2",
+      "ok": true
+    },
+    {
+      "name": "C10 已选 2 张",
+      "ok": true
+    },
+    {
+      "name": "C10 批量错误提示整批保持",
+      "ok": true
+    },
+    {
+      "name": "C10 非草稿取消逐条提示",
+      "ok": true
+    },
+    {
+      "name": "C10 整批后 IMP-0002 仍待复核",
+      "ok": true
+    },
+    {
+      "name": "C10 复核身份可过账",
+      "ok": true
+    },
+    {
+      "name": "C10 独立过账成功",
+      "ok": true
+    },
+    {
+      "name": "C10 过账计数 2",
+      "ok": true
+    },
+    {
+      "name": "C10 重复来源被拒绝",
+      "ok": true
+    },
+    {
+      "name": "C10 总账页 200",
+      "ok": true
+    },
+    {
+      "name": "C10 总账来源标记",
+      "ok": true
+    },
+    {
+      "name": "C10 来源含金蝶外部编号",
+      "ok": true
+    },
+    {
+      "name": "C11 页面 200",
+      "ok": true
+    },
+    {
+      "name": "C11 已过账净额 70000",
+      "ok": true
+    },
+    {
+      "name": "C11 收据号",
+      "ok": true
+    },
+    {
+      "name": "C11 资金流水",
+      "ok": true
+    },
+    {
+      "name": "C11 凭证链接",
+      "ok": true
+    },
+    {
+      "name": "C11 收据样张",
+      "ok": true
+    },
+    {
+      "name": "C11 样张非财政票据",
+      "ok": true
+    },
+    {
+      "name": "C11 渠道停用阻止发送",
+      "ok": true
+    },
+    {
+      "name": "C11 渠道启用",
+      "ok": true
+    },
+    {
+      "name": "C11 发送记录已接受",
+      "ok": true
+    },
+    {
+      "name": "C11 财政票据标记",
+      "ok": true
+    },
+    {
+      "name": "C11 法定票据不可签发",
+      "ok": true
+    },
+    {
+      "name": "C11 失败原因",
+      "ok": true
+    },
+    {
+      "name": "C11 重试生成新记录",
+      "ok": true
+    },
+    {
+      "name": "C11 复核人可批准",
+      "ok": true
+    },
+    {
+      "name": "C11 批准后过账",
+      "ok": true
+    },
+    {
+      "name": "C11 批准生成收据",
+      "ok": true
+    },
+    {
+      "name": "C12 伙伴页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 伙伴多角色 3 个",
+      "ok": true
+    },
+    {
+      "name": "C12 伙伴两个联系人",
+      "ok": true
+    },
+    {
+      "name": "C12 伙伴地址保存",
+      "ok": true
+    },
+    {
+      "name": "C12 伙伴自动编号",
+      "ok": true
+    },
+    {
+      "name": "C12 目录页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 商品详情类型",
+      "ok": true
+    },
+    {
+      "name": "C12 商品跟踪库存",
+      "ok": true
+    },
+    {
+      "name": "C12 停用引用提示",
+      "ok": true
+    },
+    {
+      "name": "C12 库存流程链接",
+      "ok": true
+    },
+    {
+      "name": "C12 采购页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 采购自批提示",
+      "ok": true
+    },
+    {
+      "name": "C12 采购自批批准隐藏",
+      "ok": true
+    },
+    {
+      "name": "C12 采购撤回归制单人",
+      "ok": true
+    },
+    {
+      "name": "C12 采购撤回提示",
+      "ok": true
+    },
+    {
+      "name": "C12 采购可重新提交",
+      "ok": true
+    },
+    {
+      "name": "C12 报价页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 报价草稿可正式发出",
+      "ok": true
+    },
+    {
+      "name": "C12 报价正式发出时间",
+      "ok": true
+    },
+    {
+      "name": "C12 销售订单页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 销售自批提示",
+      "ok": true
+    },
+    {
+      "name": "C12 销售自批批准禁用",
+      "ok": true
+    },
+    {
+      "name": "C12 单据流转页 200",
+      "ok": true
+    },
+    {
+      "name": "C12 暂估待确认 98400",
+      "ok": true
+    },
+    {
+      "name": "C12 暂估已入账 52600",
+      "ok": true
+    },
+    {
+      "name": "C12 AP 科目映射",
+      "ok": true
+    },
+    {
+      "name": "C12 AR 科目映射",
+      "ok": true
+    },
+    {
+      "name": "C12 暂估确认后更新金额",
+      "ok": true
+    },
+    {
+      "name": "C12 账单复核入口",
+      "ok": true
+    },
+    {
+      "name": "C12 账单已复核待过账",
+      "ok": true
+    },
+    {
+      "name": "C12 账单可独立过账",
+      "ok": true
+    },
+    {
+      "name": "C12 账单已过账",
+      "ok": true
+    },
+    {
+      "name": "C12 暗色主题生效",
+      "ok": true
+    }
+  ],
+  "passed": 70,
+  "failed": [],
+  "consoleErrors": [],
+  "screenshots": [
+    "01-imported-detail.png",
+    "02-imported-batch-blocked.png",
+    "03-imported-posted.png",
+    "04-imported-duplicate.png",
+    "05-journals-source.png",
+    "06-donation-detail.png",
+    "07-donation-receipt.png",
+    "08-donation-mail-sent.png",
+    "09-donation-dispatch.png",
+    "10-donation-approved.png",
+    "11-partner-new.png",
+    "12-catalog-detail.png",
+    "13-purchase-self-approval.png",
+    "14-purchase-withdrawn.png",
+    "15-quote-sent.png",
+    "16-sales-self-approval.png",
+    "17-trade-documents.png",
+    "18-trade-provisional-confirmed.png",
+    "19-trade-reviewed.png",
+    "20-trade-posted.png",
+    "21-trade-documents-dark.png"
+  ],
+  "generatedAt": "2026-11-19T05:24:17.089Z"
+}

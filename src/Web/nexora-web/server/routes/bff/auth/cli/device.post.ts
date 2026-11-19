@@ -1,5 +1,5 @@
 import { createError, defineEventHandler, readBody } from 'h3'
-import { deviceAuthorization, isCodeChallenge } from '../../../../utils/bff-cli'
+import { deviceAuthorization, isCodeChallenge } from '../../../../utils/auth/bff-cli'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ codeChallenge?: unknown }>(event).catch(() => undefined)

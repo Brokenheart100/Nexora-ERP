@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nexora">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="24" x2="456" y2="488" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#12213D"/>
+      <stop offset=".52" stop-color="#070D1A"/>
+      <stop offset="1" stop-color="#03060D"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(384 372) rotate(135) scale(300)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F62FE" stop-opacity=".38"/>
+      <stop offset=".55" stop-color="#0F62FE" stop-opacity=".1"/>
+      <stop offset="1" stop-color="#0F62FE" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="132" y1="126" x2="392" y2="398" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".46" stop-color="#E8F1FF"/>
+      <stop offset="1" stop-color="#78A9FF"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="48" y1="20" x2="468" y2="492" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity=".34"/>
+      <stop offset=".5" stop-color="#FFFFFF" stop-opacity=".05"/>
+      <stop offset="1" stop-color="#78A9FF" stop-opacity=".3"/>
+    </linearGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <rect x="1.5" y="1.5" width="509" height="509" rx="110.5" fill="none" stroke="url(#rim)" stroke-width="3"/>
+  <path d="M158 364V148l196 216V148" fill="none" stroke="#0F62FE" stroke-opacity=".3" stroke-width="88" stroke-linejoin="miter" filter="url(#blur)"/>
+  <path d="M158 364V148l196 216V148" fill="none" stroke="url(#mark)" stroke-width="60" stroke-linejoin="miter"/>
+</svg>

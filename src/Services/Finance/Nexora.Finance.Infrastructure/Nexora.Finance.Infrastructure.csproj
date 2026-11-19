@@ -4,6 +4,8 @@
     <PackageReference Include="Microsoft.Playwright" />
     <ProjectReference Include="../../Sales/Nexora.Sales.Contracts/Nexora.Sales.Contracts.csproj" />
     <ProjectReference Include="../Nexora.Finance.Application/Nexora.Finance.Application.csproj" />
+    <ProjectReference Include="../Nexora.Finance.Contracts/Nexora.Finance.Contracts.csproj" />
+    <ProjectReference Include="../../Inventory/Nexora.Inventory.Contracts/Nexora.Inventory.Contracts.csproj" />
     <ProjectReference Include="../../Purchasing/Nexora.Purchasing.Contracts/Nexora.Purchasing.Contracts.csproj" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />

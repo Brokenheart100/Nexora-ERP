@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
-import type { SupplierBill, SupplierCredit, SupplierPayment } from '~/mocks'
-import { bankAccounts, purchaseOrders, supplierPaymentMethodLabels } from '~/mocks'
-import type { SupplierReceiptLineMatch } from '~/stores/supplierTrade'
+import type { SupplierCredit, SupplierPayment } from '~/mocks'
+import FinancePayablesAgingCredits from '~/components/finance/PayablesAgingCredits.vue'
+import FinancePayablesBills from '~/components/finance/PayablesBills.vue'
+import FinancePayablesReceipts from '~/components/finance/PayablesReceipts.vue'
+import FinancePayablesSummary from '~/components/finance/PayablesSummary.vue'
+import { purchaseOrders, supplierPaymentMethodLabels } from '~/mocks'
+import { useBankReconStore } from '~/stores/bankRecon'
 
 const props = defineProps<{ canPost: boolean, initialBillId?: string }>()
 const toast = useToast()
 const store = useSupplierTradeStore()
+const bankRecon = useBankReconStore()
 const { activeWorkspaceId } = useMockWorkspace()
 
 const workspaceId = computed(() => activeWorkspaceId.value)
 const workspaceBills = computed(() => store.bills.filter(bill => bill.workspaceId === workspaceId.value))
 const workspaceReceiptLines = computed(() => store.receiptLines.filter(line => line.workspaceId === workspaceId.value))
-const workspaceCredits = computed(() => store.credits.filter(credit => credit.workspaceId === workspaceId.value))
 const availableReceiptLines = computed(() => workspaceReceiptLines.value.filter(line => line.availableQuantity > 0.005))
 const outstandingTotal = computed(() => workspaceBills.value
   .filter(bill => bill.status === 'posted')
@@ -23,79 +26,17 @@ const paymentCount = computed(() => store.payments.filter(payment => payment.wor
 const fixedBill = computed(() => store.bills.find(bill => bill.id === 'BILL-2026-1101') ?? null)
 const fixedOutstanding = computed(() => (fixedBill.value ? store.outstandingOf(fixedBill.value) : 0))
 const fixedPaid = computed(() => (fixedBill.value ? store.paidOf(fixedBill.value.id) : 0))
-const fixedDescription = computed(() => '账单 BILL-2026-1101 价税合计 ¥1,130.00，已付 ' + formatMoney(fixedPaid.value) + '，当前未结 ' + formatMoney(fixedOutstanding.value) + '。登记余款后，账单详情与应付账龄会同步结清。')
-
-const keyword = ref('')
-const billFilter = ref('all')
-const billFilterItems = [
-  { label: '全部账单', value: 'all' },
-  { label: '待复核', value: 'pending' },
-  { label: '未结', value: 'open' },
-  { label: '已结清', value: 'settled' },
-  { label: '已退回', value: 'cancelled' }
-]
-const filteredBills = computed(() => {
-  const term = keyword.value.trim().toLowerCase()
-  return workspaceBills.value.filter((bill) => {
-    if (billFilter.value === 'pending' && bill.status !== 'pending') return false
-    if (billFilter.value === 'cancelled' && bill.status !== 'cancelled') return false
-    if (billFilter.value === 'open' && (bill.status !== 'posted' || store.outstandingOf(bill) <= 0.005)) return false
-    if (billFilter.value === 'settled' && (bill.status !== 'posted' || store.outstandingOf(bill) > 0.005)) return false
-    if (!term) return true
-    return [bill.id, bill.supplier, bill.orderId].some(value => value.toLowerCase().includes(term))
-  })
-})
-
-const billsColumns: TableColumn<SupplierBill>[] = [
-  { accessorKey: 'id', header: '账单号', id: 'number' },
-  { accessorKey: 'supplier', header: '供应商', id: 'supplier' },
-  { accessorKey: 'date', header: '账单日期', id: 'date' },
-  { accessorKey: 'dueAt', header: '到期日', id: 'dueAt' },
-  { accessorKey: 'total', header: '价税合计', id: 'total' },
-  { id: 'paid', header: '已付' },
-  { id: 'outstanding', header: '未结' },
-  { id: 'status', header: '状态' },
-  { id: 'actions', header: '操作' }
-]
-const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
-  { accessorKey: 'receiptId', header: '收货单 / 采购单', id: 'receipt' },
-  { accessorKey: 'orderSupplier', header: '供应商', id: 'supplier' },
-  { accessorKey: 'name', header: '商品', id: 'product' },
-  { accessorKey: 'quantity', header: '收货数量', id: 'quantity', meta: { style: { th: { minWidth: '6.5rem' } } } },
-  { accessorKey: 'unitPrice', header: '暂估单价', id: 'unitPrice' },
-  { accessorKey: 'accrualAmount', header: '暂估金额', id: 'accrual' },
-  { id: 'matched', header: '已匹配 / 可匹配' },
-  { id: 'variance', header: '价差' }
-]
-
-const agingBucketNames = ['未到期', '1-30 天', '31-60 天', '60 天以上']
-const agingRows = computed(() => {
-  const totals = new Map<string, number>()
-  for (const name of agingBucketNames) totals.set(name, 0)
-  for (const bill of workspaceBills.value) {
-    if (bill.status !== 'posted') continue
-    const outstanding = store.outstandingOf(bill)
-    if (outstanding <= 0.005) continue
-    const bucket = agingBucketOf(bill.dueAt)
-    totals.set(bucket, (totals.get(bucket) ?? 0) + outstanding)
+const fixedVoidedAmount = computed(() => (fixedBill.value
+  ? store.paymentsOf(fixedBill.value.id)
+      .filter(payment => payment.status === 'voided')
+      .reduce((sum, payment) => sum + payment.amount, 0)
+  : 0))
+const fixedDescription = computed(() => {
+  if (fixedVoidedAmount.value > 0) {
+    return '账单 BILL-2026-1101 价税合计 ¥1,130.00，已作废 ' + formatMoney(fixedVoidedAmount.value) + ' 付款，当前未结恢复为 ' + formatMoney(fixedOutstanding.value) + '。冲销记录与更正后的银行流水可在付款详情查看。'
   }
-  return agingBucketNames.map(name => ({ bucket: name, amount: Math.round((totals.get(name) ?? 0) * 100) / 100 }))
+  return '账单 BILL-2026-1101 价税合计 ¥1,130.00，已付 ' + formatMoney(fixedPaid.value) + '，当前未结 ' + formatMoney(fixedOutstanding.value) + '。登记余款后，账单详情与应付账龄会同步结清。'
 })
-const agingTotal = computed(() => agingRows.value.reduce((sum, row) => sum + row.amount, 0))
-const openBills = computed(() => workspaceBills.value.filter(bill => bill.status === 'posted' && store.outstandingOf(bill) > 0.005))
-function agingBucketOf(dueAt: string) {
-  const days = Math.floor((new Date('2026-11-18T00:00:00').getTime() - new Date(dueAt + 'T00:00:00').getTime()) / 86400000)
-  if (days <= 0) return '未到期'
-  if (days <= 30) return '1-30 天'
-  if (days <= 60) return '31-60 天'
-  return '60 天以上'
-}
-function creditBill(credit: SupplierCredit) {
-  return store.bills.find(bill => bill.id === credit.billId) ?? null
-}
-function creditRefundTotal(creditId: string) {
-  return store.refundsOf(creditId).reduce((sum, refund) => sum + refund.amount, 0)
-}
 
 const detailOpen = ref(false)
 const detailId = ref('')
@@ -162,7 +103,7 @@ const paymentAfter = computed(() => {
   if (!Number.isFinite(amount)) return paymentOutstanding.value
   return Math.max(0, Math.round((paymentOutstanding.value - amount) * 100) / 100)
 })
-const activeBankItems = computed(() => bankAccounts.filter(account => account.status === 'active').map(account => ({ label: account.bankName + ' · ' + account.accountNo.slice(-4), value: account.id })))
+const activeBankItems = computed(() => bankRecon.accounts.filter(account => account.status === 'active').map(account => ({ label: account.bankName + ' · ' + account.accountNo.slice(-4), value: account.id })))
 const paymentMethodItems = Object.entries(supplierPaymentMethodLabels).map(([value, label]) => ({ label, value }))
 function openPayment(billId: string) {
   const bill = store.bills.find(item => item.id === billId)
@@ -204,6 +145,50 @@ function submitPayment() {
   paymentOpen.value = false
   toast.add({ title: '付款已登记', description: result.message, color: 'success', icon: 'i-carbon-currency-yen' })
   openBill(billId)
+}
+
+const paymentDetailOpen = ref(false)
+const paymentDetailId = ref('')
+const paymentVoidReason = ref('')
+const paymentVoidError = ref('')
+const selectedPayment = computed(() => store.payments.find(payment => payment.id === paymentDetailId.value) ?? null)
+const selectedPaymentBill = computed(() => (selectedPayment.value ? store.bills.find(bill => bill.id === selectedPayment.value?.billId) ?? null : null))
+const selectedPaymentReversalTx = computed(() => {
+  const transactionId = selectedPayment.value?.reversal?.bankTransactionId
+  return transactionId ? bankRecon.transactions.find(transaction => transaction.id === transactionId) ?? null : null
+})
+const selectedPaymentReversalAccount = computed(() => {
+  const accountId = selectedPayment.value?.reversal?.bankAccountId
+  return accountId ? bankRecon.accounts.find(account => account.id === accountId) ?? null : null
+})
+function openPaymentDetail(paymentId: string) {
+  const payment = store.payments.find(item => item.id === paymentId)
+  if (!payment) return
+  paymentDetailId.value = paymentId
+  paymentVoidReason.value = ''
+  paymentVoidError.value = ''
+  paymentDetailOpen.value = true
+}
+function openPaymentBill() {
+  if (!selectedPaymentBill.value) return
+  const billId = selectedPaymentBill.value.id
+  paymentDetailOpen.value = false
+  openBill(billId)
+}
+function submitVoidPayment() {
+  if (!selectedPayment.value) return
+  if (!props.canPost) {
+    paymentVoidError.value = '当前演示身份没有 finance.post 权限，不能发起作废更正。'
+    return
+  }
+  const result = store.voidPayment(selectedPayment.value.id, paymentVoidReason.value)
+  if (!result.ok) {
+    paymentVoidError.value = result.message
+    return
+  }
+  toast.add({ title: '付款已作废', description: result.message, color: 'success', icon: 'i-carbon-undo' })
+  paymentVoidReason.value = ''
+  paymentVoidError.value = ''
 }
 
 interface DraftBillLine {
@@ -289,6 +274,10 @@ function submitBillForm() {
 
 const creditOpen = ref(false)
 const creditId = ref('')
+function creditBill(credit: SupplierCredit) {
+  return store.bills.find(bill => bill.id === credit.billId) ?? null
+}
+
 const selectedCredit = computed(() => store.credits.find(credit => credit.id === creditId.value) ?? null)
 const selectedCreditBill = computed(() => (selectedCredit.value ? creditBill(selectedCredit.value) : null))
 const selectedCreditRefunds = computed(() => (selectedCredit.value ? store.refundsOf(selectedCredit.value.id) : []))
@@ -336,328 +325,26 @@ watch(() => props.initialBillId, (id) => {
       data-testid="payables-fixed-example"
     />
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
-        <p class="text-xs text-muted">
-          采购应付未结
-        </p>
-        <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-outstanding-total">
-          {{ formatMoney(outstandingTotal) }}
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          已过账账单 · 未扣减待复核
-        </p>
-      </UCard>
-      <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
-        <p class="text-xs text-muted">
-          待复核账单
-        </p>
-        <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-pending-count">
-          {{ pendingCount }} 张
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          价差账单需先核对再复核
-        </p>
-      </UCard>
-      <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
-        <p class="text-xs text-muted">
-          可匹配收货行
-        </p>
-        <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-available-count">
-          {{ availableCount }} 行
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          已收货、已暂估且未匹配
-        </p>
-      </UCard>
-      <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
-        <p class="text-xs text-muted">
-          已登记付款
-        </p>
-        <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-payment-count">
-          {{ paymentCount }} 笔
-        </p>
-        <p class="mt-1 text-xs text-muted">
-          资金账户来自银行对账样例
-        </p>
-      </UCard>
-    </div>
+    <FinancePayablesSummary
+      :outstanding-total="outstandingTotal"
+      :pending-count="pendingCount"
+      :available-count="availableCount"
+      :payment-count="paymentCount"
+    />
 
-    <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="text-sm font-semibold text-highlighted">
-              供应商账单
-            </h3>
-            <p class="mt-0.5 text-xs text-muted">
-              收货暂估 → 账单匹配 → 复核过账 → 付款核销；所有写入仅作用于本地预览。
-            </p>
-          </div>
-          <UButton
-            icon="i-carbon-add"
-            label="新建供应商账单"
-            data-testid="payables-new-bill"
-            :disabled="!canPost"
-            @click="openBillForm"
-          />
-        </div>
-      </template>
-      <div class="flex flex-wrap items-center gap-2 border-b border-default px-4 py-3">
-        <UInput
-          v-model="keyword"
-          icon="i-carbon-search"
-          placeholder="搜索账单号、供应商或采购单"
-          class="w-72"
-          data-testid="payables-search"
-        />
-        <USelect
-          v-model="billFilter"
-          :items="billFilterItems"
-          class="w-36"
-          data-testid="payables-status-filter"
-        />
-        <span class="text-xs text-muted">共 {{ filteredBills.length }} 张账单</span>
-      </div>
-      <ResizableTable
-        :data="filteredBills"
-        :columns="billsColumns"
-        :row-activate="(row: SupplierBill) => openBill(row.id)"
-        data-testid="payables-bills"
-      >
-        <template #number-cell="{ row }">
-          <UButton
-            :label="row.original.id"
-            variant="link"
-            color="primary"
-            size="sm"
-            class="px-0"
-            :data-testid="'bill-link-' + row.original.id"
-            @click.stop="openBill(row.original.id)"
-          />
-        </template>
-        <template #total-cell="{ row }">
-          <span class="tabular-nums">{{ formatMoney(row.original.total) }}</span>
-        </template>
-        <template #paid-cell="{ row }">
-          <span class="tabular-nums">{{ formatMoney(store.paidOf(row.original.id)) }}</span>
-        </template>
-        <template #outstanding-cell="{ row }">
-          <span class="tabular-nums font-medium" :class="store.outstandingOf(row.original) > 0 ? 'text-warning' : 'text-muted'" :data-testid="'bill-outstanding-' + row.original.id">{{ formatMoney(store.outstandingOf(row.original)) }}</span>
-        </template>
-        <template #status-cell="{ row }">
-          <UBadge
-            :label="store.billStatus(row.original).label"
-            :color="store.billStatus(row.original).color"
-            variant="subtle"
-            size="sm"
-          />
-        </template>
-        <template #actions-cell="{ row }">
-          <div class="flex justify-end gap-1">
-            <UButton
-              label="详情"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :data-testid="'bill-open-' + row.original.id"
-              @click.stop="openBill(row.original.id)"
-            />
-            <UButton
-              v-if="row.original.status === 'posted' && store.outstandingOf(row.original) > 0"
-              label="付款"
-              color="primary"
-              variant="ghost"
-              size="xs"
-              :data-testid="'bill-pay-' + row.original.id"
-              @click.stop="openPayment(row.original.id)"
-            />
-          </div>
-        </template>
-      </ResizableTable>
-      <UEmpty
-        v-if="!filteredBills.length"
-        variant="naked"
-        icon="i-carbon-receipt"
-        title="没有符合条件的账单"
-        description="调整筛选条件，或新建一张供应商账单。"
-        class="py-10"
-      />
-    </UCard>
+    <FinancePayablesBills
+      :can-post="canPost"
+      @open-bill="openBill"
+      @pay-bill="openPayment"
+      @create="openBillForm"
+    />
 
-    <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 class="text-sm font-semibold text-highlighted">
-              收货计价、暂估与匹配
-            </h3>
-            <p class="mt-0.5 text-xs text-muted">
-              分批收货按行展示已匹配与可匹配数量；价差来自供应商账单单价与采购单价。
-            </p>
-          </div>
-          <UBadge
-            label="暂估应付 · 已计价"
-            color="neutral"
-            variant="subtle"
-            size="sm"
-          />
-        </div>
-      </template>
-      <ResizableTable :data="workspaceReceiptLines" :columns="receiptColumns" data-testid="payables-receipts">
-        <template #receipt-cell="{ row }">
-          <div class="text-xs">
-            <p class="font-medium text-highlighted">
-              {{ row.original.receiptId }}
-            </p><p class="text-muted">
-              {{ row.original.orderId }} · {{ row.original.receivedAt }}
-            </p>
-          </div>
-        </template>
-        <template #product-cell="{ row }">
-          <div class="text-xs">
-            <p class="max-w-56 truncate font-medium text-highlighted">
-              {{ row.original.name }}
-            </p><p class="text-muted">
-              {{ row.original.sku }} · {{ row.original.spec }}
-            </p>
-          </div>
-        </template>
-        <template #unitPrice-cell="{ row }">
-          <span class="tabular-nums">{{ formatMoney(row.original.unitPrice) }}</span>
-        </template>
-        <template #accrual-cell="{ row }">
-          <span class="tabular-nums">{{ formatMoney(row.original.accrualAmount) }}</span>
-        </template>
-        <template #matched-cell="{ row }">
-          <div class="flex items-center gap-2 text-xs">
-            <span class="tabular-nums">{{ row.original.matchedQuantity }} / {{ row.original.availableQuantity }}</span>
-            <UBadge
-              :label="row.original.status === 'matched' ? '已匹配' : row.original.status === 'partial' ? '部分匹配' : '待匹配'"
-              :color="row.original.status === 'matched' ? 'success' : row.original.status === 'partial' ? 'warning' : 'neutral'"
-              variant="subtle"
-              size="sm"
-            />
-          </div>
-        </template>
-        <template #variance-cell="{ row }">
-          <div v-if="Math.abs(row.original.variance) > 0.005" class="flex items-center gap-2">
-            <span class="tabular-nums text-warning">+{{ formatMoney(row.original.variance) }}</span>
-            <UBadge
-              v-if="row.original.variancePending"
-              label="待审核"
-              color="warning"
-              variant="subtle"
-              size="sm"
-            />
-          </div>
-          <span v-else class="text-xs text-muted">无价差</span>
-        </template>
-      </ResizableTable>
-    </UCard>
+    <FinancePayablesReceipts />
 
-    <div class="grid gap-4 xl:grid-cols-2">
-      <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0' }" data-testid="payables-aging">
-        <template #header>
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-semibold text-highlighted">
-                采购应付账龄
-              </h3><p class="mt-0.5 text-xs text-muted">
-                按已过账账单到期日归集，未结金额实时联动。
-              </p>
-            </div>
-            <UBadge
-              label="账单口径"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            />
-          </div>
-        </template>
-        <div class="px-4 py-3">
-          <div
-            v-for="row in agingRows"
-            :key="row.bucket"
-            class="flex items-center justify-between border-b border-default py-2 text-sm last:border-b-0"
-            data-testid="payables-aging-row"
-          >
-            <span class="text-muted">{{ row.bucket }}</span><span class="tabular-nums text-highlighted">{{ formatMoney(row.amount) }}</span>
-          </div>
-          <div class="mt-2 flex items-center justify-between rounded-sm bg-elevated/40 px-3 py-2 text-sm font-medium">
-            <span>应付未结合计</span><span class="tabular-nums text-highlighted" data-testid="payables-aging-total">{{ formatMoney(agingTotal) }}</span>
-          </div>
-          <div v-if="openBills.length" class="mt-3 space-y-1">
-            <p class="text-xs font-medium text-muted">
-              未结账单
-            </p>
-            <button
-              v-for="bill in openBills"
-              :key="bill.id"
-              type="button"
-              class="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs hover:bg-elevated"
-              @click="openBill(bill.id)"
-            >
-              <span class="text-highlighted">{{ bill.id }} · {{ bill.supplier }}</span><span class="tabular-nums">{{ formatMoney(store.outstandingOf(bill)) }}</span>
-            </button>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0' }" data-testid="payables-credits">
-        <template #header>
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h3 class="text-sm font-semibold text-highlighted">
-                退货贷项与退款
-              </h3><p class="mt-0.5 text-xs text-muted">
-                已确认退货对应供应商贷项，可追溯原收货行与原账单。
-              </p>
-            </div>
-            <UBadge
-              :label="workspaceCredits.length + ' 笔'"
-              color="neutral"
-              variant="subtle"
-              size="sm"
-            />
-          </div>
-        </template>
-        <div class="divide-y divide-default">
-          <div v-for="credit in workspaceCredits" :key="credit.id" class="flex items-start justify-between gap-3 px-4 py-3">
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-highlighted">
-                {{ credit.id }} · {{ creditBill(credit)?.supplier ?? '—' }}
-              </p>
-              <p class="mt-0.5 truncate text-xs text-muted">
-                {{ credit.reason }}
-              </p>
-              <p class="mt-1 text-xs text-muted">
-                退货 {{ credit.quantity }} 件 · 退款 {{ formatMoney(creditRefundTotal(credit.id)) }} · {{ credit.status === 'refunded' ? '已退款' : '待退款' }}
-              </p>
-            </div>
-            <div class="flex shrink-0 flex-col items-end gap-1">
-              <span class="tabular-nums text-sm font-medium">{{ formatMoney(credit.total) }}</span>
-              <UButton
-                label="查看贷项"
-                color="neutral"
-                variant="ghost"
-                size="xs"
-                :data-testid="'credit-open-' + credit.id"
-                @click="openCredit(credit.id)"
-              />
-            </div>
-          </div>
-          <UEmpty
-            v-if="!workspaceCredits.length"
-            variant="naked"
-            icon="i-carbon-return"
-            title="暂无供应商贷项"
-            description="已确认退货样例会显示在这里。"
-            class="py-8"
-          />
-        </div>
-      </UCard>
-    </div>
+    <FinancePayablesAgingCredits
+      @open-bill="openBill"
+      @open-credit="openCredit"
+    />
 
     <USlideover v-model:open="detailOpen" :ui="{ content: 'sm:max-w-5xl' }">
       <template #header>
@@ -816,7 +503,9 @@ watch(() => props.initialBillId, (id) => {
                         资金账户
                       </th><th class="px-3 py-2 text-right font-medium">
                         金额
-                      </th>
+                      </th><th class="px-3 py-2 font-medium">
+                        状态
+                      </th><th class="px-3 py-2" />
                     </tr>
                   </thead>
                   <tbody>
@@ -827,6 +516,22 @@ watch(() => props.initialBillId, (id) => {
                         {{ payment.bankName }}
                       </td><td class="px-3 py-2 text-right tabular-nums">
                         {{ formatMoney(payment.amount) }}
+                      </td><td class="px-3 py-2">
+                        <UBadge
+                          :color="payment.status === 'voided' ? 'error' : 'success'"
+                          variant="soft"
+                          size="sm"
+                          :label="payment.status === 'voided' ? '已作废' : '已完成'"
+                        />
+                      </td><td class="px-3 py-2 text-right">
+                        <UButton
+                          label="详情"
+                          color="neutral"
+                          variant="ghost"
+                          size="xs"
+                          :data-testid="'payment-open-' + payment.id"
+                          @click="openPaymentDetail(payment.id)"
+                        />
                       </td>
                     </tr>
                   </tbody>
@@ -1182,6 +887,182 @@ watch(() => props.initialBillId, (id) => {
             data-testid="payment-submit"
             :disabled="!canPost"
             @click="submitPayment"
+          />
+        </div>
+      </template>
+    </USlideover>
+
+    <USlideover v-model:open="paymentDetailOpen" :ui="{ content: 'sm:max-w-2xl' }">
+      <template #header>
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-highlighted">
+              付款详情
+            </p><p class="mt-0.5 text-xs text-muted">
+              {{ selectedPayment?.id ?? '—' }}
+            </p>
+          </div>
+          <UBadge
+            v-if="selectedPayment"
+            :color="selectedPayment.status === 'voided' ? 'error' : 'success'"
+            variant="soft"
+            :label="selectedPayment.status === 'voided' ? '已作废' : '已完成'"
+            data-testid="payment-detail-status"
+          />
+        </div>
+      </template>
+      <template #body>
+        <div v-if="selectedPayment" class="space-y-4" data-testid="payment-detail">
+          <div class="grid gap-3 rounded-sm border border-default p-3 text-xs sm:grid-cols-2">
+            <div>
+              <p class="text-muted">
+                原付款
+              </p><p class="mt-0.5 font-medium text-highlighted">
+                {{ selectedPayment.id }} · {{ selectedPayment.date }}
+              </p>
+            </div>
+            <div>
+              <p class="text-muted">
+                付款金额
+              </p><p class="mt-0.5 font-medium tabular-nums text-highlighted">
+                {{ formatMoney(selectedPayment.amount) }}
+              </p>
+            </div>
+            <div>
+              <p class="text-muted">
+                关联账单
+              </p><UButton
+                v-if="selectedPaymentBill"
+                :label="selectedPaymentBill.id + ' · 未结 ' + formatMoney(store.outstandingOf(selectedPaymentBill))"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="mt-0.5 px-0"
+                data-testid="payment-detail-bill"
+                @click="openPaymentBill"
+              />
+              <p v-else class="mt-0.5 text-muted">
+                未找到关联账单
+              </p>
+            </div>
+            <div>
+              <p class="text-muted">
+                资金账户
+              </p><p class="mt-0.5 font-medium text-highlighted">
+                {{ selectedPayment.bankName }} · {{ supplierPaymentMethodLabels[selectedPayment.method] }}
+              </p>
+            </div>
+            <div>
+              <p class="text-muted">
+                银行流水号
+              </p><p class="mt-0.5 font-medium text-highlighted">
+                {{ selectedPayment.reference }}
+              </p>
+            </div>
+            <div>
+              <p class="text-muted">
+                备注
+              </p><p class="mt-0.5 text-muted">
+                {{ selectedPayment.note || '—' }}
+              </p>
+            </div>
+          </div>
+
+          <div v-if="selectedPayment.status === 'voided'" class="space-y-3" data-testid="payment-reversal">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-highlighted">
+                冲销记录
+              </p><UBadge color="error" variant="soft" label="已作废" />
+            </div>
+            <div class="grid gap-3 rounded-sm border border-default p-3 text-xs sm:grid-cols-2">
+              <div>
+                <p class="text-muted">
+                  冲销单
+                </p><p class="mt-0.5 font-medium text-highlighted">
+                  {{ selectedPayment.reversal?.id }}
+                </p>
+              </div>
+              <div>
+                <p class="text-muted">
+                  作废时间
+                </p><p class="mt-0.5 font-medium text-highlighted">
+                  {{ selectedPayment.voidedAt }}
+                </p>
+              </div>
+              <div class="sm:col-span-2">
+                <p class="text-muted">
+                  作废原因
+                </p><p class="mt-0.5 text-highlighted" data-testid="payment-reversal-reason">
+                  {{ selectedPayment.voidReason }}
+                </p>
+              </div>
+            </div>
+            <div v-if="selectedPaymentReversalTx" class="rounded-sm border border-default p-3 text-xs" data-testid="payment-reversal-tx">
+              <p class="text-sm font-semibold text-highlighted">
+                更正后的银行流水
+              </p>
+              <p class="mt-1 text-muted">
+                {{ selectedPaymentReversalTx.description }}
+              </p>
+              <p class="mt-1 tabular-nums text-highlighted">
+                入账 {{ selectedPaymentReversalTx.amount }} · {{ selectedPaymentReversalTx.matched ? '已匹配' : '待匹配' }} · 凭证 {{ selectedPaymentReversalTx.matchedJournalId ?? '—' }}
+              </p>
+              <p v-if="selectedPaymentReversalAccount" class="mt-1 tabular-nums text-muted" data-testid="payment-reversal-balance">
+                账户余额 {{ formatMoney(Number(selectedPaymentReversalAccount.balance)) }}
+              </p>
+            </div>
+            <UAlert
+              color="warning"
+              variant="soft"
+              icon="i-carbon-undo"
+              title="付款已作废，账单未结已恢复"
+              :description="'关联账单 ' + (selectedPaymentBill?.id ?? '—') + ' 的未结金额已按原付款金额回补；应付账龄同步更新。'"
+            />
+          </div>
+
+          <div v-else class="space-y-3 rounded-sm border border-default p-3" data-testid="payment-void-form">
+            <p class="text-sm font-semibold text-highlighted">
+              作废更正
+            </p>
+            <p class="text-xs text-muted">
+              作废后该付款不再冲减账单未结，系统生成冲销记录与银行入账流水，保留原付款供审计。
+            </p>
+            <UAlert
+              v-if="paymentVoidError"
+              color="error"
+              variant="soft"
+              icon="i-carbon-warning-alt"
+              :title="paymentVoidError"
+              data-testid="payment-void-error"
+            />
+            <UFormField label="作废原因">
+              <UTextarea
+                v-model="paymentVoidReason"
+                :rows="3"
+                class="w-full"
+                placeholder="例如：银行退回，原付款账户信息有误"
+                data-testid="payment-void-reason"
+              />
+            </UFormField>
+            <UButton
+              label="确认作废并生成冲销"
+              color="error"
+              icon="i-carbon-undo"
+              :disabled="!canPost"
+              data-testid="payment-void-submit"
+              @click="submitVoidPayment"
+            />
+          </div>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full items-center justify-end">
+          <UButton
+            label="关闭"
+            color="neutral"
+            variant="ghost"
+            data-testid="payment-detail-close"
+            @click="paymentDetailOpen = false"
           />
         </div>
       </template>

@@ -16,7 +16,7 @@ public static class CashStatements
             if (net == 0) continue;
             var source = journal.Key;
             byJournal.TryGetValue(source.JournalId, out var trade);
-            if (source.On < period.From || source.Kind == JournalKind.Opening || trade?.Terms.Kind == TradeKind.Opening)
+            if (source.On < period.From || source.Kind is JournalKind.Opening or JournalKind.SubledgerOpening || trade?.Terms.Kind == TradeKind.Opening)
             {
                 opening += net;
                 continue;
@@ -31,6 +31,7 @@ public static class CashStatements
                 _ when source.CashActivity == CashActivity.Investing => ("manual-investing", "投资活动收付", "investing"),
                 _ when source.CashActivity == CashActivity.Financing => ("manual-financing", "筹资活动收付", "financing"),
                 TradeKind.Payment or TradeKind.SupplierRefund => ("supplier-cash", "供应商收付", "operating"),
+                TradeKind.OwnerContribution or TradeKind.OwnerDrawing => ("owner-capital", "业主资金变动", "financing"),
                 TradeKind.Income or TradeKind.Expense or TradeKind.Donation => ("other-operating", "其他经营收付", "operating"),
                 _ when customerJournals.Contains(source.JournalId) => ("customer-cash", "客户收付", "operating"),
                 _ when contra.Length == 1 && contra[0] == AccountCategory.Equity => ("capital-cash", "权益资金变动", "financing"),
@@ -53,7 +54,7 @@ public static class CashStatements
         var docs = history.Customers.ToDictionary(x => x.Id);
         var trades = history.Trades.ToDictionary(x => x.Id);
         var directCash = history.CashLines.GroupBy(x => x.Source)
-            .Where(x => x.Key.On >= period.From && x.Key.Kind != JournalKind.Opening
+            .Where(x => x.Key.On >= period.From && x.Key.Kind is not (JournalKind.Opening or JournalKind.SubledgerOpening)
                 && x.Where(line => line.Cash).Sum(line => line.Signed) != 0
                 && x.Where(line => !line.Cash && line.Signed != 0).All(line => AccrualStatement.IsProfitAndLoss(line.Category)))
             .SelectMany(x => x.Where(line => !line.Cash && AccrualStatement.IsProfitAndLoss(line.Category)));
@@ -96,7 +97,7 @@ public static class CashStatements
             if (payment.Terms.SourceId is not Guid id || !trades.TryGetValue(id, out var document)) continue;
             switch (payment.Terms.Kind)
             {
-                case TradeKind.Payment when document.Terms.Kind == TradeKind.Bill:
+                case TradeKind.Payment when document.Terms.Kind == TradeKind.Bill && document.Terms.OpeningSource is null:
                     var net = document.Terms.BillReceipts?.Sum(x => x.Net) ?? document.Terms.Amount;
                     Add("cash-purchases", "已付采购净额", "expense", trade.Source,
                         Allocate(paid, id, document.Total, net, payment.Total * sign, minorUnits));

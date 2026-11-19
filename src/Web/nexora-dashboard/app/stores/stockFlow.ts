@@ -9,6 +9,7 @@ import type {
   StockReturnLine
 } from '~/mocks'
 import { purchaseOrders, salesOrders, stockReturnSeeds } from '~/mocks'
+import { useInventoryStore } from './inventory'
 import { useReceivablesStore } from './receivables'
 import { useSupplierTradeStore } from './supplierTrade'
 
@@ -316,14 +317,51 @@ export const useStockFlowStore = defineStore('stock-flow', () => {
     return { ok: true, message: '已创建退货单 ' + stockReturn.id + '，确认后生成关联贷项。', stockReturn }
   }
 
+  /** 同一退货行已经生成过的贷项数量，避免重复确认或多次退货重复冲减开票额度。 */
+  function creditedReturnQuantity(stockReturn: StockReturn, lineNo: number) {
+    if (stockReturn.direction === 'sales') {
+      return useReceivablesStore().credits
+        .filter(credit => credit.orderId === stockReturn.orderId && credit.lineNo === lineNo)
+        .reduce((sum, credit) => sum + credit.quantity, 0)
+    }
+    return useSupplierTradeStore().credits
+      .filter(credit => credit.receiptId === stockReturn.sourceId && credit.receiptLineNo === lineNo)
+      .reduce((sum, credit) => sum + credit.quantity, 0)
+  }
+
+  /**
+   * 确认退货：按原明细开票状态拆分，已开票部分生成贷项，未开票部分冲减可匹配/可开票数量，
+   * 同时把退货数量写回库存位置与流水。库存先行校验，避免账务已生成但库存不足。
+   */
   function confirmReturn(returnId: string): StockFlowResult {
     const stockReturn = returns.value.find(row => row.id === returnId)
     if (!stockReturn) return { ok: false, message: '未找到退货单。' }
     if (stockReturn.status !== 'pending') return { ok: false, message: '仅待确认退货可以确认。' }
+
+    const inventory = useInventoryStore()
+    const receivables = useReceivablesStore()
+    const supplier = useSupplierTradeStore()
+    const stockCheck = inventory.canApplyReturn(stockReturn)
+    if (!stockCheck.ok) return { ok: false, message: stockCheck.message }
+
+    const invoicedLines: StockReturnLine[] = []
+    for (const line of stockReturn.lines) {
+      const billed = stockReturn.direction === 'sales'
+        ? receivables.invoicedQuantityOf(stockReturn.orderId, line.lineNo)
+        : supplier.billedQuantityOf(stockReturn.sourceId, line.lineNo)
+      const credited = creditedReturnQuantity(stockReturn, line.lineNo)
+      const invoiced = Math.min(line.quantity, Math.max(0, billed - credited))
+      line.invoicedQuantity = invoiced
+      line.uninvoicedQuantity = line.quantity - invoiced
+      if (invoiced > 0) invoicedLines.push(line)
+    }
+
     const confirmedAt = nowStamp()
-    let creditId: string
-    if (stockReturn.direction === 'sales') {
-      const receivables = useReceivablesStore()
+    const stockResult = inventory.applyReturn({ ...stockReturn, status: 'confirmed', confirmedAt })
+    if (!stockResult.ok) return { ok: false, message: stockResult.message }
+
+    let creditId = ''
+    if (invoicedLines.length && stockReturn.direction === 'sales') {
       const invoice = receivables.invoices.find(row => row.sourceOrderId === stockReturn.orderId && row.status !== 'cancelled')
       const result = receivables.createCreditFromReturn({
         workspaceId: stockReturn.workspaceId,
@@ -333,29 +371,62 @@ export const useStockFlowStore = defineStore('stock-flow', () => {
         fulfillmentId: stockReturn.sourceId,
         reason: stockReturn.reason,
         confirmedAt,
-        lines: stockReturn.lines
+        lines: invoicedLines.map(line => ({
+          lineNo: line.lineNo,
+          sku: line.sku,
+          name: line.name,
+          quantity: line.invoicedQuantity!,
+          unitPrice: line.unitPrice
+        }))
       })
       if (!result.ok) return { ok: false, message: result.message }
       creditId = result.creditId ?? ''
-    } else {
-      const supplier = useSupplierTradeStore()
-      const bill = supplier.bills.find(row => row.orderId === stockReturn.orderId)
+    } else if (invoicedLines.length) {
+      const billId = supplier.billIdWithReceiptLine(stockReturn.sourceId, invoicedLines[0]!.lineNo)
+        || supplier.bills.find(row => row.orderId === stockReturn.orderId)?.id
+        || ''
       const result = supplier.createCreditFromReturn({
         workspaceId: stockReturn.workspaceId,
-        billId: bill?.id ?? '',
+        billId,
         orderId: stockReturn.orderId,
         receiptId: stockReturn.sourceId,
         reason: stockReturn.reason,
         confirmedAt,
-        lines: stockReturn.lines
+        lines: invoicedLines.map(line => ({
+          lineNo: line.lineNo,
+          sku: line.sku,
+          name: line.name,
+          quantity: line.invoicedQuantity!,
+          unitPrice: line.unitPrice
+        }))
       })
       if (!result.ok) return { ok: false, message: result.message }
       creditId = result.creditId ?? ''
     }
+
+    let uninvoicedTotal = 0
+    for (const line of stockReturn.lines) {
+      if (!line.uninvoicedQuantity) continue
+      uninvoicedTotal += line.uninvoicedQuantity
+      const result = stockReturn.direction === 'sales'
+        ? receivables.recordReturnReduction(stockReturn.orderId, line.lineNo, line.uninvoicedQuantity)
+        : supplier.recordReturnReduction(stockReturn.sourceId, line.lineNo, line.uninvoicedQuantity)
+      if (!result.ok) return { ok: false, message: result.message }
+    }
+
     stockReturn.status = 'confirmed'
     stockReturn.confirmedAt = confirmedAt
-    stockReturn.creditId = creditId
-    return { ok: true, message: '退货已确认，关联贷项 ' + creditId + ' 已生成。', stockReturn }
+    stockReturn.creditId = creditId || undefined
+
+    const invoicedTotal = invoicedLines.reduce((sum, line) => sum + (line.invoicedQuantity ?? 0), 0)
+    const balanceText = stockReturn.lines.map((line) => {
+      const unit = inventory.positions.find(position => position.sku === line.sku)?.unit ?? '件'
+      return line.name + ' 结存 ' + inventory.totalQuantityIn(stockReturn.warehouseId, line.sku) + ' ' + unit
+    }).join('、')
+    let message = '退货 ' + stockReturn.id + ' 已确认：' + balanceText + '。'
+    message += invoicedTotal > 0 ? '已开票 ' + invoicedTotal + ' 件生成贷项 ' + creditId + '。' : '本单没有已开票数量，不生成贷项。'
+    if (uninvoicedTotal > 0) message += '未开票 ' + uninvoicedTotal + ' 件已冲减可匹配数量。'
+    return { ok: true, message, stockReturn }
   }
 
   function cancelReturn(returnId: string): StockFlowResult {

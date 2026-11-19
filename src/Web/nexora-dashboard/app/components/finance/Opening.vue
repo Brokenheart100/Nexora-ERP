@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type {
   OpeningBalanceRow,
+  OpeningResultRecord,
   OpeningSubledgerBatch,
   OpeningSubledgerSource
 } from '~/mocks'
@@ -70,6 +71,30 @@ const sourceColumns: TableColumn<OpeningSubledgerSource>[] = [
   { id: 'sample', header: '来源单据' }
 ]
 
+const recordKindLabels: Record<OpeningResultRecord['kind'], string> = {
+  journal: '记账凭证',
+  stock: '库存流水',
+  receivable: '应收单据',
+  payable: '应付单据',
+  bank: '银行流水'
+}
+
+const recordKindColors: Record<OpeningResultRecord['kind'], 'primary' | 'info' | 'success' | 'warning' | 'neutral'> = {
+  journal: 'primary',
+  stock: 'info',
+  receivable: 'success',
+  payable: 'warning',
+  bank: 'neutral'
+}
+
+const recordColumns: TableColumn<OpeningResultRecord>[] = [
+  { accessorKey: 'kind', header: '类型' },
+  { accessorKey: 'docNo', header: '记录编号' },
+  { accessorKey: 'amount', header: '金额' },
+  { accessorKey: 'sourceLabel', header: '来源行' },
+  { id: 'actions', header: '操作' }
+]
+
 const batchColumns: TableColumn<OpeningSubledgerBatch>[] = [
   { accessorKey: 'id', header: '批次' },
   { id: 'state', header: '状态' },
@@ -95,6 +120,25 @@ const actionError = ref('')
 const rejectOpen = ref(false)
 const rejectNote = ref('')
 const rejectError = ref('')
+
+const recordOpen = ref(false)
+const selectedRecordId = ref('')
+const resultRecords = computed(() => selectedBatch.value?.result?.records ?? [])
+const selectedRecord = computed(() => resultRecords.value.find(record => record.id === selectedRecordId.value))
+const selectedRecordSource = computed(() => selectedBatch.value?.sources.find(source => source.id === selectedRecord.value?.sourceId))
+
+function recordCount(kind: OpeningResultRecord['kind']) {
+  return resultRecords.value.filter(record => record.kind === kind).length
+}
+
+function openRecord(recordId: string) {
+  selectedRecordId.value = recordId
+  recordOpen.value = true
+}
+
+function backToBatch() {
+  recordOpen.value = false
+}
 
 watch(selectedBatchId, () => {
   reviewNote.value = ''
@@ -752,9 +796,70 @@ function stateColor(batch: OpeningSubledgerBatch) {
                 size="sm"
               />
             </div>
-            <p class="mt-1 text-xs text-muted">
-              凭证 {{ selectedBatch.result.journalIds.join('、') }}；库存移动 {{ selectedBatch.result.stockMovements }} 笔，应收单据 {{ selectedBatch.result.receivableDocs }} 张，应付单据 {{ selectedBatch.result.payableDocs }} 张，银行流水 {{ selectedBatch.result.bankMovements }} 笔。
+            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+              <div
+                v-for="kind in (['journal', 'stock', 'receivable', 'payable', 'bank'] as const)"
+                :key="kind"
+                class="rounded-sm border border-default bg-default px-2 py-1.5"
+                :data-testid="'opening-result-count-' + kind"
+              >
+                <p class="text-[11px] text-muted">
+                  {{ recordKindLabels[kind] }}
+                </p>
+                <p class="mt-0.5 text-sm font-semibold tabular-nums text-highlighted">
+                  {{ recordCount(kind) }} 条
+                </p>
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-muted">
+              过账生成的编号与数量由下方记录汇总；打开任一条可核对批次、来源行与金额。
             </p>
+            <div class="mt-2 overflow-hidden rounded-sm border border-default bg-default">
+              <ResizableTable
+                :data="resultRecords"
+                :columns="recordColumns"
+                class="nx-table"
+                :ui="{ th: 'py-2', td: 'py-2' }"
+                data-testid="opening-result-records"
+              >
+                <template #kind-cell="{ row }">
+                  <UBadge
+                    :label="recordKindLabels[row.original.kind]"
+                    :color="recordKindColors[row.original.kind]"
+                    variant="subtle"
+                    size="sm"
+                  />
+                </template>
+                <template #docNo-cell="{ row }">
+                  <span class="font-mono text-[12px] text-highlighted">{{ row.original.docNo }}</span>
+                </template>
+                <template #amount-cell="{ row }">
+                  <span class="tabular-nums">{{ formatMoney(row.original.amount) }}</span>
+                </template>
+                <template #sourceLabel-cell="{ row }">
+                  <div class="text-xs">
+                    <p class="text-highlighted">
+                      {{ row.original.sourceLabel }}
+                    </p>
+                    <p class="text-muted">
+                      {{ row.original.sourceReference }}
+                    </p>
+                  </div>
+                </template>
+                <template #actions-cell="{ row }">
+                  <div class="flex justify-end">
+                    <UButton
+                      label="详情"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      :data-testid="'opening-result-record-' + row.original.id"
+                      @click="openRecord(row.original.id)"
+                    />
+                  </div>
+                </template>
+              </ResizableTable>
+            </div>
           </div>
 
           <UAlert
@@ -895,6 +1000,88 @@ function stateColor(batch: OpeningSubledgerBatch) {
             data-testid="opening-reject-submit"
             @click="submitReject"
           />
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="recordOpen"
+      title="过账结果记录"
+      description="核对批次、来源行、记录编号与金额；可返回原批次继续查看"
+    >
+      <template #body>
+        <div v-if="selectedRecord" class="space-y-3" data-testid="opening-record-detail">
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge
+              :label="recordKindLabels[selectedRecord.kind]"
+              :color="recordKindColors[selectedRecord.kind]"
+              variant="subtle"
+              size="sm"
+            />
+            <span class="font-mono text-sm font-medium text-highlighted" data-testid="opening-record-doc">{{ selectedRecord.docNo }}</span>
+            <UBadge
+              :label="selectedRecord.status"
+              color="success"
+              variant="subtle"
+              size="sm"
+            />
+          </div>
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+            <div>
+              <dt class="text-xs text-muted">
+                所属批次
+              </dt>
+              <dd class="mt-0.5 font-mono text-default" data-testid="opening-record-batch">
+                {{ selectedBatch?.id }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">
+                金额
+              </dt>
+              <dd class="mt-0.5 tabular-nums text-highlighted" data-testid="opening-record-amount">
+                {{ formatMoney(selectedRecord.amount) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">
+                来源行
+              </dt>
+              <dd class="mt-0.5 text-default" data-testid="opening-record-source">
+                {{ selectedRecord.sourceLabel }} · {{ selectedRecord.sourceReference }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">
+                来源单据
+              </dt>
+              <dd class="mt-0.5 font-mono text-default" data-testid="opening-record-source-doc">
+                {{ selectedRecordSource?.sampleDocNo ?? '—' }}
+              </dd>
+            </div>
+          </dl>
+          <div class="rounded-sm border border-default bg-elevated/40 px-3 py-2 text-xs text-muted">
+            {{ selectedRecord.detail }}
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-3">
+            <ULink
+              v-if="selectedRecordSource"
+              :to="selectedRecordSource.href"
+              class="text-xs text-primary"
+              data-testid="opening-record-source-link"
+            >
+              查看{{ selectedRecordSource.sampleLabel }}
+            </ULink>
+            <span v-else />
+            <UButton
+              label="返回批次"
+              color="neutral"
+              variant="outline"
+              icon="i-carbon-arrow-left"
+              data-testid="opening-record-back"
+              @click="backToBatch"
+            />
+          </div>
         </div>
       </template>
     </UModal>

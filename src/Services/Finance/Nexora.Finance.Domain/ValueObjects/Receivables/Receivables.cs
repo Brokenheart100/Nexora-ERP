@@ -13,4 +13,6 @@ public sealed record InvoiceLine(Guid? ShipmentId, Guid ItemId, string Name, dec
 
 public sealed record CustomerTerms(CustomerDocumentKind Kind, string Number, DateOnly On, Guid CustomerId, string CustomerName,
     string Currency, decimal Total, InvoiceLine[]? Lines = null, InvoiceBrand? Brand = null, Guid? BankId = null,
-    Guid? InvoiceId = null, Guid? FundsId = null, Guid? ReturnId = null, DateOnly? DueOn = null);
+    Guid? InvoiceId = null, Guid? FundsId = null, Guid? ReturnId = null, DateOnly? DueOn = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    OpeningSubledgerSource? OpeningSource = null);

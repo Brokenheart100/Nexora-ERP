@@ -1,0 +1,316 @@
+{
+  "app": {
+    "title": "Nexora ERP — UI 原型",
+    "description": "Nexora ERP 的 Carbon 风格 UI 原型：工作台、商品目录与采购订单，全部使用本地模拟数据。"
+  },
+  "nav": {
+    "dashboard": "工作台",
+    "catalog": "商品目录",
+    "partners": "伙伴档案",
+    "definitions": "主数据定义",
+    "purchaseOrders": "采购订单",
+    "purchaseAudit": "采购审计",
+    "sales": "销售与应收",
+    "inventory": "库存管理",
+    "finance": "财务",
+    "assistant": "工作区助手",
+    "changeLog": "变更记录",
+    "settings": "设置"
+  },
+  "shell": {
+    "searchButton": "搜索或跳转…",
+    "sidebarNote": "本地 UI 原型 · 模拟数据",
+    "sidebarDisconnected": "不连接后端服务",
+    "searchDescription": "搜索页面、商品、伙伴或单据；结果来自本地模拟数据。",
+    "searchPlaceholder": "搜索页面、商品、伙伴或单据…",
+    "searchEmptyTitle": "没有匹配结果",
+    "searchEmptyBody": "试试商品 SKU、单据号或页面名称；当前仅检索本地模拟数据。",
+    "searchSelect": "选择",
+    "searchOpen": "打开",
+    "searchClose": "关闭",
+    "searchScope": "演示范围：本地模拟页面、商品、伙伴与单据",
+    "language": "语言",
+    "mfa": "MFA 已启用 · {count} 个登录会话",
+    "accountSettings": "账户与设置",
+    "securitySettings": "安全设置",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "prototypeNote": "本地 UI 原型 · 模拟数据",
+    "currentWorkspace": "当前工作区：{plan}",
+    "notifications": "通知",
+    "viewNotifications": "查看通知",
+    "security": {
+      "title": "账户与安全",
+      "description": "账户、MFA 与登录会话均为本地模拟数据，只读演示",
+      "lastLogin": "上次登录 {time}",
+      "mfaEnabled": "MFA 已启用",
+      "mfaDisabled": "MFA 未启用",
+      "sessionsTitle": "登录会话",
+      "sessionsSummary": "共 {count} 个，当前设备标记为当前会话",
+      "currentSession": "当前会话",
+      "settingsTitle": "安全设置",
+      "changePassword": "修改密码",
+      "changePasswordDescription": "更新账户密码与登录提醒",
+      "rebindMfa": "重新绑定 MFA",
+      "rebindMfaDescription": "更换身份验证器或恢复码",
+      "loginHistory": "查看登录历史",
+      "loginHistoryDescription": "最近 30 天的登录与设备记录",
+      "open": "打开",
+      "endOthers": "结束其他会话",
+      "close": "关闭",
+      "endedTitle": "已结束其他会话（演示）",
+      "endedDescription": "本地原型只移除模拟会话，不影响真实登录。",
+      "demoTitle": "{action}（演示）",
+      "demoDescription": "纯 UI 阶段不提供账户操作，这里只展示入口。"
+    }
+  },
+  "search": {
+    "groups": {
+      "recent": "最近访问",
+      "pages": "页面",
+      "products": "商品",
+      "partners": "往来单位",
+      "definitions": "主数据定义",
+      "purchaseOrders": "采购订单",
+      "salesOrders": "销售订单",
+      "quotes": "报价单",
+      "invoices": "发票",
+      "documents": "最近单据",
+      "changeLog": "变更记录",
+      "demoErrors": "错误页演示"
+    },
+    "pages": {
+      "dashboard": "工作区总览、采购趋势与待办",
+      "catalog": "商品搜索、筛选与编辑",
+      "partners": "供应商、客户与捐赠人档案",
+      "definitions": "商品分类、计量单位与税码",
+      "purchaseOrders": "订单列表、明细与审批状态",
+      "purchaseAudit": "采购审批、收货与变更审计",
+      "sales": "报价、销售订单、应收与发票",
+      "inventory": "仓库、库存位置与出入库流水",
+      "finance": "总账、应收应付与报表",
+      "assistant": "会话、流式回答与工具调用审批",
+      "changeLog": "商品、伙伴、单据与定义变更",
+      "settings": "工作区、成员、角色与偏好"
+    },
+    "productCategory": "商品分类 · {status}",
+    "unit": "计量单位 · 精度 {precision}",
+    "taxCode": "{kind}税码 · {rate}",
+    "validUntil": "有效期至 {date}",
+    "errors": {
+      "forbidden": {
+        "label": "403 · 无访问权限",
+        "description": "演示错误页与切换工作区动作"
+      },
+      "notFound": {
+        "label": "404 · 页面不存在",
+        "description": "演示错误页的返回工作台动作"
+      },
+      "serverError": {
+        "label": "500 · 页面出错",
+        "description": "演示服务异常错误页"
+      }
+    }
+  },
+  "labels": {
+    "purchaseStatus": {
+      "draft": "草稿",
+      "pending": "待审批",
+      "approved": "已审批",
+      "partial": "部分入库",
+      "received": "已入库",
+      "closed": "已关闭",
+      "cancelled": "已取消"
+    },
+    "salesStatus": {
+      "draft": "草稿",
+      "pending": "待审批",
+      "approved": "已批准",
+      "partial": "部分履约",
+      "fulfilled": "已履约",
+      "closed": "已关闭",
+      "cancelled": "已取消"
+    },
+    "quoteStatus": {
+      "draft": "草稿",
+      "sent": "已发送",
+      "accepted": "已接受",
+      "rejected": "已拒绝",
+      "expired": "已过期"
+    },
+    "invoiceStatus": {
+      "draft": "草稿",
+      "issued": "已开具",
+      "paid": "已收款",
+      "overdue": "已逾期",
+      "cancelled": "已作废"
+    },
+    "changeEntity": {
+      "product": "商品",
+      "partner": "伙伴",
+      "purchaseOrder": "采购单",
+      "salesOrder": "销售单",
+      "invoice": "发票",
+      "definition": "定义"
+    },
+    "partnerType": {
+      "supplier": "供应商",
+      "customer": "客户",
+      "donor": "捐赠人",
+      "both": "供应商 / 客户"
+    },
+    "definitionStatus": {
+      "active": "启用",
+      "inactive": "停用"
+    },
+    "taxKind": {
+      "output": "销项",
+      "input": "进项"
+    },
+    "todoPriority": {
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "documentType": {
+      "purchaseOrder": "采购订单",
+      "goodsReceipt": "采购入库",
+      "purchaseInvoice": "采购发票",
+      "payment": "付款单",
+      "salesOrder": "销售订单"
+    },
+    "rawDocumentStatus": {
+      "partiallyReceived": "部分入库",
+      "received": "已入库",
+      "confirmed": "已确认",
+      "paid": "已付款",
+      "receiptReceived": "已收款",
+      "pending": "待审批",
+      "draft": "草稿",
+      "cancelled": "已取消",
+      "partiallyFulfilled": "部分履约",
+      "overdue": "已逾期",
+      "issued": "已开具",
+      "voided": "已作废"
+    }
+  },
+  "dashboard": {
+    "title": "工作台",
+    "newPurchaseOrder": "新建采购订单",
+    "headline": "工作区总览",
+    "overviewMeta": "{plan} · {members} 位成员 · 数据更新于 {time}",
+    "kpi": {
+      "purchase": "本月采购额",
+      "sales": "本月销售额",
+      "receivablePayable": "应收 / 应付",
+      "pendingPurchases": "待处理采购订单",
+      "lowStock": "库存预警",
+      "activeProducts": "在售商品",
+      "purchaseHint": "演示口径 · 较上月 +{percent}%",
+      "salesHint": "演示口径 · 较上月 +{percent}%",
+      "receivableHint": "演示口径 · {receivables} 张待收 · {orders} 单待付",
+      "pendingHint": "演示口径 · 需要审批或跟进",
+      "pendingHintIdle": "演示口径 · 当前无需处理",
+      "stockHint": "演示口径 · 占在售商品的 {percent}%",
+      "productHint": "演示口径 · 覆盖 {categories} 个品类",
+      "orders": "{count} 单",
+      "products": "{count} 个"
+    },
+    "trend": {
+      "purchase": "采购额",
+      "sales": "销售额",
+      "receivable": "应收余额",
+      "purchaseTitle": "月度采购额",
+      "salesTitle": "月度销售额",
+      "receivableTitle": "月末应收余额",
+      "range": "2026 年 1–12 月 · 单位：万元 · 演示数据",
+      "chartAria": "{title}柱状图"
+    },
+    "todos": {
+      "title": "我的待办",
+      "subtitle": "按审批、草稿与逾期分组",
+      "completeAll": "全部完成",
+      "groups": {
+        "approval": "审批",
+        "draft": "草稿",
+        "overdue": "逾期"
+      },
+      "emptyTitle": "暂无待办",
+      "emptyDescription": "演示：当前工作区没有待办事项（?empty=todos）",
+      "allDoneTitle": "全部完成",
+      "allDoneDescription": "当前工作区的待办已全部完成，可恢复到演示初始状态。",
+      "restore": "恢复全部待办",
+      "groupEmptyTitle": "该分组暂无待办",
+      "groupEmptyDescription": "{group}分组已清空，可切换到其他分组。",
+      "progressAria": "待办完成度"
+    },
+    "documents": {
+      "title": "最近单据",
+      "subtitle": "采购、入库、销售、发票与付款的最近动态",
+      "viewAll": "查看全部",
+      "emptyTitle": "暂无单据",
+      "emptyDescription": "演示：当前工作区暂时没有单据（?empty=documents）",
+      "columns": {
+        "id": "单号",
+        "type": "类型",
+        "counterparty": "往来单位",
+        "status": "状态",
+        "amount": "金额",
+        "updatedAt": "更新时间"
+      },
+      "exportFilename": "工作台单据-{date}.csv",
+      "exportButton": "导出报表",
+      "exportTitle": "已导出 {count} 条单据",
+      "exportDescription": "CSV 由浏览器本地生成，未经过后端。"
+    },
+    "activity": {
+      "title": "最近动态",
+      "subtitle": "来自模拟审计记录",
+      "all": "全部类型",
+      "emptyTitle": "暂无动态",
+      "emptyDescription": "演示：当前工作区没有变更记录（?empty=activity）",
+      "viewAll": "查看全部变更"
+    },
+    "refresh": {
+      "button": "刷新",
+      "title": "数据已刷新",
+      "description": "演示数据已重新读取，刷新页面仍会恢复初始值。"
+    },
+    "footer": {
+      "dataBefore": "所有数据来自",
+      "dataAfter": "的本地模拟数据，刷新页面后恢复初始值。",
+      "emptyBefore": "空态演示：在地址后追加",
+      "emptySeparator": "、",
+      "emptyOr": " 或 ",
+      "emptyAfter": "。"
+    },
+    "stockAria": "库存预警占比"
+  },
+  "notifications": {
+    "title": "通知",
+    "description": "公告、采购/销售待审批、库存预警与最近单据（本地模拟数据）",
+    "emptyTitle": "暂无通知",
+    "emptyDescription": "当前工作区没有需要处理的事项",
+    "markAll": "全部标记已读",
+    "unreadCount": "{count} 条未读",
+    "close": "关闭",
+    "readOne": "标为已读",
+    "todayAt": "今天 {time}",
+    "yesterdayAt": "昨天 {time}",
+    "unread": "未读",
+    "sources": {
+      "announcement": "公告",
+      "purchaseApproval": "采购审批",
+      "salesApproval": "销售审批",
+      "stockAlert": "库存预警",
+      "recentDocument": "最近单据"
+    },
+    "listSeparator": "；",
+    "purchaseTitle": "{count} 张采购订单等待处理",
+    "salesTitle": "{count} 张销售订单等待审批",
+    "stockTitle": "{count} 个商品低于安全库存",
+    "documentDescription": "{type} · {status}"
+  }
+}

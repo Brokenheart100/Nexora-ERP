@@ -11,7 +11,8 @@ public interface IPartnerRepository
 
 public interface IPartnerReader
 {
-    Task<(IReadOnlyList<PartnerSummary> Items, bool HasMore)> ListAsync(ResourceScope scope, PageWindow page, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<PartnerSummary> Items, bool HasMore)> ListAsync(ResourceScope scope, PageWindow page,
+        CancellationToken cancellationToken, PartnerRoles? role = null);
     Task<PartnerDetail?> DetailAsync(ResourceScope scope, Guid partnerId, CancellationToken cancellationToken);
     Task<PartnerSummary?> SummaryAsync(ResourceScope scope, Guid partnerId, CancellationToken cancellationToken);
 }

@@ -110,16 +110,25 @@ public sealed class GovernanceUseCases(IWorkspaceRepository workspaces, AccountM
         return new(id, workspace.TenantId, workspace.Version, WorkspacePermissions.All.Where(p => workspace.AllowsGovernanceOperation(identity, p)).ToArray(),
             member.Role, workspace.IsPersonal, member.Id, scoped, workspace.Departments.Select(department => department.Id).ToArray());
     }
-    public async Task<IReadOnlyList<MemberView>> MembersAsync(Guid id, ActorContext actor, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MemberView>> MembersAsync(Guid id, ActorContext actor, CancellationToken cancellationToken, PageWindow? page = null)
     {
         await AuthorizedAsync(id, actor, WorkspacePermissions.MembersRead, cancellationToken);
-        return await workspaces.ListMembersAsync(id, cancellationToken);
+        return await workspaces.ListMembersAsync(id, cancellationToken, page);
     }
-    public async Task<IReadOnlyList<InvitationView>> InvitationsAsync(Guid id, ActorContext actor, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<InvitationView>> InvitationsAsync(Guid id, ActorContext actor, CancellationToken cancellationToken, PageWindow? page = null)
     {
         var workspace = await AuthorizedAsync(id, actor, WorkspacePermissions.Invite, cancellationToken);
         var now = clock.GetUtcNow();
-        return workspace.Invitations.Select(x => View(workspace, x, now)).ToArray();
+        var invitations = workspace.Invitations.OrderBy(x => x.ExpiresAtUtc).ThenBy(x => x.Id).AsEnumerable();
+        if (page is { } window) invitations = invitations.Skip(window.Offset).Take(window.Size);
+        return invitations.Select(x => View(workspace, x, now)).ToArray();
+    }
+
+    public async Task<InvitationView> InvitationAsync(Guid id, Guid invitationId, ActorContext actor, CancellationToken ct)
+    {
+        var workspace = await AuthorizedAsync(id, actor, WorkspacePermissions.Invite, ct);
+        var invitation = workspace.Invitations.SingleOrDefault(x => x.Id == invitationId) ?? throw new ResourceNotFoundException();
+        return View(workspace, invitation, clock.GetUtcNow());
     }
     private async Task EnforceSeatQuotaAsync(Workspace workspace, CancellationToken cancellationToken)
     {
@@ -136,7 +145,7 @@ public sealed class GovernanceUseCases(IWorkspaceRepository workspaces, AccountM
     }
     private static IdentityReference Identity(ActorContext actor) => new(actor.Issuer, actor.Subject);
     private static void CheckVersion(Workspace workspace, long expected)
-    { if (workspace.Version != expected) throw new BusinessConflictException("Authorization version changed; reload the workspace."); }
+    { if (workspace.Version != expected) throw new RevisionConflictException("Authorization version changed; reload the workspace."); }
     private static InvitationView View(Workspace workspace, WorkspaceInvitation invitation, DateTimeOffset now) =>
         new(invitation.Id, invitation.Email, invitation.Role,
             (invitation.State is "Pending" or "PendingApproval") && invitation.ExpiresAtUtc <= now ? "Expired" : invitation.State,

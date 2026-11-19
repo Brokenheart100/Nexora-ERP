@@ -28,6 +28,7 @@ internal sealed record McpToolOutcome(McpToolStatus Status, string? Payload, str
 internal sealed class McpFinanceTools(IHttpClientFactory clients)
 {
     public const string ClientName = "finance-mcp";
+    public const string MasterDataClientName = "masterdata-mcp";
     private const int MaxDetailLength = 300;
 
     public async Task<McpToolOutcome> CallAsync(string name, JsonElement arguments, string bearer, CancellationToken cancellationToken)
@@ -40,6 +41,7 @@ internal sealed class McpFinanceTools(IHttpClientFactory clients)
         var workspace = workspaceId.ToString("D");
 
         string path;
+        var clientName = ClientName;
         switch (name)
         {
             case McpToolCatalog.ListAccounts:
@@ -89,6 +91,26 @@ internal sealed class McpFinanceTools(IHttpClientFactory clients)
                     parameters.Add("postedOnly=" + (postedOnly ? "true" : "false"));
                 path = "/api/finance/workspaces/" + workspace + "/ledger/journals?" + string.Join('&', parameters);
                 break;
+            case McpToolCatalog.ListBanks or McpToolCatalog.ListCustomers or McpToolCatalog.ListSuppliers
+                or McpToolCatalog.ListInvoices or McpToolCatalog.ListBills:
+                if (arguments.EnumerateObject().Any(x => x.Name is not ("workspaceId" or "page")))
+                    return McpToolOutcome.Invalid("Only workspaceId and page are accepted.");
+                var number = 1;
+                if (arguments.TryGetProperty("page", out _) && (!TryInteger(arguments, "page", out number) || number is < 1 or > 100))
+                    return McpToolOutcome.Invalid("page must be an integer between 1 and 100.");
+                var finance = "/api/finance/workspaces/" + workspace;
+                var masterData = "/api/masterdata/workspaces/" + workspace + "/partners?pageSize=50&";
+                if (name is McpToolCatalog.ListCustomers or McpToolCatalog.ListSuppliers) clientName = MasterDataClientName;
+                path = name switch
+                {
+                    McpToolCatalog.ListBanks => finance + "/trade/banks?",
+                    McpToolCatalog.ListInvoices => finance + "/receivables/invoices?",
+                    McpToolCatalog.ListBills => finance + "/trade/bills?",
+                    McpToolCatalog.ListCustomers => masterData + "role=customer&",
+                    _ => masterData + "role=supplier&"
+                };
+                path += "page=" + number.ToString(CultureInfo.InvariantCulture);
+                break;
             default:
                 return McpToolOutcome.Invalid("Unknown tool '" + name + "'.");
         }
@@ -98,7 +120,7 @@ internal sealed class McpFinanceTools(IHttpClientFactory clients)
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         try
         {
-            using var response = await clients.CreateClient(ClientName).SendAsync(request, cancellationToken);
+            using var response = await clients.CreateClient(clientName).SendAsync(request, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (response.IsSuccessStatusCode) return McpToolOutcome.Ok(body, workspace);
             return response.StatusCode switch

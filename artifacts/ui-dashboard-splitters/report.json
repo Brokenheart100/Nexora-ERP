@@ -1,0 +1,998 @@
+{
+  "pages": [
+    {
+      "name": "工作台",
+      "path": "/",
+      "tab": null,
+      "count": 1,
+      "tables": [
+        {
+          "cols": 6,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            139,
+            91,
+            208,
+            87,
+            120,
+            117
+          ],
+          "tableWidth": 763,
+          "rootClientWidth": 763,
+          "rootScrollWidth": 763
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 91,
+          "after": 170,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 841,
+          "rootClientWidth": 763,
+          "rootScrollWidth": 841
+        }
+      ]
+    },
+    {
+      "name": "商品目录",
+      "path": "/catalog",
+      "tab": null,
+      "count": 1,
+      "tables": [
+        {
+          "cols": 9,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            40,
+            95,
+            364,
+            99,
+            111,
+            83,
+            72,
+            170,
+            116
+          ],
+          "tableWidth": 1151,
+          "rootClientWidth": 1151,
+          "rootScrollWidth": 1151
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 95,
+          "after": 175,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1230,
+          "rootClientWidth": 1151,
+          "rootScrollWidth": 1230
+        }
+      ]
+    },
+    {
+      "name": "往来单位",
+      "path": "/partners",
+      "tab": null,
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            90,
+            254,
+            119,
+            131,
+            231,
+            85,
+            127,
+            116
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 254,
+          "after": 333,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1232,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1232
+        }
+      ]
+    },
+    {
+      "name": "采购订单",
+      "path": "/purchase-orders",
+      "tab": null,
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            145,
+            280,
+            110,
+            144,
+            144,
+            97,
+            151,
+            80
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 280,
+          "after": 360,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1231,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1231
+        }
+      ]
+    },
+    {
+      "name": "采购审计",
+      "path": "/purchase-audit",
+      "tab": null,
+      "count": 1,
+      "tables": [
+        {
+          "cols": 6,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            169,
+            144,
+            238,
+            94,
+            82,
+            426
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 144,
+          "after": 224,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1233,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1233
+        }
+      ]
+    },
+    {
+      "name": "基础定义-商品分类",
+      "path": "/definitions",
+      "tab": "商品分类",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 7,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            88,
+            108,
+            452,
+            125,
+            78,
+            185,
+            116
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 108,
+          "after": 188,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1232,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1232
+        }
+      ]
+    },
+    {
+      "name": "基础定义-计量单位",
+      "path": "/definitions",
+      "tab": "计量单位",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 7,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            149,
+            168,
+            114,
+            194,
+            122,
+            289,
+            116
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 168,
+          "after": 247,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1231,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1231
+        }
+      ]
+    },
+    {
+      "name": "基础定义-税码",
+      "path": "/definitions",
+      "tab": "税码",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            148,
+            173,
+            100,
+            103,
+            165,
+            103,
+            244,
+            116
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 173,
+          "after": 253,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1232,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1232
+        }
+      ]
+    },
+    {
+      "name": "销售-销售订单",
+      "path": "/sales",
+      "tab": "销售订单",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            149,
+            242,
+            113,
+            148,
+            148,
+            99,
+            155,
+            97
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 242,
+          "after": 322,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1231,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1231
+        }
+      ]
+    },
+    {
+      "name": "销售-报价单",
+      "path": "/sales",
+      "tab": "报价单",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 7,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            174,
+            281,
+            116,
+            173,
+            116,
+            180,
+            113
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 281,
+          "after": 361,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1233,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1233
+        }
+      ]
+    },
+    {
+      "name": "销售-应收",
+      "path": "/sales",
+      "tab": "应收",
+      "count": 3,
+      "tables": [
+        {
+          "cols": 5,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            223,
+            341,
+            209,
+            167,
+            187
+          ],
+          "tableWidth": 1128,
+          "rootClientWidth": 1128,
+          "rootScrollWidth": 1128
+        },
+        {
+          "cols": 4,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            270,
+            438,
+            180,
+            240
+          ],
+          "tableWidth": 1128,
+          "rootClientWidth": 1128,
+          "rootScrollWidth": 1128
+        },
+        {
+          "cols": 5,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            217,
+            332,
+            204,
+            178,
+            197
+          ],
+          "tableWidth": 1128,
+          "rootClientWidth": 1128,
+          "rootScrollWidth": 1128
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 341,
+          "after": 420,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1206,
+          "rootClientWidth": 1128,
+          "rootScrollWidth": 1206
+        },
+        {
+          "index": 1,
+          "before": 332,
+          "after": 412,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1208,
+          "rootClientWidth": 1128,
+          "rootScrollWidth": 1208
+        }
+      ]
+    },
+    {
+      "name": "销售-发票",
+      "path": "/sales",
+      "tab": "发票",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 7,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            174,
+            266,
+            109,
+            163,
+            163,
+            170,
+            106
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 266,
+          "after": 345,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1230,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1230
+        }
+      ]
+    },
+    {
+      "name": "销售-定期开票",
+      "path": "/sales",
+      "tab": "定期开票",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            152,
+            245,
+            82,
+            151,
+            151,
+            146,
+            101,
+            126
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 245,
+          "after": 325,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1234,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1234
+        }
+      ]
+    },
+    {
+      "name": "库存-仓库总览",
+      "path": "/inventory",
+      "tab": "仓库总览",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    },
+    {
+      "name": "库存-库存位置",
+      "path": "/inventory",
+      "tab": "库存位置",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            396,
+            121,
+            132,
+            71,
+            71,
+            88,
+            160,
+            112
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 121,
+          "after": 201,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1231,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1231
+        }
+      ]
+    },
+    {
+      "name": "库存-库存流水",
+      "path": "/inventory",
+      "tab": "库存流水",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 6,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            186,
+            176,
+            88,
+            478,
+            141,
+            83
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 176,
+          "after": 255,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1231,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1231
+        }
+      ]
+    },
+    {
+      "name": "库存-盘点与调拨",
+      "path": "/inventory",
+      "tab": "盘点与调拨",
+      "count": 2,
+      "tables": [
+        {
+          "cols": 7,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            111,
+            102,
+            74,
+            82,
+            74,
+            134,
+            72
+          ],
+          "tableWidth": 650,
+          "rootClientWidth": 552,
+          "rootScrollWidth": 650
+        },
+        {
+          "cols": 6,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            111,
+            194,
+            74,
+            60,
+            134,
+            72
+          ],
+          "tableWidth": 645,
+          "rootClientWidth": 552,
+          "rootScrollWidth": 645
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 102,
+          "after": 182,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 730,
+          "rootClientWidth": 552,
+          "rootScrollWidth": 730
+        },
+        {
+          "index": 1,
+          "before": 194,
+          "after": 274,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 725,
+          "rootClientWidth": 552,
+          "rootScrollWidth": 725
+        }
+      ]
+    },
+    {
+      "name": "库存-低库存",
+      "path": "/inventory",
+      "tab": "低库存",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 6,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            496,
+            86,
+            126,
+            204,
+            96,
+            112
+          ],
+          "tableWidth": 1120,
+          "rootClientWidth": 1120,
+          "rootScrollWidth": 1120
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 86,
+          "after": 165,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1199,
+          "rootClientWidth": 1120,
+          "rootScrollWidth": 1199
+        }
+      ]
+    },
+    {
+      "name": "财务-财务工作台",
+      "path": "/finance",
+      "tab": "财务工作台",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    },
+    {
+      "name": "财务-科目表",
+      "path": "/finance",
+      "tab": "科目表",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    },
+    {
+      "name": "财务-凭证",
+      "path": "/finance",
+      "tab": "凭证",
+      "count": 1,
+      "tables": [
+        {
+          "cols": 8,
+          "handlesOk": true,
+          "lastNoHandle": true,
+          "thWidths": [
+            161,
+            149,
+            119,
+            214,
+            156,
+            156,
+            100,
+            97
+          ],
+          "tableWidth": 1152,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1152
+        }
+      ],
+      "drags": [
+        {
+          "index": 1,
+          "before": 149,
+          "after": 229,
+          "delta": 80,
+          "fixed": true,
+          "tableWidth": 1232,
+          "rootClientWidth": 1152,
+          "rootScrollWidth": 1232
+        }
+      ]
+    },
+    {
+      "name": "财务-报表",
+      "path": "/finance",
+      "tab": "报表",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    },
+    {
+      "name": "财务-账龄与税务",
+      "path": "/finance",
+      "tab": "账龄与税务",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    },
+    {
+      "name": "财务-银行对账",
+      "path": "/finance",
+      "tab": "银行对账",
+      "count": 0,
+      "tables": [],
+      "drags": []
+    }
+  ],
+  "dialogs": [
+    {
+      "name": "销售订单详情",
+      "path": "/sales",
+      "tab": "销售订单",
+      "table": {
+        "cols": 6,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          62,
+          313,
+          62,
+          76,
+          89,
+          119
+        ],
+        "tableWidth": 720,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 720
+      },
+      "drag": {
+        "index": 1,
+        "before": 313,
+        "after": 382,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 790,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 790
+      }
+    },
+    {
+      "name": "报价单详情",
+      "path": "/sales",
+      "tab": "报价单",
+      "table": {
+        "cols": 6,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          63,
+          318,
+          63,
+          90,
+          65,
+          121
+        ],
+        "tableWidth": 720,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 720
+      },
+      "drag": {
+        "index": 1,
+        "before": 318,
+        "after": 388,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 790,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 790
+      }
+    },
+    {
+      "name": "发票详情",
+      "path": "/sales",
+      "tab": "发票",
+      "table": {
+        "cols": 5,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          69,
+          350,
+          69,
+          99,
+          133
+        ],
+        "tableWidth": 720,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 720
+      },
+      "drag": {
+        "index": 1,
+        "before": 350,
+        "after": 419,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 789,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 789
+      }
+    },
+    {
+      "name": "新建盘点",
+      "path": "/inventory",
+      "tab": "盘点与调拨",
+      "table": {
+        "cols": 7,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          49,
+          240,
+          80,
+          62,
+          128,
+          96,
+          64
+        ],
+        "tableWidth": 720,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 720
+      },
+      "drag": {
+        "index": 1,
+        "before": 240,
+        "after": 310,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 789,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 789
+      }
+    },
+    {
+      "name": "调拨详情",
+      "path": "/inventory",
+      "tab": "盘点与调拨",
+      "table": {
+        "cols": 5,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          48,
+          359,
+          87,
+          65,
+          65
+        ],
+        "tableWidth": 624,
+        "rootClientWidth": 624,
+        "rootScrollWidth": 624
+      },
+      "drag": {
+        "index": 1,
+        "before": 359,
+        "after": 429,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 694,
+        "rootClientWidth": 624,
+        "rootScrollWidth": 694
+      }
+    },
+    {
+      "name": "采购订单详情",
+      "path": "/purchase-orders",
+      "table": {
+        "cols": 7,
+        "handlesOk": true,
+        "lastNoHandle": true,
+        "thWidths": [
+          57,
+          275,
+          93,
+          59,
+          70,
+          59,
+          107
+        ],
+        "tableWidth": 720,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 720
+      },
+      "drag": {
+        "index": 1,
+        "before": 275,
+        "after": 344,
+        "delta": 70,
+        "fixed": true,
+        "tableWidth": 789,
+        "rootClientWidth": 720,
+        "rootScrollWidth": 789
+      }
+    }
+  ],
+  "dark": {
+    "table": {
+      "cols": 9,
+      "handlesOk": true,
+      "lastNoHandle": true,
+      "thWidths": [
+        40,
+        95,
+        364,
+        99,
+        111,
+        83,
+        72,
+        170,
+        116
+      ],
+      "tableWidth": 1151,
+      "rootClientWidth": 1151,
+      "rootScrollWidth": 1151
+    },
+    "handleBackground": "linear-gradient(to right, rgba(0, 0, 0, 0) 3px, rgb(57, 57, 57) 3px, rgb(57, 57, 57) 4px, rgba(0, 0, 0, 0) 4px)",
+    "htmlClass": "dark"
+  },
+  "consoleErrors": [],
+  "badResponses": []
+}

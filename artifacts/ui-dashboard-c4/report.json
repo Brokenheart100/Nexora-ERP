@@ -1,0 +1,231 @@
+{
+  "generatedAt": "2026-11-18T13:26:17.875Z",
+  "base": "http://localhost:3001",
+  "checks": [
+    {
+      "name": "向导显示四个步骤",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "默认进入公司资料步骤",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "期初余额合计正确",
+      "ok": true,
+      "detail": "期初余额预览\n\n样例数字，用于演示开账顺序，不写入总账。\n\n待确认\n\n库存商品\n\n¥286,400.00\n\n按仓库结存与移动平均成本\n\n应收账款\n\n¥486,200.00\n\n未结发票与未核销收款\n\n应付账款\n\n¥528,400.00\n\n未结账单与暂估\n\n银行存款\n\n¥1,268,400.00\n\n基本户与一般户余额\n\n合计\n¥2,569,400.00"
+    },
+    {
+      "name": "科目模板包含三套",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "完成前摘要包含零售模板与小规模税制",
+      "ok": true,
+      "detail": "完成前的配置摘要\n\n公司：华东总部贸易有限公司（C4 演示） · 会计年度：2026-01-01 至 2026-12-31\n\n科目模板：商贸流通科目表 · 税制：小规模纳税人"
+    },
+    {
+      "name": "完成页显示四步完成",
+      "ok": true,
+      "detail": "工作区初始化已完成\n\n华东总部贸易有限公司 已具备公司资料、会计年度、科目模板和税制配置。演示状态只在当前浏览器内生效。\n\n进入工作台\n查看公司设置\n\n公司资料\n\n确认开票与报表使用的主体信息\n\n会计年度与开账\n\n设置年度区间和期初余额\n\n科目模板\n\n选择一套可用的会计科目表\n\n可选税制\n\n选择增值税处理方式，可稍后调整\n\n会计年度：2026-01-01 至 2026-12-31 · 开账日 2026-01-01\n\n科目模板：商贸流通科目表 · 税制：小规模纳税人\n\n重新演示初始化"
+    },
+    {
+      "name": "公司设置显示初始化已完成",
+      "ok": true,
+      "detail": "已完成"
+    },
+    {
+      "name": "公司设置显示完成摘要",
+      "ok": true,
+      "detail": "四步配置已完成，可随时重新演示。"
+    },
+    {
+      "name": "向导保存的公司名称可见",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "公司设置可回到初始化完成页",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "重新演示初始化回到公司资料",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "稍后继续返回公司设置并保留进度",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "公司设置显示暂存提示",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "默认选中采购员角色",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "采购员部门范围是采购部",
+      "ok": true,
+      "detail": "部门\n\n1 个\n\n采购部"
+    },
+    {
+      "name": "采购员仓库范围是华东中心仓",
+      "ok": true,
+      "detail": "仓库\n\n1 个\n\n华东中心仓"
+    },
+    {
+      "name": "采购员期间范围是 11 月",
+      "ok": true,
+      "detail": "财务期间\n\n1 个\n\n11 月"
+    },
+    {
+      "name": "待审批计数为 1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "制单人可打开申请",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "制单人看不到审批按钮",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "未扩展范围时拒绝提交",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "新申请生成 REQ-2026-1203",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "提交后待审批计数为 2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "审批人不能提交申请",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "审批人可批准待审申请",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "批准后状态为已批准",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "批准后范围并入采购员",
+      "ok": true,
+      "detail": "部门\n\n2 个\n\n采购部、销售部仓库\n\n2 个\n\n华东中心仓、华南前置仓财务期间\n\n2 个\n\n11 月、12 月"
+    },
+    {
+      "name": "拒绝时必须填写原因",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "拒绝后状态为已拒绝",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "拒绝原因显示在申请中",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "处理完成后待审批清零",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "切回制单人后可再次申请",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "切回制单人后审批按钮隐藏",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "回归页面可访问 /",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "回归页面有内容 /",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "回归页面可访问 /purchase-orders",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "回归页面有内容 /purchase-orders",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "回归页面可访问 /inventory",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "回归页面有内容 /inventory",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "回归页面可访问 /finance?tab=payables",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "name": "回归页面有内容 /finance?tab=payables",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "screenshots": [
+    "01-setup-company.png",
+    "02-setup-fiscal.png",
+    "03-setup-accounts.png",
+    "04-setup-tax.png",
+    "05-setup-complete.png",
+    "06-settings-company-setup.png",
+    "07-settings-deferred.png",
+    "08-roles-authorization.png",
+    "09-access-request-form.png",
+    "10-access-request-submitted.png",
+    "11-roles-approved-rejected.png",
+    "12-roles-requester.png",
+    "13-roles-dark.png"
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "passed": 41,
+  "failed": 0
+}

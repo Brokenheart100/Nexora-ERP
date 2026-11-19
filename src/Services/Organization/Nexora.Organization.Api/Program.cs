@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Nexora.BuildingBlocks.Application;
 using Nexora.BuildingBlocks.Infrastructure;
 using Nexora.Organization.Infrastructure;
+using Nexora.Organization.Application;
 using Wolverine.Http;
 using Wolverine.HealthChecks;
 using Wolverine.Http.FluentValidation;
@@ -31,6 +32,7 @@ public partial class Program
         builder.AddServiceDefaults();
         builder.AddNexoraBearer();
         builder.AddOrganization(typeof(Program).Assembly);
+        builder.Services.AddSingleton<ILocalCheckoutTicket, LocalCheckoutTicket>();
         builder.Services.AddHealthChecks()
             .AddWolverine(tags: ["ready"], timeout: TimeSpan.FromSeconds(4))
             .AddWolverineListeners(tags: ["ready"], timeout: TimeSpan.FromSeconds(4))

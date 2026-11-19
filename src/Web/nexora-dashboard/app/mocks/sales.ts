@@ -50,13 +50,15 @@ export const salesStatusColors: Record<SalesOrderStatus, 'neutral' | 'info' | 's
 export const salesApprovalLabels: Record<SalesApprovalAction, string> = {
   submitted: '提交审批',
   approved: '审批通过',
-  rejected: '审批驳回'
+  rejected: '审批驳回',
+  withdrawn: '撤回提交'
 }
 
 export const salesApprovalColors: Record<SalesApprovalAction, 'warning' | 'success' | 'error'> = {
   submitted: 'warning',
   approved: 'success',
-  rejected: 'error'
+  rejected: 'error',
+  withdrawn: 'warning'
 }
 
 /** 报价与销售订单共用的演示商品目录，金额只在本原型内使用。 */
@@ -194,6 +196,7 @@ interface OrderSeed {
   orderedAt: string
   promisedAt: string
   owner: string
+  maker?: string
   note: string
   quoteId?: string
   lines: Array<[string, number]>
@@ -234,7 +237,8 @@ const orderSeeds: OrderSeed[] = [
     status: 'pending',
     orderedAt: '2026-09-08',
     promisedAt: '2026-09-22',
-    owner: '周奕',
+    owner: '陈立',
+    maker: '陈立',
     note: '客户信用额度待复核，审批停留时间较长。',
     lines: [['SKU-1016', 12], ['SKU-1014', 30]]
   },
@@ -402,6 +406,7 @@ export const salesOrders: SalesOrder[] = orderSeeds.map((seed) => {
     orderedAt: seed.orderedAt,
     promisedAt: seed.promisedAt,
     owner: seed.owner,
+    maker: seed.maker ?? seed.owner,
     totalAmount,
     note: seed.note,
     lines,

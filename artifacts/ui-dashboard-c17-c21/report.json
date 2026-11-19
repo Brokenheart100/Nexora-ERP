@@ -1,0 +1,483 @@
+{
+  "generatedAt": "2026-11-19T09:39:17.258Z",
+  "base": "http://localhost:3001",
+  "viewport": "1440x1000",
+  "total": 94,
+  "passed": 94,
+  "failed": 0,
+  "consoleErrors": [],
+  "pageErrors": [],
+  "badResponses": [],
+  "results": [
+    {
+      "ok": true,
+      "label": "C17 发票交付页签渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 复核列表初始 5 张发票",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 候选编号按规则显示 0118",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 制单人未确认前不能过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 业务主管确认后可过账",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 过账写入正式编号 0118",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 过账后编号锁定",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 规则变动后候选编号失效提示",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 失效候选重新确认生成 0119",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 本地样张显示已过账发票号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 样张展示公司抬头与价税合计",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 创建分享记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 分享撤销后状态生效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 失败寄送保留具体原因",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 重试生成关联的新寄送记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 结果未知记录保留待处置状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C17 重寄生成新记录并回链原记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 报表中心渲染",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 利润表按区间展示收入与成本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 利润表展示营业利润与净利润",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 报表行可钻取到凭证",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 钻取凭证与收入行对应",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 账龄快照应收余额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 账龄快照应付余额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 账龄快照编号可见",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 账龄五档分桶展示",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 账龄分桶含未到期档",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 明细账期初与本期增加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 明细账期末合计",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 客户明细账显示杭州云杉期末",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 换截止日后提示账龄差异",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 重算生成新截止日快照",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 权益变动表展示本期净利润与期末余额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 沿用导出记录并新增快照",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 导出记录保留既有报表范围",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 工作台投影显示已就绪",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 投影展示水位与工作区版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 切换工作区显示待生成",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C18 切换工作区显示暂不可用",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 治理中心五个页签",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 默认演示身份为陈立",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 默认工作区为华东总部",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 初始可访问 3 个工作区",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 新建企业进入会计期间步骤",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 创建前汇总企业与期间",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 创建企业后工作区增加",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 新企业自动切换为当前工作区",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 邀请列表展示状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 邀请详情区分业务角色",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 业务角色邀请要求独立批准",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 独立批准后邀请生效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 最后管理员停用被阻断",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 阻断提示说明最后管理员原因",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 自定义角色显示修订版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 自定义角色双人审批后生效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 公告按身份权限过滤",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 无权限公告显示可见范围说明",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 公告全部已读写入本地状态",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C19 公告已读计数包含分子与分母",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 审计中心五个服务页签",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 组织审计初始 7 条",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 财务审计按操作筛选为 2 条",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 审计详情显示当前版本",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 审计详情保留变更前后字段",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 审计详情展示来源入口",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 来源回跳到财务单据",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 财务身份不能查看组织审计",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 业务变更共 13 条",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 业务变更第二页保留记录",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 CSV 按当前业务变更范围导出",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C20 CSV 内容包含主数据与库存变更",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 当前套餐为专业版",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 工作区席位用量可见",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 权益用量标识超限",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 当前套餐存在待生效排期",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 取消待生效套餐",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 套餐变更报价按比例计费",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 报价抵扣剩余周期",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 报价展示应付金额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 周期变动后报价失效",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 失效报价不可直接确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 重新生成报价恢复应付金额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 报价确认前二次确认",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 确认报价生成待支付账单",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 测试卡失败保留结果",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 支付成功后套餐升级为企业版",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 新周期生效时间写入订阅",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 手工付款参考号校验失败",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 手工付款登记成功",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 手工付款账单金额一致",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 账单详情记录付款方式与参考号",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 切换工作区显示对应套餐",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 切换工作区显示对应限额",
+      "detail": ""
+    },
+    {
+      "ok": true,
+      "label": "C21 企业工作区展示应付账单",
+      "detail": ""
+    }
+  ]
+}

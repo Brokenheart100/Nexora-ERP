@@ -1,40 +1,75 @@
 import type { CommandPaletteGroup } from '@nuxt/ui'
 import {
-  changeEntityLabels,
   changeLogEntries,
-  definitionStatusLabels,
-  invoiceStatusLabels,
   invoices,
-  partnerTypeLabels,
   partners,
   productCategories,
   products,
   purchaseOrders,
-  quoteStatusLabels,
   quotes,
   recentDocuments,
   salesOrders,
-  salesStatusLabels,
-  statusLabels,
-  taxCodeKindLabels,
   taxCodes,
   unitDefinitions
 } from '~/mocks'
+
+const navKeyByPath: Record<string, string> = {
+  '/': 'dashboard',
+  '/catalog': 'catalog',
+  '/partners': 'partners',
+  '/definitions': 'definitions',
+  '/purchase-orders': 'purchaseOrders',
+  '/purchase-audit': 'purchaseAudit',
+  '/sales': 'sales',
+  '/inventory': 'inventory',
+  '/finance': 'finance',
+  '/assistant': 'assistant',
+  '/change-log': 'changeLog',
+  '/settings': 'settings'
+}
+
+const productCategoryPath = '/catalog'
+const partnerPath = '/partners'
+const definitionPath = '/definitions'
+const purchaseOrderPath = '/purchase-orders'
+const salesPath = '/sales'
+const changeLogPath = '/change-log'
+const dashboardPath = '/'
 
 /**
  * 全局命令面板（⌘K）的数据源：页面、商品、伙伴、采购/销售订单、发票、
  * 最近单据与错误页演示。全部取自本地模拟数据，切换工作区后订单与单据同步变化。
  */
 export function useDashboardSearch() {
+  const { t } = useI18n()
   const { workspace } = useMockWorkspace()
   const { visits } = useRecentVisits()
+  const {
+    purchaseStatusLabel,
+    salesStatusLabel,
+    quoteStatusLabel,
+    invoiceStatusLabel,
+    changeEntityLabel,
+    partnerTypeLabel,
+    definitionStatusLabel,
+    taxKindLabel,
+    documentTypeLabel,
+    rawDocumentStatusLabel
+  } = useMockLabels()
 
-  const recentItems = computed(() => visits.value.slice(0, 5).map(visit => ({
-    label: visit.label,
-    description: '最近访问',
-    icon: visit.icon,
-    to: visit.to
-  })))
+  function pageDescription(key: string) {
+    return t('search.pages.' + key)
+  }
+
+  const recentItems = computed(() => visits.value.slice(0, 5).map((visit) => {
+    const navKey = navKeyByPath[visit.to]
+    return {
+      label: navKey ? t('nav.' + navKey) : visit.label,
+      description: t('search.groups.recent'),
+      icon: visit.icon,
+      to: visit.to
+    }
+  }))
 
   const groups = computed<CommandPaletteGroup[]>(() => {
     const orders = purchaseOrders.filter(order => order.workspaceId === workspace.value.id)
@@ -47,201 +82,206 @@ export function useDashboardSearch() {
       ...(recentItems.value.length
         ? [{
             id: 'recent',
-            label: '最近访问',
+            label: t('search.groups.recent'),
             items: recentItems.value
           }]
         : []),
       {
         id: 'pages',
-        label: '页面',
+        label: t('search.groups.pages'),
         items: [{
-          label: '工作台',
-          description: '工作区总览、采购趋势与待办',
+          label: t('nav.dashboard'),
+          description: pageDescription('dashboard'),
           icon: 'i-carbon-dashboard',
-          to: '/'
+          to: dashboardPath
         }, {
-          label: '商品目录',
-          description: '商品搜索、筛选与编辑',
+          label: t('nav.catalog'),
+          description: pageDescription('catalog'),
           icon: 'i-carbon-catalog',
-          to: '/catalog'
+          to: productCategoryPath
         }, {
-          label: '伙伴档案',
-          description: '供应商、客户与捐赠人档案',
+          label: t('nav.partners'),
+          description: pageDescription('partners'),
           icon: 'i-carbon-partnership',
-          to: '/partners'
+          to: partnerPath
         }, {
-          label: '主数据定义',
-          description: '商品分类、计量单位与税码',
+          label: t('nav.definitions'),
+          description: pageDescription('definitions'),
           icon: 'i-carbon-list',
-          to: '/definitions'
+          to: definitionPath
         }, {
-          label: '采购订单',
-          description: '订单列表、明细与审批状态',
+          label: t('nav.purchaseOrders'),
+          description: pageDescription('purchaseOrders'),
           icon: 'i-carbon-purchase',
-          to: '/purchase-orders'
+          to: purchaseOrderPath
         }, {
-          label: '采购审计',
-          description: '采购审批、收货与变更审计',
+          label: t('nav.purchaseAudit'),
+          description: pageDescription('purchaseAudit'),
           icon: 'i-carbon-document-view',
           to: '/purchase-audit'
         }, {
-          label: '销售与应收',
-          description: '报价、销售订单、应收与发票',
+          label: t('nav.sales'),
+          description: pageDescription('sales'),
           icon: 'i-carbon-shopping-cart',
-          to: '/sales'
+          to: salesPath
         }, {
-          label: '库存管理',
-          description: '仓库、库存位置与出入库流水',
+          label: t('nav.inventory'),
+          description: pageDescription('inventory'),
           icon: 'i-carbon-inventory-management',
           to: '/inventory'
         }, {
-          label: '财务',
-          description: '总账、应收应付与报表',
+          label: t('nav.finance'),
+          description: pageDescription('finance'),
           icon: 'i-carbon-finance',
           to: '/finance'
         }, {
-          label: '变更记录',
-          description: '商品、伙伴、单据与定义变更',
-          icon: 'i-carbon-time',
-          to: '/change-log'
+          label: t('nav.assistant'),
+          description: pageDescription('assistant'),
+          icon: 'i-carbon-bot',
+          to: '/assistant'
         }, {
-          label: '设置',
-          description: '工作区、成员、角色与偏好',
+          label: t('nav.changeLog'),
+          description: pageDescription('changeLog'),
+          icon: 'i-carbon-time',
+          to: changeLogPath
+        }, {
+          label: t('nav.settings'),
+          description: pageDescription('settings'),
           icon: 'i-carbon-settings',
           to: '/settings'
         }]
       },
       {
         id: 'products',
-        label: '商品',
+        label: t('search.groups.products'),
         items: products.slice(0, 12).map(product => ({
           label: product.name,
           description: product.category,
           suffix: product.sku,
           icon: 'i-carbon-catalog',
-          to: '/catalog'
+          to: productCategoryPath
         }))
       },
       {
         id: 'partners',
-        label: '往来单位',
+        label: t('search.groups.partners'),
         items: partners.map(partner => ({
           label: partner.name,
-          description: partnerTypeLabels[partner.type] + ' · ' + partner.contact,
+          description: partnerTypeLabel(partner.type) + ' · ' + partner.contact,
           suffix: partner.code,
           icon: partner.type === 'customer' ? 'i-carbon-shopping-cart' : partner.type === 'supplier' ? 'i-carbon-purchase' : 'i-carbon-enterprise',
-          to: partner.type === 'supplier' ? '/purchase-orders' : partner.type === 'customer' ? '/sales' : '/partners'
+          to: partner.type === 'supplier' ? purchaseOrderPath : partner.type === 'customer' ? salesPath : partnerPath
         }))
       },
       {
         id: 'definitions',
-        label: '主数据定义',
+        label: t('search.groups.definitions'),
         items: [
           ...productCategories.map(category => ({
             label: category.name,
-            description: '商品分类 · ' + definitionStatusLabels[category.status],
+            description: t('search.productCategory', { status: definitionStatusLabel(category.status) }),
             suffix: category.code,
             icon: 'i-carbon-catalog',
-            to: '/definitions'
+            to: definitionPath
           })),
           ...unitDefinitions.map(unit => ({
             label: unit.name,
-            description: '计量单位 · 精度 ' + unit.precision,
+            description: t('search.unit', { precision: unit.precision }),
             suffix: unit.code,
             icon: 'i-carbon-list',
-            to: '/definitions'
+            to: definitionPath
           })),
           ...taxCodes.map(tax => ({
             label: tax.name,
-            description: taxCodeKindLabels[tax.kind] + '税码 · ' + tax.rate,
+            description: t('search.taxCode', { kind: taxKindLabel(tax.kind), rate: tax.rate }),
             suffix: tax.code,
             icon: 'i-carbon-receipt',
-            to: '/definitions'
+            to: definitionPath
           }))
         ]
       },
       {
         id: 'orders',
-        label: '采购订单',
+        label: t('search.groups.purchaseOrders'),
         items: orders.map(order => ({
           label: order.id,
           description: order.supplier,
-          suffix: statusLabels[order.status],
+          suffix: purchaseStatusLabel(order.status),
           icon: 'i-carbon-purchase',
-          to: '/purchase-orders'
+          to: purchaseOrderPath
         }))
       },
       {
         id: 'sales',
-        label: '销售订单',
+        label: t('search.groups.salesOrders'),
         items: sales.map(order => ({
           label: order.id,
           description: order.customerName,
-          suffix: salesStatusLabels[order.status],
+          suffix: salesStatusLabel(order.status),
           icon: 'i-carbon-shopping-cart',
-          to: '/sales'
+          to: salesPath
         }))
       },
       {
         id: 'quotes',
-        label: '报价单',
+        label: t('search.groups.quotes'),
         items: workspaceQuotes.map(quote => ({
           label: quote.id,
-          description: quote.customerName + ' · 有效期至 ' + quote.validUntil,
-          suffix: quoteStatusLabels[quote.status],
+          description: quote.customerName + ' · ' + t('search.validUntil', { date: quote.validUntil }),
+          suffix: quoteStatusLabel(quote.status),
           icon: 'i-carbon-document',
-          to: '/sales'
+          to: salesPath
         }))
       },
       {
         id: 'invoices',
-        label: '发票',
+        label: t('search.groups.invoices'),
         items: workspaceInvoices.map(invoice => ({
           label: invoice.id,
           description: invoice.customerName + ' · ' + invoice.issuedAt,
-          suffix: invoiceStatusLabels[invoice.status],
+          suffix: invoiceStatusLabel(invoice.status),
           icon: 'i-carbon-receipt',
-          to: '/sales'
+          to: salesPath
         }))
       },
       {
         id: 'documents',
-        label: '最近单据',
+        label: t('search.groups.documents'),
         items: documents.map(document => ({
           label: document.title,
-          description: document.status,
-          suffix: document.type,
+          description: rawDocumentStatusLabel(document.status),
+          suffix: documentTypeLabel(document.type),
           icon: 'i-carbon-document',
-          to: '/'
+          to: dashboardPath
         }))
       },
       {
         id: 'change-log',
-        label: '变更记录',
+        label: t('search.groups.changeLog'),
         items: changeLogEntries.filter(entry => entry.workspaceId === workspace.value.id).slice(0, 10).map(entry => ({
           label: entry.entityName + ' · ' + entry.action,
-          description: changeEntityLabels[entry.entityType] + ' · ' + entry.actor + ' · ' + entry.at,
+          description: changeEntityLabel(entry.entityType) + ' · ' + entry.actor + ' · ' + entry.at,
           suffix: entry.entityId,
           icon: 'i-carbon-time',
-          to: '/change-log'
+          to: changeLogPath
         }))
       },
       {
         id: 'demo-errors',
-        label: '错误页演示',
+        label: t('search.groups.demoErrors'),
         items: [{
-          label: '403 · 无访问权限',
-          description: '演示错误页与切换工作区动作',
+          label: '403 · ' + t('search.errors.forbidden.label'),
+          description: t('search.errors.forbidden.description'),
           icon: 'i-carbon-locked',
           to: '/demo/error/403'
         }, {
-          label: '404 · 页面不存在',
-          description: '演示错误页的返回工作台动作',
+          label: '404 · ' + t('search.errors.notFound.label'),
+          description: t('search.errors.notFound.description'),
           icon: 'i-carbon-help',
           to: '/demo/error/404'
         }, {
-          label: '500 · 页面出错',
-          description: '演示服务异常错误页',
+          label: '500 · ' + t('search.errors.serverError.label'),
+          description: t('search.errors.serverError.description'),
           icon: 'i-carbon-warning-alt',
           to: '/demo/error/500'
         }]

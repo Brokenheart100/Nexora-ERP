@@ -37,15 +37,15 @@ public sealed class SmtpInvoiceMail(IConfiguration configuration) : IInvoiceMail
     private static bool IsLoopback(string host) => host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
         || IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address);
 
-    public async Task<DispatchOutcome> SendAsync(Guid id, int attempt, string recipient, CustomerTerms invoice, InvoicePdf pdf, CancellationToken ct)
+    public async Task<DispatchOutcome> SendAsync(Guid id, int attempt, string recipient, string documentLabel, InvoicePdf pdf, CancellationToken ct)
     {
         if (ReadSettings() is not { } settings) return new(DispatchState.Failed, "The SMTP delivery channel is unavailable.");
         using var client = new SmtpClient(settings.Host, settings.Port) { EnableSsl = settings.UseTls, UseDefaultCredentials = false };
         if (!string.IsNullOrWhiteSpace(settings.Username)) client.Credentials = new NetworkCredential(settings.Username, settings.Password);
         using var message = new MailMessage(settings.Sender, new MailAddress(recipient))
         {
-            Subject = $"客户发票 {invoice.Number}", SubjectEncoding = Encoding.UTF8,
-            Body = $"您好，附件是发票 {invoice.Number}。", BodyEncoding = Encoding.UTF8
+            Subject = documentLabel, SubjectEncoding = Encoding.UTF8,
+            Body = $"您好，附件是{documentLabel}。", BodyEncoding = Encoding.UTF8
         };
         message.Headers.Add("X-Nexora-Dispatch", $"{id:N}/{attempt}");
         message.Attachments.Add(new Attachment(new MemoryStream(pdf.Bytes, writable: false), pdf.FileName, MediaTypeNames.Application.Pdf));

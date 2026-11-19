@@ -3,9 +3,7 @@
     "argv": [
       "D:\\Software\\NodeJs\\node.exe",
       "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\node_modules\\@playwright\\test\\cli.js",
-      "test",
-      "--grep",
-      "Custom roles keep department"
+      "test"
     ],
     "configFile": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\playwright.config.ts",
     "rootDir": "D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/e2e",
@@ -99,13 +97,123 @@
   },
   "suites": [
     {
+      "title": "billing-subx.spec.ts",
+      "file": "billing-subx.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "signup plan is highlighted and a prorated change waits for confirmation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4167,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:47:59.812Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "12f520f91dde5bf02a3b-1508977f07f04aa27d23",
+          "file": "billing-subx.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "a fully credited change needs no reference and still shows the confirmation first",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3070,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:48:04.389Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "12f520f91dde5bf02a3b-5c0f78c015e4de2a99da",
+          "file": "billing-subx.spec.ts",
+          "line": 109,
+          "column": 1
+        },
+        {
+          "title": "public pricing shows the published plans and opens registration with the chosen plan",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2831,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:48:07.478Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "12f520f91dde5bf02a3b-ad0a9f804cb51c723a89",
+          "file": "billing-subx.spec.ts",
+          "line": 146,
+          "column": 1
+        }
+      ]
+    },
+    {
       "title": "email-onboarding.spec.ts",
       "file": "email-onboarding.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "Custom roles keep department and warehouse permissions in their approved scope",
+          "title": "Email registration, company creation and invitation by email for new and existing accounts",
           "ok": true,
           "tags": [],
           "tests": [
@@ -120,12 +228,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 42336,
+                  "duration": 69409,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-11-15T09:50:23.667Z",
+                  "startTime": "2026-11-17T06:48:10.351Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -133,9 +241,1939 @@
               "status": "expected"
             }
           ],
+          "id": "a9c824c25fad2366d85f-18a12fdb0ea8bf806a14",
+          "file": "email-onboarding.spec.ts",
+          "line": 74,
+          "column": 1
+        },
+        {
+          "title": "An incorrect email registration code consumes the challenge",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2989,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:49:19.817Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a9c824c25fad2366d85f-bcc5708f34f3fa571787",
+          "file": "email-onboarding.spec.ts",
+          "line": 141,
+          "column": 1
+        },
+        {
+          "title": "Team and roles pages require independent approval for multi-role invitations and member edits",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 20080,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m403\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n    at D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts:268:17",
+                    "location": {
+                      "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                      "column": 17,
+                      "line": 268
+                    },
+                    "snippet": "  266 |     expect((await postGovernance(owner, base, memberRolePath, {\n  267 |       action: 'submit', businessRoles: ['PurchasingOperator', 'PurchasingApprover'],\n> 268 |     })).status).toBe(400)\n      |                 ^\n  269 |\n  270 |     await member.getByRole('button', { name: '编辑权限' }).click()\n  271 |     await member.getByRole('checkbox', { name: '采购审批', exact: true }).check()"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                        "column": 17,
+                        "line": 268
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m400\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n\n  266 |     expect((await postGovernance(owner, base, memberRolePath, {\n  267 |       action: 'submit', businessRoles: ['PurchasingOperator', 'PurchasingApprover'],\n> 268 |     })).status).toBe(400)\n      |                 ^\n  269 |\n  270 |     await member.getByRole('button', { name: '编辑权限' }).click()\n  271 |     await member.getByRole('checkbox', { name: '采购审批', exact: true }).check()\n    at D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts:268:17"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:49:22.820Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Code\\CSharp\\Nexora ERP\\artifacts\\p1\\runtime\\browser\\email-onboarding-Team-and--b025e-nvitations-and-member-edits\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                    "column": 17,
+                    "line": 268
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a9c824c25fad2366d85f-990258353717f13f9307",
+          "file": "email-onboarding.spec.ts",
+          "line": 196,
+          "column": 1
+        },
+        {
+          "title": "Custom roles keep department and warehouse permissions in their approved scope",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 39865,
+                  "error": {
+                    "message": "Error: {\n  \"error\": true,\n  \"url\": \"https://localhost:7443/bff/api/workspaces/01a1e844-d7e6-7e53-9e57-58fb28180c18/settings\",\n  \"statusCode\": 403,\n  \"statusMessage\": \"Multi-factor verification required\",\n  \"message\": \"Multi-factor verification required\",\n  \"data\": {\n    \"code\": \"mfa_enrollment_required\",\n    \"reauthPath\": \"/bff/login?prompt=login\"\n  },\n  \"stack\": [\n    \"Multi-factor verification required\",\n    \"at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:71:15)\",\n    \"at Object.handler (D:\\\\Code\\\\CSharp\\\\Nexora ERP\\\\src\\\\Web\\\\nexora-web\\\\server\\\\routes\\\\bff\\\\api\\\\[...path].ts:38:10)\",\n    \"at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\",\n    \"at async file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2017:19)\",\n    \"at async Object.callAsync (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/unctx@3.0.1_magic-string@1._00f81b7beed88cc6d3a227c0d99ec2d9/node_modules/unctx/dist/index.mjs:71:12)\",\n    \"at async Server.toNodeHandle (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2316:7)\"\n  ]\n}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m",
+                    "stack": "Error: {\n  \"error\": true,\n  \"url\": \"https://localhost:7443/bff/api/workspaces/01a1e844-d7e6-7e53-9e57-58fb28180c18/settings\",\n  \"statusCode\": 403,\n  \"statusMessage\": \"Multi-factor verification required\",\n  \"message\": \"Multi-factor verification required\",\n  \"data\": {\n    \"code\": \"mfa_enrollment_required\",\n    \"reauthPath\": \"/bff/login?prompt=login\"\n  },\n  \"stack\": [\n    \"Multi-factor verification required\",\n    \"at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:71:15)\",\n    \"at Object.handler (D:\\\\Code\\\\CSharp\\\\Nexora ERP\\\\src\\\\Web\\\\nexora-web\\\\server\\\\routes\\\\bff\\\\api\\\\[...path].ts:38:10)\",\n    \"at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\",\n    \"at async file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2017:19)\",\n    \"at async Object.callAsync (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/unctx@3.0.1_magic-string@1._00f81b7beed88cc6d3a227c0d99ec2d9/node_modules/unctx/dist/index.mjs:71:12)\",\n    \"at async Server.toNodeHandle (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2316:7)\"\n  ]\n}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n    at D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts:468:40",
+                    "location": {
+                      "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                      "column": 40,
+                      "line": 468
+                    },
+                    "snippet": "  466 |       presentation: settings.presentation, roleGrantApprovals: 2,\n  467 |     }, 'PUT')\n> 468 |     expect(policy.status, policy.text).toBe(200)\n      |                                        ^\n  469 |     const dualRequest = await postGovernance(owner, base, grantPath, {\n  470 |       operationId: crypto.randomUUID(), memberId: employeeId, roleId: stockRole.id,\n  471 |       roleRevision: stockRole.revision, scope: 'warehouse', scopeId: otherWarehouse.id,"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                        "column": 40,
+                        "line": 468
+                      },
+                      "message": "Error: {\n  \"error\": true,\n  \"url\": \"https://localhost:7443/bff/api/workspaces/01a1e844-d7e6-7e53-9e57-58fb28180c18/settings\",\n  \"statusCode\": 403,\n  \"statusMessage\": \"Multi-factor verification required\",\n  \"message\": \"Multi-factor verification required\",\n  \"data\": {\n    \"code\": \"mfa_enrollment_required\",\n    \"reauthPath\": \"/bff/login?prompt=login\"\n  },\n  \"stack\": [\n    \"Multi-factor verification required\",\n    \"at createError (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:71:15)\",\n    \"at Object.handler (D:\\\\Code\\\\CSharp\\\\Nexora ERP\\\\src\\\\Web\\\\nexora-web\\\\server\\\\routes\\\\bff\\\\api\\\\[...path].ts:38:10)\",\n    \"at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\",\n    \"at async file:///D:/Code/CSharp/Nexora%20ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2017:19)\",\n    \"at async Object.callAsync (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/unctx@3.0.1_magic-string@1._00f81b7beed88cc6d3a227c0d99ec2d9/node_modules/unctx/dist/index.mjs:71:12)\",\n    \"at async Server.toNodeHandle (D:/Code/CSharp/Nexora ERP/src/Web/nexora-web/node_modules/.pnpm/h3@1.15.11/node_modules/h3/dist/index.mjs:2316:7)\"\n  ]\n}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m403\u001b[39m\n\n  466 |       presentation: settings.presentation, roleGrantApprovals: 2,\n  467 |     }, 'PUT')\n> 468 |     expect(policy.status, policy.text).toBe(200)\n      |                                        ^\n  469 |     const dualRequest = await postGovernance(owner, base, grantPath, {\n  470 |       operationId: crypto.randomUUID(), memberId: employeeId, roleId: stockRole.id,\n  471 |       roleRevision: stockRole.revision, scope: 'warehouse', scopeId: otherWarehouse.id,\n    at D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts:468:40"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:49:43.664Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "D:\\Code\\CSharp\\Nexora ERP\\artifacts\\p1\\runtime\\browser\\email-onboarding-Custom-ro-d935e-ons-in-their-approved-scope\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\email-onboarding.spec.ts",
+                    "column": 40,
+                    "line": 468
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
           "id": "a9c824c25fad2366d85f-d13499e6e8b8186e3b90",
           "file": "email-onboarding.spec.ts",
-          "line": 296,
+          "line": 306,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "pwa.spec.ts",
+      "file": "pwa.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "PWA",
+          "file": "pwa.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "exposes the web app manifest and activates the service worker",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1771,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-17T06:50:24.451Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "30bf0965a0eb07fc9173-92eb1c32dc19c23780ec",
+              "file": "pwa.spec.ts",
+              "line": 10,
+              "column": 3
+            },
+            {
+              "title": "offers installation and remembers a dismissal",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1849,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-17T06:50:26.525Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "30bf0965a0eb07fc9173-cc87efd16a62dca6f95c",
+              "file": "pwa.spec.ts",
+              "line": 31,
+              "column": 3
+            },
+            {
+              "title": "serves the cached shell offline and recovers when the network returns",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7583,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-17T06:50:28.388Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "30bf0965a0eb07fc9173-ea317d03d1d7cce28ee1",
+              "file": "pwa.spec.ts",
+              "line": 56,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "readiness.spec.ts",
+      "file": "readiness.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "book tab shows readiness and backfills pending costs",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2230,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:36.004Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ed8fb6c90a074cb4e48e-dbe61e0a39c178e117f0",
+          "file": "readiness.spec.ts",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "blocked backfill keeps the cost list and reports the reason",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2137,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:38.247Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ed8fb6c90a074cb4e48e-f0f64cb475404aafb794",
+          "file": "readiness.spec.ts",
+          "line": 93,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "runtime-status.spec.ts",
+      "file": "runtime-status.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "status overlay blocks the page, keeps the draft and restores it after recovery",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3675,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:40.416Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a83d5e22592e3ec3fed3-9962902570acf205bdb2",
+          "file": "runtime-status.spec.ts",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "status overlay reports startup and leaves through retry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1945,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:44.101Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a83d5e22592e3ec3fed3-cd54f36a9b57517810ae",
+          "file": "runtime-status.spec.ts",
+          "line": 88,
+          "column": 1
+        },
+        {
+          "title": "a new build id offers a reload notice that can be snoozed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2010,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:46.055Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a83d5e22592e3ec3fed3-a2c52b9d99968b72172d",
+          "file": "runtime-status.spec.ts",
+          "line": 106,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "session-policy.spec.ts",
+      "file": "session-policy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "warns with the shortest workspace policy and extends on continue",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2294,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:48.084Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f356270f8ca5346bd172-92b1a93077980096c098",
+          "file": "session-policy.spec.ts",
+          "line": 36,
+          "column": 1
+        },
+        {
+          "title": "announces a policy change without reloading the page",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1705,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:50.390Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f356270f8ca5346bd172-9f821cee084e8be775ad",
+          "file": "session-policy.spec.ts",
+          "line": 57,
+          "column": 1
+        },
+        {
+          "title": "logs out when the shortest idle policy expires",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5065,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:52.104Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f356270f8ca5346bd172-179423a34cd61dabd5f5",
+          "file": "session-policy.spec.ts",
+          "line": 72,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "workspace.spec.ts",
+      "file": "workspace.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Catalog UI and API preserve workspace scope, versioning and idempotency",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16212,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:50:57.341Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-96b2c598c0323a363680",
+          "file": "workspace.spec.ts",
+          "line": 10,
+          "column": 1
+        },
+        {
+          "title": "Local capacity drill measures concurrent business reads and writes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Run explicitly as a local capacity drill.",
+                  "location": {
+                    "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\workspace.spec.ts",
+                    "line": 129,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 165,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:51:13.563Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Run explicitly as a local capacity drill.",
+                      "location": {
+                        "file": "D:\\Code\\CSharp\\Nexora ERP\\src\\Web\\nexora-web\\e2e\\workspace.spec.ts",
+                        "line": 129,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "b163ed09f68681248ada-234ee0b037687ca7a376",
+          "file": "workspace.spec.ts",
+          "line": 128,
+          "column": 1
+        },
+        {
+          "title": "The direct frontend URL opens the BFF entry",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2968,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:51:13.741Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-c05ed6d04c7105c30131",
+          "file": "workspace.spec.ts",
+          "line": 294,
+          "column": 1
+        },
+        {
+          "title": "Logout reports an unexpected antiforgery response in place",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2134,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:51:16.719Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-e0af4c458ffae59b84fd",
+          "file": "workspace.spec.ts",
+          "line": 301,
+          "column": 1
+        },
+        {
+          "title": "OIDC + TOTP, CSRF, workspace creation, projection, tenant denial and logout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 20806,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Public workspace page loaded\n"
+                    },
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:51:18.864Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-a3832ec6e4bab03de617",
+          "file": "workspace.spec.ts",
+          "line": 317,
+          "column": 1
+        },
+        {
+          "title": "Logout works from an open tab after the BFF session is gone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 24343,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:51:39.701Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-b778b2beae88d7d005e4",
+          "file": "workspace.spec.ts",
+          "line": 379,
+          "column": 3
+        },
+        {
+          "title": "Logout works from a reloaded tab after the BFF session is gone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 30405,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:52:04.055Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-4cfb705f8da9f50ad875",
+          "file": "workspace.spec.ts",
+          "line": 379,
+          "column": 3
+        },
+        {
+          "title": "Workspace invitation, role assignment, immediate suspension and reactivation through the real BFF",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 35518,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:52:34.469Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1f03df59c81585905b02",
+          "file": "workspace.spec.ts",
+          "line": 409,
+          "column": 1
+        },
+        {
+          "title": "Partner profiles retain multiple roles and scoped contacts across edits and reference checks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 26209,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:53:09.995Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-84541d834cbcee58a5d3",
+          "file": "workspace.spec.ts",
+          "line": 495,
+          "column": 1
+        },
+        {
+          "title": "Company presentation and private workspace links stay independently scoped",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34617,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:53:36.214Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1cdf6b4aee2ce01d3fa5",
+          "file": "workspace.spec.ts",
+          "line": 592,
+          "column": 1
+        },
+        {
+          "title": "Account session registry lists devices, revokes other sessions and blocks replay",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 81280,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:54:10.841Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-f6f177f575e8df18bf2f",
+          "file": "workspace.spec.ts",
+          "line": 726,
+          "column": 1
+        },
+        {
+          "title": "Security capabilities report MFA state and gate stale sensitive writes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 31277,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:55:32.133Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-5f5f89fd612c4aedb4f0",
+          "file": "workspace.spec.ts",
+          "line": 811,
+          "column": 1
+        },
+        {
+          "title": "Chart hierarchy, archive, import preview and commit share the same scoped revision",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 35510,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:56:03.421Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-d64b1b2fc65358ddf17c",
+          "file": "workspace.spec.ts",
+          "line": 841,
+          "column": 1
+        },
+        {
+          "title": "Effective tax rates and scoped classifications preserve calculation snapshots",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 29032,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:56:38.940Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-ee60069e98634fc261fc",
+          "file": "workspace.spec.ts",
+          "line": 940,
+          "column": 1
+        },
+        {
+          "title": "Opening, journal approval, period races, reversal and P5 accrual reports preserve the scoped ledger",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 57827,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:57:07.981Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-bb68689189d6364df2d9",
+          "file": "workspace.spec.ts",
+          "line": 1020,
+          "column": 1
+        },
+        {
+          "title": "Purchase orders require current scoped references and independent approval",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 42648,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:58:05.818Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-4a334f15152a07f04bdf",
+          "file": "workspace.spec.ts",
+          "line": 1390,
+          "column": 1
+        },
+        {
+          "title": "P6 opening subledger batch reconciles stock, open items, bank and general ledger",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 17514,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:58:48.476Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-269d890c94c380483db3",
+          "file": "workspace.spec.ts",
+          "line": 1989,
+          "column": 1
+        },
+        {
+          "title": "P4 sales, inventory, invoicing, settlement and communication reconcile (accrual)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 99723,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T06:59:05.999Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-56d60ee6c9fa94d9de39",
+          "file": "workspace.spec.ts",
+          "line": 2181,
+          "column": 30
+        },
+        {
+          "title": "P4 sales, inventory, invoicing, settlement and communication reconcile (cash)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 90901,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:00:45.732Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-f5533bc39c91b95783f1",
+          "file": "workspace.spec.ts",
+          "line": 2181,
+          "column": 30
+        },
+        {
+          "title": "Workspace setup wizard initializes settings, book, starter chart and tax, and resumes after skipping",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9821,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:02:16.645Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-89ef418dfed87037d4a9",
+          "file": "workspace.spec.ts",
+          "line": 2976,
+          "column": 1
+        },
+        {
+          "title": "Business dashboard summarizes finance, aging, inventory and projection state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6579,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:02:26.478Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-12abf52c21f25416caf1",
+          "file": "workspace.spec.ts",
+          "line": 3024,
+          "column": 1
+        },
+        {
+          "title": "CLI device authorization grants scoped access and revokes immediately",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 41154,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:02:33.066Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-a5a0fbdce4f74019a0b8",
+          "file": "workspace.spec.ts",
+          "line": 3074,
+          "column": 1
+        },
+        {
+          "title": "Business data exports download CSV and print from list panels",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 26830,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:03:14.230Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-c37422778fd84c7b33a9",
+          "file": "workspace.spec.ts",
+          "line": 3208,
+          "column": 1
+        },
+        {
+          "title": "Unified audit trail lists security and business events, filters, exports and isolates workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 23278,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:03:41.071Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-1b2022684cc924685516",
+          "file": "workspace.spec.ts",
+          "line": 3317,
+          "column": 1
+        },
+        {
+          "title": "Finance MCP lists read-only tools, answers scoped calls and rejects other audiences",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 36596,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:04:04.359Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-e06a8abd412c281b52b8",
+          "file": "workspace.spec.ts",
+          "line": 3373,
+          "column": 1
+        },
+        {
+          "title": "AI assistant streams, cancels, resumes, gates tools and isolates workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 28425,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:04:40.973Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-19b8692b68aca8602aae",
+          "file": "workspace.spec.ts",
+          "line": 3561,
+          "column": 1
+        },
+        {
+          "title": "Billing plans enforce quotas, gate modules, record manual payments and downgrade on cancel",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 360000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8568,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:05:09.407Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-b0187d507a31f38018ba",
+          "file": "workspace.spec.ts",
+          "line": 3640,
+          "column": 1
+        },
+        {
+          "title": "Local checkout resumes payment, protects callbacks and confirms the saved test card",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18183,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:05:17.983Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-6d42ea32f756b6cf7ba5",
+          "file": "workspace.spec.ts",
+          "line": 3844,
+          "column": 1
+        },
+        {
+          "title": "Journal links connect posted entries, scan integrity and isolate workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34563,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "Starting alice browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    },
+                    {
+                      "text": "alice OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:05:36.174Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-cbdf2587321fa3011091",
+          "file": "workspace.spec.ts",
+          "line": 3891,
+          "column": 1
+        },
+        {
+          "title": "Record changes capture cross-service snapshots, filter, export and isolate workspaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5497,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:06:10.745Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-7d8de403477322810584",
+          "file": "workspace.spec.ts",
+          "line": 3999,
+          "column": 1
+        },
+        {
+          "title": "Effective session policy follows the shortest workspace idle timeout",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 16304,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Starting bob browser login\n"
+                    },
+                    {
+                      "text": "bob OIDC and TOTP login passed\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-17T07:06:16.251Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b163ed09f68681248ada-9f07af9614deaceacf47",
+          "file": "workspace.spec.ts",
+          "line": 4114,
           "column": 1
         }
       ]
@@ -143,11 +2181,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-11-15T09:50:23.161Z",
-    "duration": 43411.496,
-    "expected": 1,
-    "skipped": 0,
-    "unexpected": 0,
+    "startTime": "2026-11-17T06:47:58.789Z",
+    "duration": 1114256.06,
+    "expected": 46,
+    "skipped": 1,
+    "unexpected": 2,
     "flaky": 0
   }
 }

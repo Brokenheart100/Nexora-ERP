@@ -103,6 +103,8 @@ export const useReceivablesStore = defineStore('receivables', () => {
   const credits = ref<SalesCredit[]>(creditSeed.map(cloneCredit))
   const refunds = ref<SalesRefund[]>(refundSeed.map(cloneRefund))
   const corrections = ref<InvoiceCorrection[]>([])
+  /** C6：未开票退货冲减，key 为 orderId:lineNo。 */
+  const unbilledReturned = ref<Record<string, number>>({})
 
   function invoiceById(id: string) {
     return invoices.value.find(invoice => invoice.id === id) ?? null
@@ -143,6 +145,39 @@ export const useReceivablesStore = defineStore('receivables', () => {
 
   function creditAvailableOf(credit: SalesCredit) {
     return money(Math.max(0, Number(credit.total) - creditAllocatedOf(credit.id) - creditRefundedOf(credit.id)))
+  }
+
+  function returnKey(orderId: string, lineNo: number) {
+    return orderId + ':' + lineNo
+  }
+
+  function unbilledReturnedOf(orderId: string, lineNo: number) {
+    return unbilledReturned.value[returnKey(orderId, lineNo)] ?? 0
+  }
+
+  /** 已开票数量只统计已生效发票，草稿与已取消发票不占用可开票额度。 */
+  function invoicedQuantityOf(orderId: string, lineNo: number) {
+    return money(invoices.value
+      .filter(invoice => invoice.sourceOrderId === orderId && ['issued', 'paid', 'overdue'].includes(invoice.status))
+      .flatMap(invoice => invoice.lines ?? [])
+      .filter(line => line.lineNo === lineNo)
+      .reduce((sum, line) => sum + line.quantity, 0))
+  }
+
+  /** 可开票数量 = 已发货数量 - 未开票退货冲减。 */
+  function invoiceableQuantityOf(orderId: string, lineNo: number, shipped: number) {
+    return Math.max(0, shipped - unbilledReturnedOf(orderId, lineNo))
+  }
+
+  /** 未开票退货减少可开票数量，避免退货后仍按原发货数量重复开票。 */
+  function recordReturnReduction(orderId: string, lineNo: number, quantity: number): ReceivableActionResult {
+    if (!Number.isFinite(quantity) || quantity <= 0) return { ok: false, message: '退货数量必须大于 0。' }
+    const key = returnKey(orderId, lineNo)
+    unbilledReturned.value = {
+      ...unbilledReturned.value,
+      [key]: unbilledReturnedOf(orderId, lineNo) + quantity
+    }
+    return { ok: true, message: '未开票退货已冲减可开票数量。' }
   }
 
   function agingBucketsFor(workspaceId: string): AgingBucket[] {
@@ -402,12 +437,14 @@ export const useReceivablesStore = defineStore('receivables', () => {
     credits.value = creditSeed.map(cloneCredit)
     refunds.value = refundSeed.map(cloneRefund)
     corrections.value = []
+    unbilledReturned.value = {}
   }
 
   return {
     invoices, receipts, allocations, credits, refunds, corrections,
     invoiceById, allocatedOf, outstandingOf, receiptAllocatedOf, receiptAvailableOf,
     creditAllocatedOf, creditRefundedOf, creditAvailableOf,
+    unbilledReturnedOf, invoicedQuantityOf, invoiceableQuantityOf, recordReturnReduction,
     agingBucketsFor, outstandingTotalFor, openInvoiceRowsFor, availableReceiptsFor, openInvoicesFor,
     registerReceipt, allocate, refundCredit, createCreditFromReturn, addInvoice, saveDraft, issueInvoice,
     addDelivery, correctInvoice, reset
