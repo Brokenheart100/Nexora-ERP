@@ -1,0 +1,106 @@
+{
+  "generatedAtUtc": "2026-11-19T15:13:32.272022+00:00",
+  "scope": "Dashboard D1 and D2 local acceptance",
+  "gitHead": "eb06469eacda6351cb2cb66e7495bd3a5e14cb9d",
+  "workingTree": true,
+  "sourceSha256": "3e3dae0b39a29b375145fbfff9a5c17204c98a06ae187c27c6bae2184172dc34",
+  "sourceFileCount": 265,
+  "checks": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "frontendUnit": {
+      "files": 18,
+      "passed": 77,
+      "failed": 0
+    },
+    "builds": {
+      "mock": "passed",
+      "live": "passed",
+      "dotnetRelease": "passed",
+      "dotnetReleaseDiagnostics": {
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    "dotnetTests": {
+      "total": 62,
+      "passed": 62,
+      "failed": 0,
+      "notExecuted": 0
+    },
+    "browser": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "scopeMutation": {
+      "detected": true,
+      "restoredTestsPassed": 5
+    },
+    "diffCheck": "passed",
+    "appHostStopped": true,
+    "volumesPreserved": true
+  },
+  "browserScenarios": [
+    {
+      "file": "integration.spec.ts",
+      "title": "新版 HTTPS 跳转、模拟预览及原版 BFF 入口并存",
+      "status": "passed",
+      "durationMs": 17414,
+      "retries": 0
+    },
+    {
+      "file": "integration.spec.ts",
+      "title": "独立入口登录、CSRF、契约头、并发冲突及响应丢失回读",
+      "status": "passed",
+      "durationMs": 13322,
+      "retries": 0
+    },
+    {
+      "file": "orders.spec.ts",
+      "title": "采购销售同操作重放、额度、202 恢复查询和 CSV/PDF 头",
+      "status": "passed",
+      "durationMs": 32250,
+      "retries": 0
+    },
+    {
+      "file": "production.spec.ts",
+      "title": "独立生产产物验证会话、私有配置与 Redis 不可用；缺配置拒绝启动",
+      "status": "passed",
+      "durationMs": 24564,
+      "retries": 0
+    },
+    {
+      "file": "refresh.spec.ts",
+      "title": "加密会话、API audience、并发刷新、附加验证与刷新失效",
+      "status": "passed",
+      "durationMs": 55303,
+      "retries": 0
+    },
+    {
+      "file": "sessions.spec.ts",
+      "title": "两个会话隔离资源、切换清空表单并隔离迟到查询",
+      "status": "passed",
+      "durationMs": 39845,
+      "retries": 0
+    },
+    {
+      "file": "sessions.spec.ts",
+      "title": "邮箱登录邀请返回和只读拒绝",
+      "status": "passed",
+      "durationMs": 3873,
+      "retries": 0
+    },
+    {
+      "file": "sessions.spec.ts",
+      "title": "新邮箱注册的独立账户配额拒绝均不写订单",
+      "status": "passed",
+      "durationMs": 21556,
+      "retries": 0
+    }
+  ],
+  "acceptanceBoundary": "Local build and integration only; D3 onward, remote CI and production acceptance are outside this delivery.",
+  "sourceDigestAlgorithm": "SHA256 over sorted repository-relative UTF-8 path, NUL, file bytes, NUL",
+  "sourceScope": "Dashboard app/server/shared/e2e/test sources and Nuxt/package/lock/Playwright/Vitest configuration; AppHost, Gateway proxy and onboarding script."
+}

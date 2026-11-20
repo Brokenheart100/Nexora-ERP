@@ -1,0 +1,95 @@
+{
+  "stage": "D3",
+  "verificationDate": "2026-11-20",
+  "level": "local",
+  "completed": true,
+  "checks": {
+    "lint": "passed",
+    "strictTypecheck": "passed",
+    "mockBuild": "passed",
+    "liveBuild": "passed",
+    "unit": {
+      "passed": 85,
+      "files": 21
+    },
+    "browser": {
+      "passed": 13,
+      "workers": 1,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "mutation": {
+      "expectedFailureObserved": true,
+      "sourceRestoredExactly": true,
+      "restoredTestsPassed": 2
+    },
+    "developmentRestartPreservesProductionEntries": [
+      {
+        "output": ".output",
+        "retainedExactly": true
+      },
+      {
+        "output": ".output-live",
+        "retainedExactly": true
+      }
+    ]
+  },
+  "appHost": {
+    "stoppedNormally": true,
+    "persistentDataVolumeCount": 4,
+    "allPersistentDataVolumesRetained": true
+  },
+  "boundaries": {
+    "dotnetBusinessCodeChanged": false,
+    "databaseModelsOrMigrationsChanged": false,
+    "remoteCI": "not run",
+    "productionDeployment": "not run",
+    "followingStages": "D4 onward pending"
+  },
+  "knownGaps": [
+    "Finance OpenAPI SetupRequest name collision remains; owning request DTOs verified separately."
+  ],
+  "verificationRecord": "docs/verification/dashboard-d3.md",
+  "sourceFingerprintSha256": "f525fa6ffc882edde3c1fb185eb9161962870b4a3d1ac202b3b95ba8734ec581",
+  "verifiedFiles": {
+    "docs/ui-dashboard-api-integration-todolist.md": "c92e437776b79eb6d4e8e751e5c6dec6247078fc9905479b4afe86cb4dd59c5f",
+    "docs/verification/dashboard-d3.md": "f8df26e2ac9830a1974844b679760e337555794d4624f9df3f7171bf754295ac",
+    "docs/架构.md": "e77247835cc17f677e4bc522b08e470adf75ab21a45c8542387fb1694bdf5eb0",
+    "docs/计划.md": "b3e1d672d2198c79a074b64b0a4567433b0075846a79e57c15ce5c74681f7863",
+    "src/Web/nexora-dashboard/.gitignore": "9145e390d60f584f8794e506eba66216b02728a1add83d53a2a869c002961268",
+    "src/Web/nexora-dashboard/README.md": "a7fd4e321b2c7dac6e4619f5e78f970c3518be0b931384a86314990694ea20cd",
+    "src/Web/nexora-dashboard/app/components/LiveCatalogPanel.vue": "ccf0be05a9e2943b3a99cad989a4c73efa0b5116cfc64fe66e781fd5390ba242",
+    "src/Web/nexora-dashboard/app/components/LiveDashboardLayout.vue": "df20b773ce00a135385a781d8a642640873b1176acb0dbd95bd997f1f10d41ae",
+    "src/Web/nexora-dashboard/app/components/catalog/LiveDefinitionEditor.vue": "0914ed5b20f6c138ab0aca628f4e1311b9ba4ad58fc7bfe166147df4746fdfbe",
+    "src/Web/nexora-dashboard/app/components/catalog/LiveItemEditor.vue": "5e0a8914767b805e7b211fac3287009188b0a756bee35b5a5519a0eda4b45aa5",
+    "src/Web/nexora-dashboard/app/components/finance/LiveAccountMappingEditor.vue": "4e93bc8e87dff90ee8d18134394e8fe194a2d88d2ae48dd7cbbafebd283af227",
+    "src/Web/nexora-dashboard/app/components/finance/LivePrerequisitesPanel.vue": "90b5834d5d1287a6f80216ce5886b2458d7503e8baa84834860382d10851067c",
+    "src/Web/nexora-dashboard/app/components/inventory/LiveWarehousesPanel.vue": "e382cd08bea72c9aba418cf733e2b1c8ac088e31cbd7380d538787ecc4289f0a",
+    "src/Web/nexora-dashboard/app/components/live/LiveMutationFeedback.vue": "1dcb761ace32b1c9f5765c8901708e084d0671297ed91c72a69ab446ea187965",
+    "src/Web/nexora-dashboard/app/components/partners/LivePartnerEditor.vue": "ba6fac38cef7f120b1bb34420618ff20ae70943755b5bad28b130db7aaed1bc8",
+    "src/Web/nexora-dashboard/app/components/partners/LivePartnersPanel.vue": "def27283880b6ac8285eec731a8293455131ae0b70d9c51424d9086fa5bbad72",
+    "src/Web/nexora-dashboard/app/composables/api/useFinanceSetupApi.ts": "00ea23dd09eb8885bea7fa16c06856ce1dec68a397cdd7336561017fce1c4401",
+    "src/Web/nexora-dashboard/app/composables/api/useInventoryApi.ts": "133fec89a41c4cb4ee6c5008819d95b8bdb762cd1e6c7e65aca3f683015e621d",
+    "src/Web/nexora-dashboard/app/composables/api/useMasterDataApi.ts": "7bee1b5cf2736e4f4918980d468b8205523857b5d777cee6353d55d9ad1c082c",
+    "src/Web/nexora-dashboard/app/composables/api/useOrganizationApi.ts": "61d10d0c347c698cba05b33a6685d2dcbfdbdf7e06e072b3491d5ebaf5a359f0",
+    "src/Web/nexora-dashboard/app/composables/api/usePartnersApi.ts": "e0638977a91181cc2f2226a87c8b4b61126c546d4b5e5ab688813aa91a659028",
+    "src/Web/nexora-dashboard/app/composables/useLiveMutation.ts": "8a7e42a933cb71c0e50959d8ce04bff5a27d3ae9f20f242754ea4cc1315a220a",
+    "src/Web/nexora-dashboard/app/stores/liveSession.ts": "cabb849b9bf07ea28cac1467a79ed32f9676ab5065599a05d477320c97744d45",
+    "src/Web/nexora-dashboard/app/utils/api/access.ts": "ab0e55db44d1f32594e245f29d250ddf367e73b19785369d0dd405cd1ec933e1",
+    "src/Web/nexora-dashboard/app/utils/api/account-mappings.ts": "4fac4951a2b0db92c71c38411446ad6bf13a8390099e46cb07179b93694278d4",
+    "src/Web/nexora-dashboard/app/utils/api/client.ts": "80ed546bc426cbbb713847aa39178d1e130cc2b87cc10e751e756bb61fb2956c",
+    "src/Web/nexora-dashboard/e2e/d3-foundation.spec.ts": "bb798f2625135f5f6ece4956ccaec3f92138959d5f00ebc7c82b03c8558f2af6",
+    "src/Web/nexora-dashboard/e2e/d3-masterdata.spec.ts": "5c397ded1e613ef8e1b455c90aa7fc4834b550bfa16dba35294b330ab90c57c6",
+    "src/Web/nexora-dashboard/e2e/d3-setup.spec.ts": "3e43d327586a5ac31682d004faf5e8030ceae38ad7a58d2b1871e36a3833a26b",
+    "src/Web/nexora-dashboard/e2e/helpers.ts": "c59fe5b1bf10a0addef9b21f727a1c65f490725057accc7cf8be7c65efac09ba",
+    "src/Web/nexora-dashboard/e2e/integration.spec.ts": "63a9c91b8a96ec53243f81079b01b5ba92f1dfc1fc9954046b3d75fa55f97e5c",
+    "src/Web/nexora-dashboard/e2e/production.spec.ts": "b88e251658018a4be370c679b9c5d87dd2658ab515885a7ec5c68ac96fe8a225",
+    "src/Web/nexora-dashboard/nuxt.config.ts": "50aff60b310cc0364b4c7be11f5d3529ee5c058bea29344f7a5e54b9253dc3da",
+    "src/Web/nexora-dashboard/shared/types/masterdata.ts": "a6c19b6b24d0327229b323a080c3deffa5ddc4f162277908b5c549a4b3b5e288",
+    "src/Web/nexora-dashboard/shared/types/prerequisites.ts": "3c0b572e68a3385847aef5dd92dd7ec9c2f345bf6786495a8487569b0fd618a0",
+    "src/Web/nexora-dashboard/shared/types/wire.ts": "2ef08c8d1d84916eaa242c106eaa01cce877ecaccf123b292d22c1c7adf8b882",
+    "src/Web/nexora-dashboard/test/account-mappings.test.ts": "95b23aa87c2d111d62ed9344c93d22183bd45c237cd347168e2927d583e15203",
+    "src/Web/nexora-dashboard/test/live-access.test.ts": "0bea5b157d21f4182763fe7d0944aeb41e26cb078fe146207cd96d47b2dc88a8",
+    "src/Web/nexora-dashboard/test/live-mutation.test.ts": "50feddb4e2e782977ff60b611deee3ce5819075331bb056bac2567b72f843e3a"
+  }
+}

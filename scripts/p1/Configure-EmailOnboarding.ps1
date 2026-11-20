@@ -240,4 +240,37 @@ foreach ($scopeName in @('basic', 'profile', 'email')) {
     Invoke-Realm "/clients/$($mcp.id)/default-client-scopes/$($scope.id)" Put | Out-Null
 }
 
+# The dashboard is a separate confidential client with its own session keys and callbacks.
+if ($env:NEXORA_DASHBOARD_ORIGIN -and $env:NEXORA_DASHBOARD_CLIENT_SECRET) {
+    $dashboardOrigin = $env:NEXORA_DASHBOARD_ORIGIN.TrimEnd('/')
+    $dashboardClient = @(Invoke-Realm '/clients?clientId=nexora-dashboard-bff') | Where-Object clientId -eq 'nexora-dashboard-bff' | Select-Object -First 1
+    $dashboardSettings = @{
+        clientId = 'nexora-dashboard-bff'; enabled = $true; protocol = 'openid-connect'; publicClient = $false
+        secret = $env:NEXORA_DASHBOARD_CLIENT_SECRET; standardFlowEnabled = $true
+        implicitFlowEnabled = $false; directAccessGrantsEnabled = $false; serviceAccountsEnabled = $false
+        redirectUris = @("$dashboardOrigin/signin-oidc")
+        defaultClientScopes = @('basic', 'profile', 'email', 'acr')
+        authenticationFlowBindingOverrides = @{ browser = $flow.id }
+        attributes = @{ 'pkce.code.challenge.method' = 'S256'; 'post.logout.redirect.uris' = "$dashboardOrigin/signout-callback-oidc" }
+    }
+    if ($dashboardClient) {
+        Invoke-Realm "/clients/$($dashboardClient.id)" Put $dashboardSettings | Out-Null
+    } else {
+        Invoke-Realm '/clients' Post $dashboardSettings | Out-Null
+        $dashboardClient = @(Invoke-Realm '/clients?clientId=nexora-dashboard-bff') | Where-Object clientId -eq 'nexora-dashboard-bff' | Select-Object -First 1
+    }
+    if (!$dashboardClient) { throw 'The dashboard OIDC client was not provisioned.' }
+    $dashboardMappers = @(Invoke-Realm "/clients/$($dashboardClient.id)/protocol-mappers/models")
+    foreach ($mapper in @(
+        @{ name = 'business-api-audience'; protocol = 'openid-connect'; protocolMapper = 'oidc-audience-mapper'; consentRequired = $false
+           config = @{ 'included.custom.audience' = 'nexora-api'; 'access.token.claim' = 'true'; 'id.token.claim' = 'false' } },
+        @{ name = 'authentication-method-reference'; protocol = 'openid-connect'; protocolMapper = 'oidc-amr-mapper'; consentRequired = $false
+           config = @{ 'access.token.claim' = 'true'; 'id.token.claim' = 'true' } }
+    )) {
+        if (!($dashboardMappers | Where-Object name -eq $mapper.name)) {
+            Invoke-Realm "/clients/$($dashboardClient.id)/protocol-mappers/models" Post $mapper | Out-Null
+        }
+    }
+}
+
 Write-Output 'Keycloak email onboarding is configured.'

@@ -15,7 +15,7 @@ public sealed class PurchaseReceiptUseCases(IPurchaseAuthority authority, IPurch
         if (!current.CanRead(order))
             throw new ResourceNotFoundException();
         var permits = await receipts.ListAsync(current.Scope, orderId, ct, page);
-        return new(current.Allows(PurchasePermissions.Approve), permits.Select(x => new PermitView(x.Id, x.LineId, x.WarehouseId,
+        return new(current.Allows(PurchasePermissions.Approve, order.DepartmentId), permits.Select(x => new PermitView(x.Id, x.LineId, x.WarehouseId,
             DecimalText.Format(x.Quantity), DecimalText.Format(x.Executed), x.Revision, x.Fenced ? "cancelled"
                 : x.Cancelling ? "cancelling" : x.Executed == x.Quantity ? "completed" : x.Revision == 0 ? "dispatching" : "issued")).ToArray());
     }
@@ -24,8 +24,8 @@ public sealed class PurchaseReceiptUseCases(IPurchaseAuthority authority, IPurch
     {
         const string action = "receipt.issued";
         var (current, audit, fingerprint) = await BeginAsync(command.WorkspaceId, command.OperationId, action, command, ct);
+        var order = await LoadAsync(current, command.OrderId, audit is null ? command.ExpectedVersion : (long?)null, ct);
         if (audit is not null) return (Replay(audit), null);
-        var order = await LoadAsync(current.Scope, command.OrderId, command.ExpectedVersion, ct);
         var line = order.Lines.SingleOrDefault(x => x.Id == command.LineId) ?? throw new ResourceNotFoundException();
         await authority.DemandWarehouseAsync(current.Scope, command.WarehouseId, ct);
         var permits = await receipts.ListAsync(current.Scope, order.Id, ct);
@@ -41,10 +41,10 @@ public sealed class PurchaseReceiptUseCases(IPurchaseAuthority authority, IPurch
     {
         const string action = "receipt.cancel-requested";
         var (current, audit, fingerprint) = await BeginAsync(command.WorkspaceId, command.OperationId, action, command, ct);
+        var order = await LoadAsync(current, command.OrderId, audit is null ? command.ExpectedVersion : (long?)null, ct);
         if (audit is not null) return (Replay(audit), null);
         var reason = command.Reason?.Trim() ?? "";
         if (reason.Length is < 1 or > 300) throw new ArgumentException("A cancellation reason is required.");
-        var order = await LoadAsync(current.Scope, command.OrderId, command.ExpectedVersion, ct);
         var permits = await receipts.ListAsync(current.Scope, order.Id, ct);
         var permit = permits.SingleOrDefault(x => x.Id == command.PermitId) ?? throw new ResourceNotFoundException();
         var line = order.Lines.Single(x => x.Id == permit.LineId);
@@ -69,10 +69,10 @@ public sealed class PurchaseReceiptUseCases(IPurchaseAuthority authority, IPurch
     {
         const string action = "receipt.order-closed";
         var (current, audit, fingerprint) = await BeginAsync(command.WorkspaceId, command.OperationId, action, command, ct);
+        var order = await LoadAsync(current, command.OrderId, audit is null ? command.ExpectedVersion : (long?)null, ct);
         if (audit is not null) return new(audit.OrderId, audit.ResultVersion);
         var reason = command.Reason?.Trim() ?? "";
         if (reason.Length is < 1 or > 300) throw new ArgumentException("A closing reason is required.");
-        var order = await LoadAsync(current.Scope, command.OrderId, command.ExpectedVersion, ct);
         var permits = await receipts.ListAsync(current.Scope, order.Id, ct);
         order.CloseReceiving(permits.Any(x => x.Cancelling || (!x.Fenced && x.Executed < x.Quantity)));
         orders.Add(new PurchaseAudit(Guid.CreateVersion7(), order.TenantId, order.WorkspaceId, order.Id, current.Actor.Issuer,
@@ -80,17 +80,19 @@ public sealed class PurchaseReceiptUseCases(IPurchaseAuthority authority, IPurch
         return new(order.Id, order.Version);
     }
 
-    private async Task<PurchaseOrder> LoadAsync(ResourceScope scope, Guid id, long version, CancellationToken ct)
+    private async Task<PurchaseOrder> LoadAsync(PurchaseAccess current, Guid id, long? version, CancellationToken ct)
     {
-        var order = await orders.LockAsync(scope, id, ct) ?? throw new ResourceNotFoundException();
-        if (order.Version != version) throw new RevisionConflictException("The purchase order version changed.");
+        var order = await orders.LockAsync(current.Scope, id, ct) ?? throw new ResourceNotFoundException();
+        if (!current.CanRead(order) || !current.Allows(PurchasePermissions.Approve, order.DepartmentId))
+            throw new ResourceNotFoundException();
+        if (version is { } expected && order.Version != expected) throw new RevisionConflictException("The purchase order version changed.");
         return order;
     }
 
     private async Task<(PurchaseAccess, PurchaseAudit?, string)> BeginAsync(Guid workspace, Guid operation, string action, object input, CancellationToken ct)
     {
         var current = await authority.AccessAsync(workspace, ct);
-        current.Demand(PurchasePermissions.Approve);
+        if (!current.HasPermission(PurchasePermissions.Approve)) throw new AccessDeniedException();
         if (operation == Guid.Empty) throw new ArgumentException("Operation identifier required.");
         await orders.LockOperationAsync(current, operation, ct);
         var fingerprint = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(input)));

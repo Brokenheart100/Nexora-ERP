@@ -813,11 +813,7 @@ async function reloadPage() {
       </template>
     </USlideover>
 
-    <USlideover
-      v-model:open="editOpen"
-      :title="editing ? '编辑伙伴' : '新建伙伴'"
-      :ui="{ content: 'sm:max-w-xl' }"
-    >
+    <USlideover v-model:open="editOpen" :title="editing ? '编辑伙伴' : '新建伙伴'" :ui="{ content: 'sm:max-w-xl' }">
       <template #description>
         <span class="text-sm text-muted">
           {{ editing ? editing.code + ' · 档案编号只读' : '保存后自动生成档案编号' }} · 修改后仅作用于本次预览
@@ -929,7 +925,11 @@ async function reloadPage() {
                   />
                 </UFormField>
                 <UFormField label="职务">
-                  <UInput v-model="contact.title" class="w-full" :data-testid="'partners-edit-contact-title-' + index" />
+                  <UInput
+                    v-model="contact.title"
+                    class="w-full"
+                    :data-testid="'partners-edit-contact-title-' + index"
+                  />
                 </UFormField>
                 <UFormField label="联系电话">
                   <UInput

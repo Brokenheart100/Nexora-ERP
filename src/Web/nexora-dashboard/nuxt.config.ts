@@ -9,6 +9,16 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     ...(process.env.NODE_ENV === 'development' ? ['@nuxt/hints'] : [])
   ],
+  $env: {
+    msw: {
+      buildDir: '.nuxt-msw',
+      devServer: { port: 3003 },
+      runtimeConfig: { public: { apiMocking: true } },
+      nitro: { output: { dir: '.output-msw-dev' } }
+    }
+  },
+  ssr: false,
+  imports: { dirs: ['~/composables/**', '~/utils/**'] },
 
   devtools: {
     enabled: false
@@ -22,6 +32,17 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    bff: {
+      issuer: '', clientSecret: '', sessionKey: '', previousSessionKey: '', redisUrl: '', gatewayUrl: '',
+      mfaEnabled: true, mfaRequired: true, mfaStepUpSeconds: 300,
+      cliClientId: 'nexora-cli', cliScopes: 'openid nexora.cli', mcpClientId: 'nexora-mcp', mcpScopes: 'openid nexora.mcp'
+    },
+    public: { dataMode: 'mock', bffOrigin: '', apiMocking: false }
+  },
+  buildDir: process.env.NODE_ENV === 'production'
+    ? (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.nuxt-live-build' : '.nuxt-build')
+    : (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.nuxt-live' : '.nuxt'),
 
   devServer: {
     port: 3001,
@@ -29,6 +50,14 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2026-06-30',
+  nitro: {
+    output: {
+      dir: process.env.NODE_ENV === 'production'
+        ? (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.output-live' : '.output')
+        : (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.output-live-dev' : '.output-dev')
+    }
+  },
+  typescript: { strict: true },
 
   eslint: {
     config: {

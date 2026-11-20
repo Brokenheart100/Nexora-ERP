@@ -1,0 +1,175 @@
+[
+  {
+    "displayName": "cache",
+    "resourceType": "Container",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "secondary",
+        "url": "tcp://localhost:64842"
+      },
+      {
+        "name": "tcp",
+        "url": "rediss://localhost:64837"
+      }
+    ]
+  },
+  {
+    "displayName": "finance",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:64836"
+      }
+    ]
+  },
+  {
+    "displayName": "gateway",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:7443"
+      }
+    ]
+  },
+  {
+    "displayName": "identity",
+    "resourceType": "Container",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "management",
+        "url": "https://localhost:64833",
+        "isInternal": true
+      },
+      {
+        "name": "http",
+        "url": "https://localhost:8088"
+      }
+    ]
+  },
+  {
+    "displayName": "inventory",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:64841"
+      }
+    ]
+  },
+  {
+    "displayName": "masterdata",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:64839"
+      }
+    ]
+  },
+  {
+    "displayName": "organization",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "http",
+        "url": "http://localhost:5133"
+      },
+      {
+        "name": "https",
+        "url": "https://localhost:7140"
+      }
+    ]
+  },
+  {
+    "displayName": "postgres",
+    "resourceType": "Container",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "tcp",
+        "url": "tcp://localhost:6543"
+      }
+    ]
+  },
+  {
+    "displayName": "purchasing",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:64840"
+      }
+    ]
+  },
+  {
+    "displayName": "rabbitmq",
+    "resourceType": "Container",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "tcp",
+        "url": "tcp://localhost:64834"
+      }
+    ]
+  },
+  {
+    "displayName": "reporting",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "http",
+        "url": "http://localhost:5179"
+      },
+      {
+        "name": "https",
+        "url": "https://localhost:7257"
+      }
+    ]
+  },
+  {
+    "displayName": "sales",
+    "resourceType": "Project",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "https",
+        "url": "https://localhost:64843"
+      }
+    ]
+  },
+  {
+    "displayName": "web",
+    "resourceType": "Executable",
+    "state": "Running",
+    "healthStatus": "Healthy",
+    "urls": [
+      {
+        "name": "http",
+        "url": "http://localhost:3000"
+      }
+    ]
+  }
+]

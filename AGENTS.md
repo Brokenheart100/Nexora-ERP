@@ -218,6 +218,8 @@ src/Web/nexora-web/
 
 ## 本地开发与验证
 
+Aspire 工作流使用仓库维护的项目级技能，入口为 [aspire](.agents/skills/aspire/SKILL.md)，具体任务按其路由选择子技能。用户明确要求保留这些本地副本；在本仓库优先使用它们，并按实际 AppHost SDK / CLI 版本核对命令与 API。来源、更新方式及验证见 [Aspire 技能安装记录](docs/verification/aspire-project-skills.md)。
+
 命令从仓库根目录运行。依照 README 准备锁定的 .NET SDK、Aspire CLI、Node、pnpm、Linux Docker 引擎和受信任的 ASP.NET 开发证书。
 
 ```powershell

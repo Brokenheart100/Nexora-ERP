@@ -1,0 +1,401 @@
+{
+  "run": "20261119131758",
+  "origin": "https://localhost:7443",
+  "createdAtUtc": "2026-11-19T13:17:58.549Z",
+  "checks": [],
+  "responses": [
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces",
+      "status": 201,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db",
+      "fields": [
+        "id",
+        "tenantId",
+        "name",
+        "countryCode",
+        "baseCurrency",
+        "version",
+        "isPersonal"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations",
+      "status": 201,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations/01a1f3f5-2d5f-7808-bda5-3b7b71a87bc7",
+      "fields": [
+        "invitation",
+        "token",
+        "authorizationVersion",
+        "mailStatus"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/invitations/01a1f3f5-2d5f-7808-bda5-3b7b71a87bc7/redeem",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations",
+      "status": 201,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations/01a1f3f5-2f67-7eee-b094-9dd3998eacb8",
+      "fields": [
+        "invitation",
+        "token",
+        "authorizationVersion",
+        "mailStatus"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/invitations/01a1f3f5-2f67-7eee-b094-9dd3998eacb8/redeem",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations",
+      "status": 201,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/invitations/01a1f3f5-3039-7d43-ab45-2b351411bd06",
+      "fields": [
+        "invitation",
+        "token",
+        "authorizationVersion",
+        "mailStatus"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/invitations/01a1f3f5-3039-7d43-ab45-2b351411bd06/redeem",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "array"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members/01a1f3f5-29f5-7ca6-9477-8f2e0d90c662/purchase-role",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members/01a1f3f5-29f5-7ca6-9477-8f2e0d90c662/purchase-role",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members/01a1f3f5-2ee5-79af-977a-e0e63591ab85/purchase-role",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "authorizationVersion"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/access",
+      "status": 200,
+      "contentType": "application/json; charset=utf-8",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "workspaceId",
+        "tenantId",
+        "authorizationVersion",
+        "permissions",
+        "role",
+        "isPersonal",
+        "memberId",
+        "scopedPermissions",
+        "departmentIds"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members/01a1f3f5-2ee5-79af-977a-e0e63591ab85/purchase-role",
+      "status": 403,
+      "contentType": "application/problem+json",
+      "etag": null,
+      "location": null,
+      "fields": [
+        "type",
+        "title",
+        "status",
+        "code",
+        "traceId"
+      ]
+    }
+  ],
+  "workspace": {
+    "id": "01a1f3f5-29f3-7067-a87c-f7886ddbb3db",
+    "tenantId": "01a1f3f5-29f3-738a-ad35-fa7f3f5a3bb1",
+    "name": "Nexora Dashboard D0 20261119131758",
+    "countryCode": "CN",
+    "baseCurrency": "CNY",
+    "version": 1,
+    "isPersonal": false
+  },
+  "members": [
+    {
+      "id": "01a1f3f5-29f5-7ca6-9477-8f2e0d90c662",
+      "userId": "01a1c61f-5201-732a-bb9b-671e0f921628",
+      "subject": "3885e5db-9e09-4614-951c-e41ba5905e37",
+      "email": "alice@nexora.invalid",
+      "role": "WorkspaceOwner",
+      "isActive": true,
+      "joinedAtUtc": "2026-11-19T13:18:12.97956+00:00",
+      "financeRole": null,
+      "proposedFinanceRole": null,
+      "financeRoleProposalVersion": null,
+      "purchaseRole": null,
+      "proposedPurchaseRole": null,
+      "purchaseRoleProposalVersion": null,
+      "salesRole": null,
+      "proposedSalesRole": null,
+      "salesRoleProposalVersion": null,
+      "proposedBusinessRoles": null,
+      "businessRoleProposerId": null,
+      "businessRoleProposalVersion": null,
+      "businessRoleProposalExpiresAtUtc": null
+    },
+    {
+      "id": "01a1f3f5-2ee5-79af-977a-e0e63591ab85",
+      "userId": "01a1c61f-a0ba-7ccd-a8b4-cfa6808829d3",
+      "subject": "b6dfd6ff-98b7-4770-b8b2-baeff94eaf0c",
+      "email": "bob@nexora.invalid",
+      "role": "WorkspaceOwner",
+      "isActive": true,
+      "joinedAtUtc": "2026-11-19T13:18:14.244651+00:00",
+      "financeRole": null,
+      "proposedFinanceRole": null,
+      "financeRoleProposalVersion": null,
+      "purchaseRole": null,
+      "proposedPurchaseRole": null,
+      "purchaseRoleProposalVersion": null,
+      "salesRole": null,
+      "proposedSalesRole": null,
+      "salesRoleProposalVersion": null,
+      "proposedBusinessRoles": null,
+      "businessRoleProposerId": null,
+      "businessRoleProposalVersion": null,
+      "businessRoleProposalExpiresAtUtc": null
+    },
+    {
+      "id": "01a1f3f5-2fbd-7b22-8598-bfefd656bb27",
+      "userId": "01a1f3f5-2fbc-7ed4-bf41-645c30c00218",
+      "subject": "ba20a39f-b9df-4a79-841e-d5088def72a3",
+      "email": "dashboard-d0-receiver-20261119131758@example.invalid",
+      "role": "WorkspaceReader",
+      "isActive": true,
+      "joinedAtUtc": "2026-11-19T13:18:14.461205+00:00",
+      "financeRole": null,
+      "proposedFinanceRole": null,
+      "financeRoleProposalVersion": null,
+      "purchaseRole": null,
+      "proposedPurchaseRole": null,
+      "purchaseRoleProposalVersion": null,
+      "salesRole": null,
+      "proposedSalesRole": null,
+      "salesRoleProposalVersion": null,
+      "proposedBusinessRoles": null,
+      "businessRoleProposerId": null,
+      "businessRoleProposalVersion": null,
+      "businessRoleProposalExpiresAtUtc": null
+    },
+    {
+      "id": "01a1f3f5-3084-77f6-b1b3-eb27727c83b4",
+      "userId": "01a1f3f5-3084-77ba-940b-57cd8f05dba2",
+      "subject": "82cede02-6329-46e7-b45f-5dff1110a05c",
+      "email": "dashboard-d0-reader-20261119131758@example.invalid",
+      "role": "WorkspaceReader",
+      "isActive": true,
+      "joinedAtUtc": "2026-11-19T13:18:14.660925+00:00",
+      "financeRole": null,
+      "proposedFinanceRole": null,
+      "financeRoleProposalVersion": null,
+      "purchaseRole": null,
+      "proposedPurchaseRole": null,
+      "purchaseRoleProposalVersion": null,
+      "salesRole": null,
+      "proposedSalesRole": null,
+      "salesRoleProposalVersion": null,
+      "proposedBusinessRoles": null,
+      "businessRoleProposerId": null,
+      "businessRoleProposalVersion": null,
+      "businessRoleProposalExpiresAtUtc": null
+    }
+  ],
+  "failure": {
+    "message": "POST /bff/api/workspaces/01a1f3f5-29f3-7067-a87c-f7886ddbb3db/members/01a1f3f5-2ee5-79af-977a-e0e63591ab85/purchase-role: auth.forbidden\n\n403 !== 200\n",
+    "atUtc": "2026-11-19T13:18:15.414Z"
+  }
+}

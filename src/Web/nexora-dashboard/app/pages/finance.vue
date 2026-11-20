@@ -377,10 +377,7 @@ function handleExportAging() {
             @post="handlePostJournal"
           />
 
-          <FinanceImportedJournals
-            v-else-if="activeTab === 'imported'"
-            :accounts="accounts"
-          />
+          <FinanceImportedJournals v-else-if="activeTab === 'imported'" :accounts="accounts" />
 
           <FinanceReports
             v-else-if="activeTab === 'reports'"
@@ -412,19 +409,11 @@ function handleExportAging() {
             :initial-bill-id="initialBillId"
           />
 
-          <FinanceTradeDocuments
-            v-else-if="activeTab === 'documents'"
-            :can-post="canPost"
-          />
+          <FinanceTradeDocuments v-else-if="activeTab === 'documents'" :can-post="canPost" />
 
-          <FinanceDonations
-            v-else-if="activeTab === 'donations'"
-          />
+          <FinanceDonations v-else-if="activeTab === 'donations'" />
 
-          <FinanceOpening
-            v-else-if="activeTab === 'opening'"
-            :can-post="canPost"
-          />
+          <FinanceOpening v-else-if="activeTab === 'opening'" :can-post="canPost" />
 
           <FinanceBankRecon
             v-else-if="activeTab === 'bank'"
@@ -443,10 +432,7 @@ function handleExportAging() {
             @undo="handleUndoReconciliation"
           />
 
-          <FinanceTreasury
-            v-else-if="activeTab === 'treasury'"
-            :can-post="canPost"
-          />
+          <FinanceTreasury v-else-if="activeTab === 'treasury'" :can-post="canPost" />
 
           <FinanceClosing
             v-else-if="activeTab === 'closing'"
@@ -456,13 +442,9 @@ function handleExportAging() {
             :can-post="canPost"
           />
 
-          <FinanceTaxCenter
-            v-else-if="activeTab === 'tax-center'"
-          />
+          <FinanceTaxCenter v-else-if="activeTab === 'tax-center'" />
 
-          <FinanceReportingCenter
-            v-else-if="activeTab === 'reporting'"
-          />
+          <FinanceReportingCenter v-else-if="activeTab === 'reporting'" />
         </div>
       </template>
     </UDashboardPanel>

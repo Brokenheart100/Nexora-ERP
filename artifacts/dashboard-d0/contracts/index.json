@@ -1,0 +1,63 @@
+{
+  "capturedAtUtc": "2026-11-19T13:27:51.8961011+00:00",
+  "appHost": "src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj",
+  "documents": [
+    {
+      "service": "organization",
+      "source": "https://localhost:7140/openapi/v1.json",
+      "document": "organization.openapi.json",
+      "sha256": "a6c6e2b20abb063847605bb74793617aba9eb18c30e9f3c43522c3d0bb4e51a1",
+      "operationCount": 48,
+      "schemaCount": 58
+    },
+    {
+      "service": "masterdata",
+      "source": "https://localhost:64839/openapi/v1.json",
+      "document": "masterdata.openapi.json",
+      "sha256": "7203a52883974d83fec71906aef0aaa25ea10c58fb1b5a53c3ccc6a4218fbe51",
+      "operationCount": 15,
+      "schemaCount": 22
+    },
+    {
+      "service": "purchasing",
+      "source": "https://localhost:64840/openapi/v1.json",
+      "document": "purchasing.openapi.json",
+      "sha256": "dd156aa8ebaca1071f172bf61137e5f97f6c282f59ece9f72bc2e5bc0f9c137b",
+      "operationCount": 12,
+      "schemaCount": 20
+    },
+    {
+      "service": "sales",
+      "source": "https://localhost:64843/openapi/v1.json",
+      "document": "sales.openapi.json",
+      "sha256": "d02ff05d7ca534dd5459c0d58391a95e2205ca59921bdb24515e982012f6da45",
+      "operationCount": 13,
+      "schemaCount": 24
+    },
+    {
+      "service": "inventory",
+      "source": "https://localhost:64841/openapi/v1.json",
+      "document": "inventory.openapi.json",
+      "sha256": "16aafc213a17cbde017bebc121403a5c68ff89fa78d46c6589d073ac69dc3501",
+      "operationCount": 25,
+      "schemaCount": 21
+    },
+    {
+      "service": "finance",
+      "source": "https://localhost:64836/openapi/v1.json",
+      "document": "finance.openapi.json",
+      "sha256": "951981ed34ba735b03fff5db41a6c3e38acd34735c71e066e03f3fdfd777ad29",
+      "operationCount": 129,
+      "schemaCount": 198
+    },
+    {
+      "service": "reporting",
+      "source": "https://localhost:7257/openapi/v1.json",
+      "document": "reporting.openapi.json",
+      "sha256": "f9a0d015a2e9fc0fb0524b039237f8b54cb5602a16753abdfcf1671c7429ae8d",
+      "operationCount": 1,
+      "schemaCount": 3
+    }
+  ],
+  "operationCount": 243
+}

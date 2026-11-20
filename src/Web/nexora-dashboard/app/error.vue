@@ -95,11 +95,7 @@ function reload() {
           icon="i-carbon-arrow-left"
           @click="goHome"
         />
-        <UDropdownMenu
-          v-if="statusCode === 403"
-          :items="workspaceItems"
-          :content="{ align: 'center' }"
-        >
+        <UDropdownMenu v-if="statusCode === 403" :items="workspaceItems" :content="{ align: 'center' }">
           <UButton
             label="切换工作区"
             color="neutral"

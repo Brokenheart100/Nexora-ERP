@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-20T15:32:35.332345+08:00",
+  "scope": "Restore the existing Dashboard visual shell for prototype, live and MSW modes",
+  "originalPages": {
+    "retained": 15,
+    "unchangedFromPreD4Snapshot": true
+  },
+  "sharedPresentation": "DashboardShell",
+  "dataBoundary": {
+    "liveUsesCurrentIdentityAndPermissions": true,
+    "liveSearchUsesAuthorizedPagesOnly": true,
+    "unconnectedMetricsUseExplicitEmptyState": true,
+    "mockGovernanceAndIdentitiesStayInPrototype": true
+  },
+  "checks": {
+    "frontendUnit": {
+      "passed": 100
+    },
+    "mswBrowser": {
+      "fullSuitePassed": 6,
+      "enhancedLayoutRecheckPassed": 1
+    },
+    "liveAndPrototypeBrowser": {
+      "startTime": "2026-11-20T07:19:46.801Z",
+      "duration": 192810.391,
+      "expected": 7,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "localeThemeLogoutBrowser": {
+      "startTime": "2026-11-20T07:24:51.604Z",
+      "duration": 20042.056999999997,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "uniqueLiveAndPrototypeChecks": 8,
+    "lint": "passed",
+    "strictTypecheck": "passed",
+    "mockNodeBuild": "passed",
+    "liveNodeBuild": "passed",
+    "conditionInversion": {
+      "failed": 1,
+      "restoredPassed": 1
+    }
+  },
+  "businessRegression": {
+    "invoiceTotal": "1130",
+    "paid": "600",
+    "outstanding": "530"
+  },
+  "lifecycle": {
+    "validationAppHostStopped": true,
+    "retainedNamedVolumes": [
+      "nexora-postgres-data",
+      "nexora.apphost-99ce89c660-cache-data",
+      "nexora.apphost-99ce89c660-identity-data",
+      "nexora.apphost-99ce89c660-rabbitmq-data"
+    ]
+  },
+  "privateEvidence": [
+    "artifacts/p1/runtime/layout-restore-live-results.json",
+    "artifacts/p1/runtime/layout-restore-locale-results.json",
+    "artifacts/p1/runtime/layout-restore-msw.log",
+    "artifacts/p1/runtime/layout-restore-unit.log",
+    "artifacts/p1/runtime/layout-restored-live.png",
+    "artifacts/p1/runtime/layout-preserved-prototype.png",
+    "artifacts/p1/runtime/layout-restored-msw.png"
+  ],
+  "sourceFingerprints": {
+    "src/Web/nexora-dashboard/app/app.vue": "4b0521f5954d7c6435a822954e963f5c712a3dcbc02a4865875a5c29c9814bba",
+    "src/Web/nexora-dashboard/app/layouts/default.vue": "c14c15115faea1fb4c2578f6ea8668a8a76195e2a0c1faae4c7976d5a6a5d879",
+    "src/Web/nexora-dashboard/app/components/DashboardShell.vue": "a22317fa22be102c7ae9dcb05f6cc35df29564413b85bd53e3760894c999f111",
+    "src/Web/nexora-dashboard/app/components/MockDashboardLayout.vue": "783580268166d22f2a726464ed8cb4b32616e744ff3ca22d10669f619603905b",
+    "src/Web/nexora-dashboard/app/components/LiveDashboardLayout.vue": "fe7bbeedc333d97c36703d02605bd020e5b525deaaf9d7386dc383d82b2e7f6b",
+    "src/Web/nexora-dashboard/app/components/live/LiveWorkspaceMenu.vue": "277141c681289aa9d046513ebdaba5078ea5b6d1c0e12e63f674937822f8b8c5",
+    "src/Web/nexora-dashboard/app/components/live/LiveUserMenu.vue": "7d6c60f53f30140195e9c6ef3e2666acd6cab195e4797b021f85a85457adcbeb",
+    "src/Web/nexora-dashboard/app/components/live/LiveHomeDashboard.vue": "c7d8119f4193c7789d01d8b662f7a8b05cc5b271644de2794a49ab765d3a1ff2",
+    "src/Web/nexora-dashboard/e2e/layout.spec.ts": "9af4e4b5e79e76e5f8d10aa9cb455eb002e430b1ee8673f7682f87b5be38ee6b",
+    "src/Web/nexora-dashboard/e2e/msw.spec.ts": "b45b4f124f370ad2b7701aeda86919e3efc8dff7c4a887cf73949a22c3b8a5de",
+    "src/Web/nexora-dashboard/e2e/d3-foundation.spec.ts": "6a3765e5ab2f7413fceb7dafe8ae2a4da1a2241dfcab39ea8a99cbff24c84bbe",
+    "src/Web/nexora-dashboard/README.md": "3ff9ae95ab89eae55578d8cf7296828ef2b525a7121be3a45bc4ef4d81c5e18f",
+    "docs/架构.md": "bc865316e3b222d1e727bbc0cf397a2eedb94344128b0070bfaf3227dddad95c",
+    "docs/verification/dashboard-layout-restoration.md": "e43548c9d06487043a557f449e99b90bba5448a6b0ae569ed7f6c815fdd64b18"
+  },
+  "backendChanges": false,
+  "remoteCI": "not run",
+  "productionAcceptance": "not run"
+}

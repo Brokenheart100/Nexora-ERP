@@ -37,6 +37,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
   }],
   [
     {
+      label: '工作区操作',
+      type: 'label'
+    },
+    {
       label: '工作区与权限治理',
       icon: 'i-carbon-flow',
       onSelect() {
@@ -69,11 +73,11 @@ const items = computed<DropdownMenuItem[][]>(() => [
 </script>
 
 <template>
-  <div class="space-y-1">
+  <div class="w-full">
     <UDropdownMenu
       :items="items"
       :content="{ align: 'start', collisionPadding: 12 }"
-      :ui="{ content: collapsed ? 'w-56' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+      :ui="{ content: collapsed ? 'w-64' : 'w-72' }"
     >
       <UButton
         color="neutral"
@@ -82,6 +86,8 @@ const items = computed<DropdownMenuItem[][]>(() => [
         :square="collapsed"
         class="justify-start px-2 data-[state=open]:bg-elevated"
         :ui="{ base: 'min-w-0' }"
+        :aria-label="collapsed ? workspace.name : undefined"
+        :title="workspace.name"
       >
         <template #leading>
           <span class="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-[11px] font-semibold text-inverted">
@@ -98,45 +104,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
         </template>
       </UButton>
     </UDropdownMenu>
-
-    <div v-if="!collapsed" class="flex items-center gap-1 px-1">
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-carbon-flow"
-        aria-label="工作区与权限治理"
-        data-testid="workspace-governance-open"
-        @click="openGovernance('overview')"
-      />
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-carbon-add-alt"
-        aria-label="新建企业工作区"
-        data-testid="workspace-create-company"
-        @click="openGovernance('create-company')"
-      />
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-carbon-user-multiple"
-        aria-label="新建个人工作区"
-        data-testid="workspace-create-personal"
-        @click="openGovernance('create-personal')"
-      />
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-carbon-link"
-        aria-label="个人账本链接"
-        data-testid="workspace-ledger-link"
-        @click="openGovernance('link-ledger')"
-      />
-    </div>
   </div>
 
   <USlideover v-model:open="governanceOpen" :ui="{ content: 'w-full sm:max-w-[1440px]' }">

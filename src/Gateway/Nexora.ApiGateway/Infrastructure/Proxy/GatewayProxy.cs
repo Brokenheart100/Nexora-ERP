@@ -40,6 +40,34 @@ internal static class GatewayProxy
             }
         ];
 
+        var legacyWeb = builder.Configuration["services:web:https:0"] ?? builder.Configuration["services:web:http:0"];
+        if (string.IsNullOrWhiteSpace(legacyWeb)) routes = routes.Where(route => route.ClusterId != "web").ToArray();
+
+        if (builder.Configuration["Dashboard:Origin"] is { Length: > 0 } dashboardOrigin)
+        {
+            var origin = new Uri(dashboardOrigin, UriKind.Absolute);
+            if (origin.Scheme != Uri.UriSchemeHttps || origin.AbsolutePath != "/" || !string.IsNullOrEmpty(origin.UserInfo)
+                || !string.IsNullOrEmpty(origin.Query) || !string.IsNullOrEmpty(origin.Fragment))
+                throw new InvalidOperationException("Dashboard origin must be an HTTPS origin.");
+            var hosts = new[] { origin.Authority };
+            routes = [
+                ..routes,
+                ..new[] { "/bff/{**rest}", "/signin-oidc", "/signout-oidc", "/signout-callback-oidc" }
+                    .Select((path, index) => new RouteConfig
+                    {
+                        RouteId = $"dashboard-session-{index}", ClusterId = "dashboard", Order = -10,
+                        AuthorizationPolicy = "Anonymous", Match = new() { Path = path, Hosts = hosts },
+                        Transforms = [new Dictionary<string, string> { ["RequestHeaderOriginalHost"] = "true" }, RemoveHeader("Authorization")]
+                    }),
+                new RouteConfig
+                {
+                    RouteId = "dashboard-web", ClusterId = "dashboard", Order = 90,
+                    AuthorizationPolicy = "Anonymous", Match = new() { Path = "/{**rest}", Hosts = hosts },
+                    Transforms = [RemoveHeader("Cookie"), RemoveHeader("Authorization")]
+                }
+            ];
+        }
+
         var readiness = builder.Services.AddHealthChecks();
         var clusters = new List<ClusterConfig>();
         foreach (var service in routes.Select(route => route.ClusterId!).Distinct())

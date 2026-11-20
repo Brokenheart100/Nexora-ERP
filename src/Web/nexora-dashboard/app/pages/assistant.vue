@@ -78,7 +78,11 @@ onBeforeUnmount(() => {
       <template #body>
         <AppBreadcrumb current="工作区助手" class="mb-3" />
 
-        <div v-if="!planAvailable" class="rounded-sm border border-default bg-elevated/40 p-6" data-testid="assistant-plan-restricted">
+        <div
+          v-if="!planAvailable"
+          class="rounded-sm border border-default bg-elevated/40 p-6"
+          data-testid="assistant-plan-restricted"
+        >
           <div class="flex items-start gap-4">
             <div class="rounded-sm bg-neutral-500/10 p-3">
               <UIcon name="i-carbon-locked" class="size-6 text-muted" />
@@ -123,7 +127,7 @@ onBeforeUnmount(() => {
             data-testid="assistant-role-restricted"
           />
 
-          <div class="grid min-h-[620px] gap-3 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
+          <div class="grid min-h-155 gap-3 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
             <AssistantSessionList />
             <AssistantConversationPanel :key="workspace.id" :role-restricted="roleRestricted" />
             <AssistantCapabilityPanel :plan-available="planAvailable" :role-restricted="roleRestricted" />

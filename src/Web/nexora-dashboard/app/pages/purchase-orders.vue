@@ -1202,11 +1202,7 @@ async function copyOrderId() {
             >
               当前身份无审批权限
             </p>
-            <p
-              v-if="selfApprovalBlocked"
-              class="text-xs text-error"
-              data-testid="order-self-approval"
-            >
+            <p v-if="selfApprovalBlocked" class="text-xs text-error" data-testid="order-self-approval">
               不能审批自己提交的单据
             </p>
             <UButton

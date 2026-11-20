@@ -1,64 +1,51 @@
-# Nuxt Dashboard Template
+# Nexora Dashboard
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+Nuxt 4、Vue 3、Nuxt UI 与 Carbon 主题。保留用户已有的原型界面；另写的替代 UI 已删除。源码入口恢复为 `app.vue → NuxtLayout → NuxtPage`，布局位于 `app/layouts/default.vue`。
 
-Get started with the Nuxt dashboard template with multiple pages, collapsible sidebar, keyboard shortcuts, light & dark mode, command palette and more, powered by [Nuxt UI](https://ui.nuxt.com).
+## 当前页面与服务
 
-- [Live demo](https://dashboard-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+| 入口 | 当前用途 |
+| --- | --- |
+| `http://localhost:3001` | 原有完整 UI、原型交互与模拟数据 |
+| `http://localhost:3003` | 相同原型 UI，加上保留的 MSW 网络拦截基础；页面尚未通过 handlers 取数 |
+| `https://localhost:7444` | Aspire 承载的原型页面及独立 Nitro BFF 基础；原页面尚未接入真实业务数据 |
 
-<a href="https://dashboard-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
-    <img alt="Nuxt Dashboard Template" src="https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png">
-  </picture>
-</a>
+原型的模拟说明和演示身份保留。运行时 BFF 配置为 live 不代表页面已完成真实数据接入。当前不再提供另一套 Live 业务界面，下一步按原页面进行数据适配。
 
-> The dashboard template for Vue is on https://github.com/nuxt-ui-templates/dashboard-vue.
-
-## Quick Start
-
-```bash [Terminal]
-npm create nuxt@latest -- -t ui/dashboard
+```powershell
+pnpm --dir src/Web/nexora-dashboard install --frozen-lockfile
+pnpm --dir src/Web/nexora-dashboard dev
+# 可选：验证 MSW 网络拦截基础
+pnpm --dir src/Web/nexora-dashboard dev:msw
 ```
 
-## Deploy your own
+## 保留的接入基础
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=dashboard&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fdashboard&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fdashboard-dark.png&demo-url=https%3A%2F%2Fdashboard-template.nuxt.dev%2F&demo-title=Nuxt%20Dashboard%20Template&demo-description=A%20dashboard%20template%20with%20multi-column%20layout%20for%20building%20sophisticated%20admin%20interfaces.)
+`server/` 中的 OIDC、服务端 Redis 会话、CSRF、MFA 与固定 Gateway 转发保留。API 客户端、响应类型、版本及幂等处理、未知写入恢复、MSW handlers 和网络测试继续保留，等待接入原有页面。
 
-## Setup
+BFF 私有配置为 `NUXT_BFF_ISSUER`、`NUXT_BFF_CLIENT_SECRET`、`NUXT_BFF_SESSION_KEY`、`NUXT_BFF_REDIS_URL`、`NUXT_BFF_GATEWAY_URL`。`NUXT_PUBLIC_DATA_MODE=live` 与 `NUXT_PUBLIC_BFF_ORIGIN` 用于已有独立 BFF 运行环境；缺少私有配置时仍拒绝启动。令牌保存在服务端加密会话，业务调用使用同源 `/bff/api/*`。
 
-Make sure to install the dependencies:
-
-```bash
-pnpm install
+```powershell
+aspire start --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj --non-interactive
+aspire wait gateway --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj --timeout 180 --non-interactive
 ```
 
-## Development Server
+## 构建与验证
 
-Start the development server on `http://localhost:3000`:
-
-```bash
-pnpm dev
+```powershell
+pnpm --dir src/Web/nexora-dashboard lint
+pnpm --dir src/Web/nexora-dashboard typecheck
+pnpm --dir src/Web/nexora-dashboard test:unit
+pnpm --dir src/Web/nexora-dashboard test:msw
+pnpm --dir src/Web/nexora-dashboard test:e2e --grep '原有 UI'
+pnpm --dir src/Web/nexora-dashboard build
+$env:NUXT_PUBLIC_DATA_MODE = 'live'
+try { pnpm --dir src/Web/nexora-dashboard build }
+finally { Remove-Item Env:NUXT_PUBLIC_DATA_MODE }
 ```
 
-## Production
+默认构建输出 `.output/`，BFF live 配置构建输出 `.output-live/`；开发输出独立，分别为 `.output-dev/` 与 `.output-live-dev/`。MSW 仅允许显式 mock 开发环境，未知 BFF 模拟请求返回 501。
 
-Build the application for production:
+其余 `test:e2e` 保留独立 BFF、会话与 API 契约检查，需要指定 AppHost、D0 本地开发样例、Mailpit 和受保护的开发凭据。它们不再依赖已删除界面的用户标签与工作区菜单。专属替代 UI 的浏览器测试已删除，原界面的真实业务验收需重新完成。
 
-```bash
-pnpm build
-```
-
-Locally preview production build:
-
-```bash
-pnpm preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
-## Renovate integration
-
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+本轮临时启动的验证 AppHost 在结束后正常停止，保留数据卷。详细状态见 [替代 UI 删除记录](../../../docs/verification/dashboard-replacement-ui-removal.md)；[接入 TODO](../../../docs/ui-dashboard-api-integration-todolist.md) 以原有界面接入为验收依据，旧报告仅为历史证据。

@@ -638,7 +638,8 @@ async function onImportFile(event: Event) {
           data-testid="catalog-batch-bar"
         >
           <p class="text-xs text-default">
-            已选 <span class="font-medium tabular-nums" data-testid="catalog-selected-count">{{ selectedCount }}</span> 个商品
+            已选 <span class="font-medium tabular-nums" data-testid="catalog-selected-count">{{ selectedCount }}</span>
+            个商品
           </p>
           <div class="flex flex-wrap gap-2">
             <UButton
@@ -797,7 +798,10 @@ async function onImportFile(event: Event) {
           </div>
 
           <template #footer>
-            <div v-if="!showSkeleton && !isError && !isForbidden && !isEmpty" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+            <div
+              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
+              class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
+            >
               <p class="text-xs text-muted">
                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
               </p>
@@ -1135,7 +1139,8 @@ async function onImportFile(event: Event) {
                 是否跟踪库存
               </dt>
               <dd data-testid="catalog-detail-track-stock">
-                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking ?? 'none'] + '）' }}
+                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking
+                  ?? 'none'] + '）' }}
               </dd>
             </div>
             <div>

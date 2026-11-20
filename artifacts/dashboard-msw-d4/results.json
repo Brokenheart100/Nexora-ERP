@@ -1,0 +1,289 @@
+{
+  "date": "2026-11-20T14:08:34.578151+08:00",
+  "scope": "New Dashboard MSW and D4 purchase to payment",
+  "validation": "local",
+  "mswVersion": "3.0.7",
+  "mswPreview": "http://localhost:3003",
+  "checks": {
+    "frontendUnit": {
+      "passed": 100,
+      "failed": 0
+    },
+    "backendUnit": {
+      "passed": 68,
+      "failed": 0,
+      "skipped": 0
+    },
+    "mswBrowser": {
+      "startTime": "2026-11-20T05:50:03.726Z",
+      "duration": 65292.958000000006,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "lint": "passed",
+    "strictTypecheck": "passed",
+    "lockedDotnetRestore": "passed",
+    "releaseBuild": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "mockNodeBuild": "passed",
+    "liveNodeBuild": "passed"
+  },
+  "browser": {
+    "uniqueCasesPassed": 16,
+    "skipped": 0,
+    "allCasesHavePassingEvidence": true,
+    "singleFullRunAllGreen": false,
+    "fullRun": {
+      "startTime": "2026-11-20T05:53:28.182Z",
+      "duration": 520650.02900000004,
+      "expected": 15,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "entryRecheck": {
+      "startTime": "2026-11-20T06:04:27.603Z",
+      "duration": 22532.365999999998,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "reason": "The optional legacy entry check used Node certificate trust and initially expected 404. It now uses Edge with TLS verification and explicitly checks the gateway authentication fallback 401. The other 15 cases passed in the full run.",
+    "cases": [
+      {
+        "file": "d3-foundation.spec.ts",
+        "title": "D3 工作区权限、套餐导航和交易前置读取",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d3-foundation.spec.ts",
+        "title": "D3 只读导航、隐藏资源深链接和仓库执行权限",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d3-foundation.spec.ts",
+        "title": "D3 仓库执行身份按资源返回显示",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d3-masterdata.spec.ts",
+        "title": "D3 主数据正常入口、版本冲突保留输入、跨区引用和历史快照",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d3-setup.spec.ts",
+        "title": "D3 财务映射真实保存、响应丢失显式恢复和部门制单范围",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d4-boundaries.spec.ts",
+        "title": "D4 并发签发、超量拒绝、取消执行交错与关闭余量",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d4-purchase.spec.ts",
+        "title": "D4 部门采购批准、分批收货与暂估真实入口",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "d4-recovery.spec.ts",
+        "title": "D4 Finance 消费落后与 RabbitMQ 传输恢复只记账一次",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "integration.spec.ts",
+        "title": "新版 HTTPS 跳转、模拟预览及可选原版 BFF 入口",
+        "passed": true,
+        "evidence": "entry_recheck"
+      },
+      {
+        "file": "integration.spec.ts",
+        "title": "独立入口登录、CSRF、契约头、并发冲突及响应丢失回读",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "orders.spec.ts",
+        "title": "采购销售同操作重放、额度、202 恢复查询和 CSV/PDF 头",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "production.spec.ts",
+        "title": "独立生产产物验证会话、私有配置与 Redis 不可用；缺配置拒绝启动",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "refresh.spec.ts",
+        "title": "加密会话、API audience、并发刷新、附加验证与刷新失效",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "sessions.spec.ts",
+        "title": "两个会话隔离资源、切换清空表单并隔离迟到查询",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "sessions.spec.ts",
+        "title": "邮箱登录邀请返回和只读拒绝",
+        "passed": true,
+        "evidence": "full_run"
+      },
+      {
+        "file": "sessions.spec.ts",
+        "title": "新邮箱注册的独立账户配额拒绝均不写订单",
+        "passed": true,
+        "evidence": "full_run"
+      }
+    ]
+  },
+  "sample": {
+    "currency": "CNY",
+    "receivedQuantity": "100",
+    "receiptFacts": 2,
+    "netCost": "1000",
+    "invoiceTotal": "1130",
+    "payment": "600",
+    "outstanding": "530",
+    "supplierLedgerClosing": "530",
+    "agingTotal": "530",
+    "bankMovement": "-600",
+    "bankBalance": "1400"
+  },
+  "recovery": [
+    {
+      "resource": "finance",
+      "inventoryMovements": 1,
+      "financeFacts": 1,
+      "postedAccruals": 1,
+      "quantity": "1",
+      "cost": "10"
+    },
+    {
+      "resource": "rabbitmq",
+      "inventoryMovements": 1,
+      "financeFacts": 1,
+      "postedAccruals": 1,
+      "quantity": "1",
+      "cost": "10"
+    }
+  ],
+  "review": {
+    "axes": [
+      "correctness",
+      "readability",
+      "architecture",
+      "security",
+      "performance"
+    ],
+    "conditionInversion": {
+      "detected": true,
+      "failedTests": 1,
+      "restoredPassingTests": 9
+    }
+  },
+  "lifecycle": {
+    "ownedAppHostStopped": true,
+    "retainedNamedVolumes": [
+      "nexora-postgres-data",
+      "nexora.apphost-99ce89c660-cache-data",
+      "nexora.apphost-99ce89c660-identity-data",
+      "nexora.apphost-99ce89c660-rabbitmq-data"
+    ],
+    "userAppHostConfigurationUnchanged": true
+  },
+  "remoteCI": "not run",
+  "productionAcceptance": "not run",
+  "privateEvidence": [
+    "artifacts/p1/runtime/d4-full-browser-results.json",
+    "artifacts/p1/runtime/d4-entry-final-results.json",
+    "artifacts/p1/runtime/dashboard-msw-results.json",
+    "artifacts/p1/runtime/d4-tests/d4-full.trx",
+    "artifacts/p1/runtime/d4-main-fixture.json",
+    "artifacts/p1/runtime/d4-recovery-evidence.json"
+  ],
+  "sourceFingerprints": {
+    "docs/ui-dashboard-api-integration-todolist.md": "4962979be58f10804c3619a4eda7c43437e0252d78b094a5e6956e271dfb9721",
+    "docs/verification/dashboard-msw-d4.md": "73b3a159a98ac72a151c27de5f408f554dd3fc378397ee4327aca1f63e5f77cb",
+    "docs/依赖.md": "7876a27bbac6e9f2554509b6c82522c3c75404f80ea2ff040c0cf4b2c3e15459",
+    "docs/架构.md": "db504124ed2635bf8c1cdf8c9164650f5f2debba6080fe4161808328d3de3aa9",
+    "docs/计划.md": "4acbf1b4f59bcb65469e7807d460207a9a26c24b9934294422b79385e29b2821",
+    "src/Gateway/Nexora.ApiGateway/Infrastructure/Proxy/GatewayProxy.cs": "5fcab870f6164492d99b0846a74868a6791086eb9a875912918368cf818af4ad",
+    "src/Gateway/Nexora.ApiGateway/Nexora.ApiGateway.csproj": "1f76f57181e03b91ea5b52ac69d8eaf7ed8bb258d1b133c45b00149fa58181c4",
+    "src/Services/Purchasing/Nexora.Purchasing.Application/UseCases/Receipts/PurchaseReceiptUseCases.cs": "abee8b8f2167ac1669c7a9c26815881b40c906c67d498246cddcf670a7b415a6",
+    "src/Web/nexora-dashboard/.gitignore": "c827dfbb5e57e5cac19d3538bbdf6599437f1d90f2f83cf236f283b4df455de4",
+    "src/Web/nexora-dashboard/README.md": "6de5ef606902bc9849217d1d693422a70a168aa6cd2f64864b0363a8b95f2dc8",
+    "src/Web/nexora-dashboard/app/app.vue": "4b0521f5954d7c6435a822954e963f5c712a3dcbc02a4865875a5c29c9814bba",
+    "src/Web/nexora-dashboard/app/components/LiveDashboardLayout.vue": "9eedbc783f2a9322783d6fdbfa8f8d84fa10f1068e3b1fbc6307ac9d04e7bbd2",
+    "src/Web/nexora-dashboard/app/components/dev/MswScenarioPicker.vue": "512089c9e46a7ab04594e22fa74f0184f62e5a11e65ef536251fd70b4f62e4a7",
+    "src/Web/nexora-dashboard/app/components/finance/LiveBillEditor.vue": "6e07eed75602d2e24627643c22db65a3028c440995c85c8aa0cbb3eaf009f99a",
+    "src/Web/nexora-dashboard/app/components/finance/LiveBillLine.vue": "335d2de6855dd4a2543c25077bb707eb70d61a5ed7ce1f5f8ebbd48ac28e817c",
+    "src/Web/nexora-dashboard/app/components/finance/LivePaymentEditor.vue": "1aa250ed17df2ed591988faa07aa0836f4a06db8c8978da751a8eb389258ac15",
+    "src/Web/nexora-dashboard/app/components/finance/LiveTradeDocumentDetail.vue": "24b5b09e4e432754b03717cadf10004aa00995b553b4c28a2b3b566e25f67d6d",
+    "src/Web/nexora-dashboard/app/components/finance/LiveTradePanel.vue": "9ca2a54481c703fb9bedf554a185fb4b8e01184d5c02f2da2b3d41ab826fc2d0",
+    "src/Web/nexora-dashboard/app/components/inventory/LiveWarehouseTasks.vue": "31df4030af555e81fd9a790f70a926035697c38e5d21c12cd678876b4858e8c8",
+    "src/Web/nexora-dashboard/app/components/inventory/LiveWarehousesPanel.vue": "468fbcbf6ded7beaa03605181172c9c980800654dcccdb56ee287f39ea46faee",
+    "src/Web/nexora-dashboard/app/components/purchasing/LivePurchaseOrderDetail.vue": "7379af0a31e2941c8c6cf3120a5fbf59467881d0ca9d79f0201c5c23f9e8a1ea",
+    "src/Web/nexora-dashboard/app/components/purchasing/LivePurchaseOrderEditor.vue": "7ff9b18cd37480c007b4a91cd7d23a69a476a3186f6a078f856b060304cac091",
+    "src/Web/nexora-dashboard/app/components/purchasing/LivePurchaseReceipts.vue": "4965e11ea44e0530542195a55d5e78d86073f1c96570e42e61150ce402b8e12f",
+    "src/Web/nexora-dashboard/app/components/purchasing/LivePurchasingPanel.vue": "65abee672910af34f462c83c6ae4394adc16f192d1f5e0d004e8a38fef390388",
+    "src/Web/nexora-dashboard/app/composables/api/useDashboardApi.ts": "f5473184eb8b9bff7a3ccb8d6364af0ece58d8079789227d39f3bc9eb2902455",
+    "src/Web/nexora-dashboard/app/composables/api/useInventoryApi.ts": "ef623cb49aac073ddc71fa7b673702f02dce9c93e757ef0cd380e4c16b5931a2",
+    "src/Web/nexora-dashboard/app/composables/api/usePurchasingApi.ts": "a0d8b094133c7cd7094d0732043109ab8af716a2599f526bc2092e4e2da446ec",
+    "src/Web/nexora-dashboard/app/composables/api/useTradeApi.ts": "3386f8f912d1667f5a3e236ad580cd0d385ce3c4c5af197ddde7461bec3d0ba8",
+    "src/Web/nexora-dashboard/app/mocks/api/finance.ts": "041a9b74043ed0db7b0bdb646ba35cd06fd8eedd1f944ab15b953c2a823d328f",
+    "src/Web/nexora-dashboard/app/mocks/api/handlers.ts": "3d02f4e5d8250e16ca5eb2fa4e1f3424430403dea53261080e6bd25b72fad4e0",
+    "src/Web/nexora-dashboard/app/mocks/api/purchasing.ts": "a4d176d719d8fef587762fa5c28850b5f28efd2a8e7176874d0587c5a8e20b24",
+    "src/Web/nexora-dashboard/app/plugins/msw.client.ts": "f0bb6133d2455d6a3475ad1e58a0dda960427bf31c4b658bfe7b71e8054a926d",
+    "src/Web/nexora-dashboard/app/utils/api/client.ts": "a36221298fd6719b4fc7f6e6041b886d736902629032dd393cbd53a0b1f24078",
+    "src/Web/nexora-dashboard/app/utils/purchasing/order-policy.ts": "a5f3cec88457a16bf16db10865c1fab0c35f9706aae905123f2fb70058d94643",
+    "src/Web/nexora-dashboard/e2e/d4-boundaries.spec.ts": "4f583a93b5017b8aa5b8deeb0fd311d652af03a6a8a5ec14644ca3de3e5090a0",
+    "src/Web/nexora-dashboard/e2e/d4-finance.ts": "8fc64bc89af27e9019fbea9d41d1558bbd78140c320dfce7202ea2d6a6f4c124",
+    "src/Web/nexora-dashboard/e2e/d4-fixture.ts": "79fb26d9070382e874f04eccc05f9d586dc418cfb173a8a2a8367f727e960b95",
+    "src/Web/nexora-dashboard/e2e/d4-purchase.spec.ts": "7ea5f129653a7a43fa99db9a8fd513147eb40242593fb7e22f6f8d0d67826da5",
+    "src/Web/nexora-dashboard/e2e/d4-recovery.spec.ts": "536e01da820ebf78c0c7c170b66ee21826598b96c8a941603238a9db6d60a109",
+    "src/Web/nexora-dashboard/e2e/d4-resilience.ts": "f6069f1362c166b40d4c177bfa1eee30e2abec8d801d0b4a00e4cf36771c3055",
+    "src/Web/nexora-dashboard/e2e/integration.spec.ts": "15026d9a65ca4c842302c755a03ed9cc9854e18711ae3715d41f566bba2b0b9a",
+    "src/Web/nexora-dashboard/e2e/msw.spec.ts": "88e16253c0476355037117f638710fe6cdb30fdbf75a454d83ee6a0c40016038",
+    "src/Web/nexora-dashboard/e2e/production.spec.ts": "22a4f9e2a1475ab959d9e1ddf1c132bf13e381e2db953ee76f6b5e89f01bdd3f",
+    "src/Web/nexora-dashboard/e2e/runtime.ts": "ed06833de928b5cc02d5ae2f2b8549cde6bd2807049d3ad38de9307f264e2384",
+    "src/Web/nexora-dashboard/eslint.config.mjs": "d2514512a72e1a50fefc3a0ede28f09735c2359a93d2094d6e79e6687450ff62",
+    "src/Web/nexora-dashboard/nuxt.config.ts": "a9e4060a3cfb6c5694cff4d9fd9bafe59064336ba03a1205f2f3ff3065faa3ff",
+    "src/Web/nexora-dashboard/package.json": "056e813024df3db068093c7fda3068ac7f1f0d7bb9040b8621421cfb4eb9c50b",
+    "src/Web/nexora-dashboard/playwright.config.ts": "68f78452be4df172e0e6c91854a34abee262fbca3003cf9a7ebbe41bb1872e6a",
+    "src/Web/nexora-dashboard/playwright.msw.config.ts": "f66a321f33f27f55fc377ef18ad2e71c04ff76d36aa68b435042d0a3cefb1bdd",
+    "src/Web/nexora-dashboard/pnpm-lock.yaml": "58c75085407fe8c1c004d12a42bb1997672760fb67a606887de6261f376c4b8f",
+    "src/Web/nexora-dashboard/public/mockServiceWorker.js": "b6205da2a650334ba09a6b48f04e91a03e082f24b3d1428b995920b9ada4836d",
+    "src/Web/nexora-dashboard/server/plugins/data-mode.ts": "51e510d9759a5d32e7492ebc553267ae3032e09ffe5cec8c4071e35595f1cd25",
+    "src/Web/nexora-dashboard/shared/types/purchasing.ts": "c550dce567aaa13500208d90eeda312cb0e26c4404414034033c40ea2bc57169",
+    "src/Web/nexora-dashboard/shared/types/trade.ts": "f21672354ec89bfab17f0e734cb7f19832f6a65310de41e40d6f34ee62d659d4",
+    "src/Web/nexora-dashboard/shared/utils/decimal.ts": "007a1c87dec2b766139e59ee99452b08400a62600bcae9f77a9b45c7914684fe",
+    "src/Web/nexora-dashboard/shared/utils/trade-documents.ts": "56747fa9bb2d3a1947a18fdedc8dc2dfc5a7295ddccc6284043bdd7ff6fbd237",
+    "src/Web/nexora-dashboard/test/api-timeout.test.ts": "d742c7bda410e75194352a5e912de7d01b88dfcade92eb3f1a24e0bd1c50f32d",
+    "src/Web/nexora-dashboard/test/msw-api.test.ts": "6918090156eeb7ac6a51c276d08cda134fa7a199c7dfbda082326ef73bea1ea1",
+    "src/Web/nexora-dashboard/test/purchasing-ui.test.ts": "417c1b12c4bd65a040dc2d419f7a1856060ff717fa7427e2740fcb48af8bc8d3",
+    "src/Web/nexora-dashboard/test/trade-input.test.ts": "8adf7f46355f119537c921e9f21da7b045cd281d3fcf1edc397e0964cad96918",
+    "src/Web/nexora-dashboard/test/write-response.test.ts": "a8a4f502a16203754aff42a95f522cdc2d35926eb0801c2c6456d0a4de0559a6",
+    "src/Web/nexora-dashboard/vitest.config.ts": "d49f8e258447045c53d58fe0d3395f7722936a0e2900e16b4922823f913a7ed2",
+    "tests/Nexora.Tests/GatewayFrontendTests.cs": "6b37ec4d0b35dd88aada538582837e04051ef93c9e784c3a5e4a328fb538c3cb",
+    "tests/Nexora.Tests/Nexora.Tests.csproj": "c544832bb0cae196ab4a7c534147d2ffcc48370c3887c581b3f603c777b85cf5",
+    "tests/Nexora.Tests/PurchaseReceiptAuthorizationTests.cs": "e604e7f03c057cacae91e6e99ae11c163752fb066aedc18f314627a0b1a98684",
+    "tests/Nexora.Tests/packages.lock.json": "6f959f692c31709c26d96187975d6d76d4743da003b877477175912851128859"
+  }
+}

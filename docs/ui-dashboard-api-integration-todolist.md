@@ -1,6 +1,6 @@
 # Nexora Dashboard 后端接入 TODO
 
-2026-11-19 · 本清单仅规划 `src/Web/nexora-dashboard/` 的独立接入。当前继续用本地模拟数据完善原型。你确认界面满意后，从 D0 开始真实 API 接入与验收。
+2026-11-20 · 本清单仅规划 `src/Web/nexora-dashboard/` 的独立接入。按用户要求已删除另写的替代 UI，恢复原有页面与模拟数据；保留 D0 基线、独立 BFF、请求客户端和 MSW 基础。原有界面的真实接入尚待完成，D1 的相关验收及 D2–D4 已恢复待完成。[删除记录](verification/dashboard-replacement-ui-removal.md) · [D0 记录与缺口](verification/dashboard-d0-baseline.md)
 
 依据 [纯 UI 待办](ui-dashboard-backend-todolist.md) · [原型验收记录](verification/web-ui-dashboard-prototype.md) · [Nexora 架构](架构.md#13-nuxt-4-前端架构) · [实施计划](计划.md) · [P0 业务政策与算例](domain/p0-policies.md)
 
@@ -84,33 +84,38 @@ Vue 和 Nitro 各自维护运行时专用代码。两端交互通过 HTTP 和按
 
 ### D0 确认接入范围与联调基线
 
-- [ ] 记录界面确认范围及新版提交标识。逐项核对 C 待办，标记已有可接 UI、需先补的交互和后端契约待核实项。在相应阶段补齐仍在待办的界面。
-- [ ] 按 README 准备本地开发配置和专用联调工作区。验证 Gateway、业务服务、Keycloak、Redis、服务数据库和 RabbitMQ 的就绪状态，确保收发货和财务消费者可用。样例覆盖制单、独立复核、仓库收货人、只读成员和无权访问的工作区，并记录部门、仓库、财务期间范围及套餐。沿用独立业务编号、已初始化的账簿、有效期间、科目映射和资金账户。[本地启动](../README.md#本地运行) · [平台就绪基线](verification/p1-platform-readiness.md)
-- [ ] 用现有验收记录对照登录、工作区、目录、采购和销售。先跑现有 OpenAPI 样例检查，再按波次核对服务的开发环境 `/openapi/v1.json` 和新版 BFF 的运行时响应。记录方法、路径、DTO、权限、分页、写入头、成功状态、错误、媒体类型和来源字段。端点或字段缺口记录所属服务、影响及可用的读取路径。[契约验证脚本](../scripts/p1/Test-OpenApiContracts.ps1)
+- [x] D0-01 记录界面确认范围及新版提交标识。已记录 `eb06469` 加当前工作树指纹，逐项核对 C1–C23 的 67 个原型子项、界面承载与后续阶段；本次未将原型验收当作真实业务验收。[范围与版本](verification/dashboard-d0-baseline.md#1-界面范围与版本)
+- [x] D0-02 按 README 准备本地开发配置和专用联调工作区。Gateway、七个业务服务、Keycloak、Redis、八个业务/身份数据库与 RabbitMQ 就绪，平台探针及 4 项 AMQP 权限探针通过。专用样例覆盖制单、独立复核、仓库收货人、只读成员和不可见工作区；已初始化账簿、期间、科目映射、银行及主数据，并记录权限范围和套餐。[环境与样例](verification/dashboard-d0-baseline.md#2-联调环境与专用样例)
+- [x] D0-03 跑通现有 OpenAPI 样例检查，采集七个服务的 243 个操作与首波 BFF 实际响应，记录方法、DTO、分页、权限、写入头、状态、媒体类型及来源。Organization 创建响应与 Finance setup schema 的缺口已记录归属、影响和可用读取路径；新版 BFF 的逐波响应由 D1–D14 各自验收。[契约基线](verification/dashboard-d0-baseline.md#3-契约基线与缺口)
+- [x] D0-04 按现有 ESLint 规则修正 13 个 UI 文件的模板格式，`pnpm --dir src/Web/nexora-dashboard lint` 复验通过；全部 111 个 Vue 文件的非空白内容摘要保持一致。[质量门禁](verification/dashboard-d0-baseline.md#4-验证结果与边界)
+
+2026-11-20 清理状态：按用户要求删除替代 UI，恢复原有文件路由和布局。BFF、请求客户端、MSW 与业务契约代码保留；原页面仍使用模拟数据。下方涉及原界面真实接入的条目已恢复待完成。详见 [替代 UI 删除记录](verification/dashboard-replacement-ui-removal.md)。
 
 ### D1 新版独立 Nitro BFF 与登录会话
 
 依赖 D0。
 
-- [ ] 按 1.1、1.2 在新版 `server/` 实现业务转发、OIDC、会话、CSRF、MFA 和响应中间件。验收 GET 与 POST 进入对应处理器，业务代理只接收契约内允许的方法、路径和固定 Gateway 目标。应用和 BFF 可凭新版自己的源码、依赖锁文件和环境配置构建并启动。[Nuxt 服务端目录](https://nuxt.com/docs/4.x/directory-structure/server)
-- [ ] 配置新版独立 HTTPS 入口与运行资源，注册 OIDC 客户端、登录及注销回调，设置 Redis 会话命名空间。按 1.3 通过私有 `runtimeConfig` 注入 Gateway 地址和密钥。验收令牌受众、应用会话 Cookie 和身份服务登录及注销。检查页面 payload 和客户端构建只含公开配置。[身份与会话决策](adr/0009-oidc-bff.md)
-- [ ] 接通 `GET /bff/login`、`GET /bff/email-login`、`GET /bff/register`、`GET /bff/me`、`GET /bff/antiforgery` 和 `GET/POST /bff/logout`。保留 `GET /signin-oidc`、`GET /signout-oidc` 与 `GET /signout-callback-oidc`。验收邮箱开通、受邀回跳、刷新恢复、MFA 再验证与注销。写请求由浏览器提供会话 Cookie 和 `X-CSRF-TOKEN`，Nitro 提供服务端 Bearer。[邮箱开通基线](verification/p1-email-onboarding.md) · [MFA 基线](verification/w2-f03-mfa.md)
-- [ ] 验证 BFF 保留 `ETag`、`If-Match`、`Idempotency-Key`、`Location`、`Retry-After`、CSV/PDF 媒体类型和附件头。核对采购及销售建单 POST 以同一个操作 ID 预留配额和创建订单，重复提交只计一次，配额明确拒绝时保持原有订单状态。[Gateway 契约](adr/0018-api-gateway.md)
-- [ ] 按新版入口核对 `GET /health`、`GET /alive` 与新版所需的 `GET /bff/status`、`GET /bff/version`。分别验证新版的认证、会话存储与业务 Gateway 连通性，验收会话不可用、无效 CSRF、刷新和注销。
+- [x] 按 1.1、1.2 在新版 `server/` 实现业务转发、OIDC、会话、CSRF、MFA 和响应中间件。验收 GET 与 POST 进入对应处理器，业务代理只接收契约内允许的方法、路径和固定 Gateway 目标。应用和 BFF 可凭新版自己的源码、依赖锁文件和环境配置构建并启动。[Nuxt 服务端目录](https://nuxt.com/docs/4.x/directory-structure/server) [本地验收](verification/dashboard-d1-d2.md#d1-实现与证据)
+- [x] 配置新版独立 HTTPS 入口与运行资源，注册 OIDC 客户端、登录及注销回调，设置 Redis 会话命名空间。按 1.3 通过私有 `runtimeConfig` 注入 Gateway 地址和密钥。验收令牌受众、应用会话 Cookie 和身份服务登录及注销。检查页面 payload 和客户端构建只含公开配置。[身份与会话决策](adr/0009-oidc-bff.md) [本地验收](verification/dashboard-d1-d2.md#d1-实现与证据)
+- [ ] 接通 `GET /bff/login`、`GET /bff/email-login`、`GET /bff/register`、`GET /bff/me`、`GET /bff/antiforgery` 和 `GET/POST /bff/logout`。保留 `GET /signin-oidc`、`GET /signout-oidc` 与 `GET /signout-callback-oidc`。验收邮箱开通、受邀回跳、刷新恢复、MFA 再验证与注销。写请求由浏览器提供会话 Cookie 和 `X-CSRF-TOKEN`，Nitro 提供服务端 Bearer。[邮箱开通基线](verification/p1-email-onboarding.md) · [MFA 基线](verification/w2-f03-mfa.md) [本地验收](verification/dashboard-d1-d2.md#d1-实现与证据)
+- [x] 验证 BFF 保留 `ETag`、`If-Match`、`Idempotency-Key`、`Location`、`Retry-After`、CSV/PDF 媒体类型和附件头。核对采购及销售建单 POST 以同一个操作 ID 预留配额和创建订单，重复提交只计一次，配额明确拒绝时保持原有订单状态。[Gateway 契约](adr/0018-api-gateway.md) [本地验收](verification/dashboard-d1-d2.md#d1-实现与证据)
+- [x] 按新版入口核对 `GET /health`、`GET /alive` 与新版所需的 `GET /bff/status`、`GET /bff/version`。分别验证新版的认证、会话存储与业务 Gateway 连通性，验收会话不可用、无效 CSRF、刷新和注销。 [本地验收](verification/dashboard-d1-d2.md#d1-实现与证据)
 
 ### D2 类型化客户端与模拟数据切换
 
 依赖 D1。
 
-- [ ] 在 `app/composables/` 按业务域组织类型化请求，按第 2 节区分首次查询和用户触发的写入。核对 URL、查询参数、字段可空性、响应状态及所需响应头。Wire DTO 到页面模型以服务端 OpenAPI 与实际响应为准。列表、表单和状态提示继续用 `UTable`、`UForm`、`USlideover`。
-- [ ] 按运行配置为页面提供 `app/mocks/` 或真实客户端。真实查询键包含账号、工作区、资源与筛选条件。切换身份、工作区或权限时取消在途查询并清除前一范围的数据和表单，隔离迟到响应。手动重试从原主体、工作区和提交记录发起。
-- [ ] 落实第 2 节的错误、幂等、版本和异步约定。联调回归覆盖首次成功、双击、同键重放、键与请求冲突、并发修改、丢失响应、`202` 恢复查询及权限变化。Nuxt 路由和表单提供可读提示，验收请求头、最终状态和写入次数。
-- [ ] 先经 BFF 用商品接口验证当前 `ETag`、旧版本的 `412` 和正文版本冲突，再在 D3 验收保留页面输入。补一个结果待确认的写入用例，核对回读前后单据数、余额或配额，以及同一身份和工作区下的人工恢复。用两个会话覆盖资源隐藏式 `404`、附加验证和迟到响应。[REST 条件请求基线](verification/rest-api-normalization.md)
-- [ ] 在新版项目内维护串行 Playwright 配置、登录辅助和 `test:e2e` 脚本，测试地址使用新版独立入口。先验收登录与切换工作区，再逐阶段加入真实业务流程。浏览器证据使用测试账户和去敏样例。
+- [ ] 在 `app/composables/` 按业务域组织类型化请求，按第 2 节区分首次查询和用户触发的写入。核对 URL、查询参数、字段可空性、响应状态及所需响应头。Wire DTO 到页面模型以服务端 OpenAPI 与实际响应为准。列表、表单和状态提示继续用 `UTable`、`UForm`、`USlideover`。 [本地验收](verification/dashboard-d1-d2.md#d2-实现与证据)
+- [ ] 按运行配置为页面提供 `app/mocks/` 或真实客户端。真实查询键包含账号、工作区、资源与筛选条件。切换身份、工作区或权限时取消在途查询并清除前一范围的数据和表单，隔离迟到响应。手动重试从原主体、工作区和提交记录发起。 [本地验收](verification/dashboard-d1-d2.md#d2-实现与证据)
+- [ ] 落实第 2 节的错误、幂等、版本和异步约定。联调回归覆盖首次成功、双击、同键重放、键与请求冲突、并发修改、丢失响应、`202` 恢复查询及权限变化。Nuxt 路由和表单提供可读提示，验收请求头、最终状态和写入次数。 [本地验收](verification/dashboard-d1-d2.md#d2-实现与证据)
+- [ ] 先经 BFF 用商品接口验证当前 `ETag`、旧版本的 `412` 和正文版本冲突，再在 D3 验收保留页面输入。补一个结果待确认的写入用例，核对回读前后单据数、余额或配额，以及同一身份和工作区下的人工恢复。用两个会话覆盖资源隐藏式 `404`、附加验证和迟到响应。[REST 条件请求基线](verification/rest-api-normalization.md) [本地验收](verification/dashboard-d1-d2.md#d2-实现与证据)
+- [ ] 在新版项目内维护串行 Playwright 配置、登录辅助和 `test:e2e` 脚本，测试地址使用新版独立入口。先验收登录与切换工作区，再逐阶段加入真实业务流程。浏览器证据使用测试账户和去敏样例。 [本地验收](verification/dashboard-d1-d2.md#d2-实现与证据)
 
 ### D3 工作区授权、主数据与交易前置配置
 
 依赖 D2。对应 C3、C4、C12、C13 的前置读取。
+
+历史替代 UI 曾完成本地验收，记录见 [D3 历史验收](verification/dashboard-d3.md)。该界面已删除；下列原有页面接入及验收仍待完成。
 
 - [ ] 接 `GET /api/me`、`GET /api/workspaces`、`GET O`、`GET O/access` 与 `GET O/billing/entitlements`，按需使用 `GET O/authorization/{permission}`。从已授权工作区、权限及权益结果初始化导航。部门、仓库、期间和单据范围以对应业务资源判定为准。验收越权深链接、只读用户和切换工作区后的可见操作。[工作区](../src/Services/Organization/Nexora.Organization.Api/Endpoints/Workspaces/WorkspaceEndpoints.cs) · [治理](../src/Services/Organization/Nexora.Organization.Api/Endpoints/Governance/GovernanceEndpoints.cs)
 - [ ] 接 `GET M/catalog`、`POST M/items`、`GET/PUT M/items/{itemId}`、`POST M/definitions`、`GET/PUT M/definitions/{definitionId}`、`GET/POST M/partners` 及 `GET/PUT M/partners/{partnerId}`。使用 `GET M/items/{itemId}/reference`、`GET M/partners/{partnerId}/reference` 校对现有引用。验收跨工作区引用、停用项和历史单据的原值。[主数据端点](../src/Services/MasterData/Nexora.MasterData.Api/Endpoints) · [引用验收基线](verification/p2-masterdata-references.md)
@@ -120,11 +125,11 @@ Vue 和 Nitro 各自维护运行时专用代码。两端交互通过 HTTP 和按
 
 依赖 D3。对应 C1、C3 和 C12 的采购部分。从 `/purchase-orders` 进入采购单、收货许可与供应商账务，关联流水由 `/inventory` 和 `/finance` 查看。
 
-- [ ] 在采购列表、详情和表单接 `GET/POST P/orders`、`GET/PUT P/orders/{id}`、`POST P/orders/{id}/decision`。根据单据版本和权限开放保存、提交、撤回、退回、批准及取消。核对部门范围及制单人与审批人的职责分离。[采购单 API](../src/Services/Purchasing/Nexora.Purchasing.Api/Endpoints/PurchaseEndpoints.cs)
-- [ ] 接 `GET/POST P/orders/{id}/receipts`，用 `202 Location` 和许可 ID 回查签发进度。通过 `GET I/warehouses/{id}/receipts` 打开仓库任务，按仓库侧许可修订号调用 `POST I/receipts/{id}/receive`。使用 `POST P/orders/{id}/receipts/{permitId}/cancel` 与 `POST P/orders/{id}/receipts/close` 处理许可取消和关闭余量，按回执刷新可收数量。[收货许可](../src/Services/Purchasing/Nexora.Purchasing.Api/Endpoints/PurchaseReceiptEndpoints.cs) · [仓库收货](../src/Services/Inventory/Nexora.Inventory.Api/Endpoints/InventoryEndpoints.cs)
-- [ ] 接 `GET F/trade/receipts` 与适用的 `POST F/trade/receipts/{id}/accrue`，区分已实收、成本或暂估待入账和可匹配。用 `GET/POST F/trade/documents`、`GET F/trade/documents/{id}` 和 `POST F/trade/documents/{id}/decision` 处理账单及独立付款。账单按各收货行提交数量、净额和适用的税额评估 ID。含税验收在 D4 使用已配置税组调用 `POST F/tax/assessments`，税务配置界面由 D10 补齐。付款选择 `GET F/trade/bills` 中符合条件的未结账单，回读各行匹配、价差和凭证。[交易 API](../src/Services/Finance/Nexora.Finance.Api/Endpoints/Trade/TradeEndpoints.cs) · [交易字段](../src/Services/Finance/Nexora.Finance.Domain/ValueObjects/Trade/TradeTerms.cs)
-- [ ] 走通「采购批准 → 分批收货 → 暂估 → 账单 → 部分付款」。按 P0 样例，1,130.00 元账单支付 600.00 元后，应付明细与账龄均显示未结 530.00 元。通过付款凭证和银行流水核对实付 600.00 元。复测超量、重复付款、并发签发、取消与执行交错、暂估等待和传输恢复。[采购联调基线](verification/p3-purchase-to-ledger.md)
-- [ ] 在专用联调环境验收仓库已确认收货而 Finance 消费暂时落后。用单行实收核对恢复后库存和财务各只处理一次，刷新详情能读回待处理或终态。回执未确认时保持可追溯的处理中状态。[财务消费者恢复基线](verification/p1-finance-consumer-recovery.md)
+- [ ] 在采购列表、详情和表单接 `GET/POST P/orders`、`GET/PUT P/orders/{id}`、`POST P/orders/{id}/decision`。根据单据版本和权限开放保存、提交、撤回、退回、批准及取消。核对部门范围及制单人与审批人的职责分离。[采购单 API](../src/Services/Purchasing/Nexora.Purchasing.Api/Endpoints/PurchaseEndpoints.cs) · [D4 本地验收](verification/dashboard-msw-d4.md)
+- [ ] 接 `GET/POST P/orders/{id}/receipts`，用 `202 Location` 和许可 ID 回查签发进度。通过 `GET I/warehouses/{id}/receipts` 打开仓库任务，按仓库侧许可修订号调用 `POST I/receipts/{id}/receive`。使用 `POST P/orders/{id}/receipts/{permitId}/cancel` 与 `POST P/orders/{id}/receipts/close` 处理许可取消和关闭余量，按回执刷新可收数量。[收货许可](../src/Services/Purchasing/Nexora.Purchasing.Api/Endpoints/PurchaseReceiptEndpoints.cs) · [仓库收货](../src/Services/Inventory/Nexora.Inventory.Api/Endpoints/InventoryEndpoints.cs) · [D4 本地验收](verification/dashboard-msw-d4.md)
+- [ ] 接 `GET F/trade/receipts` 与适用的 `POST F/trade/receipts/{id}/accrue`，区分已实收、成本或暂估待入账和可匹配。用 `GET/POST F/trade/documents`、`GET F/trade/documents/{id}` 和 `POST F/trade/documents/{id}/decision` 处理账单及独立付款。账单按各收货行提交数量、净额和适用的税额评估 ID。含税验收在 D4 使用已配置税组调用 `POST F/tax/assessments`，税务配置界面由 D10 补齐。付款选择 `GET F/trade/bills` 中符合条件的未结账单，回读各行匹配、价差和凭证。[交易 API](../src/Services/Finance/Nexora.Finance.Api/Endpoints/Trade/TradeEndpoints.cs) · [交易字段](../src/Services/Finance/Nexora.Finance.Domain/ValueObjects/Trade/TradeTerms.cs) · [D4 本地验收](verification/dashboard-msw-d4.md)
+- [ ] 走通「采购批准 → 分批收货 → 暂估 → 账单 → 部分付款」。按 P0 样例，1,130.00 元账单支付 600.00 元后，应付明细与账龄均显示未结 530.00 元。通过付款凭证和银行流水核对实付 600.00 元。复测超量、重复付款、并发签发、取消与执行交错、暂估等待和传输恢复。[采购联调基线](verification/p3-purchase-to-ledger.md) · [D4 本地验收](verification/dashboard-msw-d4.md)
+- [ ] 在专用联调环境验收仓库已确认收货而 Finance 消费暂时落后。用单行实收核对恢复后库存和财务各只处理一次，刷新详情能读回待处理或终态。回执未确认时保持可追溯的处理中状态。[财务消费者恢复基线](verification/p1-finance-consumer-recovery.md) · [D4 本地验收](verification/dashboard-msw-d4.md)
 
 ### D5 销售到收款
 

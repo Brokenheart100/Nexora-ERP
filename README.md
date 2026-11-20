@@ -29,9 +29,13 @@ P5 已接入工作区「财务报表」。可查询权责发生制的试算平�
 - [依赖就绪、AMQP 权限与本地故障回归](docs/verification/p1-platform-readiness.md)
 - [P2 商品目录与数据库升级](docs/verification/p2-catalog.md)
 
+新版 Dashboard 独立入口为 **https://localhost:7444**，资源 `dashboard` 使用端口 `3002`；模拟预览保留 `3001`。独立构建、运行配置和当前接入范围见 [Dashboard README](src/Web/nexora-dashboard/README.md) 与 [D1/D2 验收](docs/verification/dashboard-d1-d2.md)。
+
 ## 本地运行
 
 准备 .NET SDK 10.0.402、Aspire CLI 13.6.5、Node 24.21.0、pnpm 12.16.1、PowerShell 7（`pwsh`，AppHost 的 `identity-onboarding` 使用）、可用的 Linux Docker 引擎和受信任的 ASP.NET 开发证书。当前本地浏览器测试使用 Windows Edge。
+
+Windows 上如果 `identity-onboarding` 报 `could not assign process ... to cleanup job: Access is denied`，检查是否使用了 Microsoft Store / MSIX 版 PowerShell。本机复现中，其执行别名和包内实体程序都受到 DCP 清理 Job 的进程分配限制。可使用微软官方 ZIP 版 PowerShell 7，并在 AppHost 的本机 User Secrets 中把 `Tools:PowerShellExecutable` 设置为该版本 `pwsh.exe` 的完整路径。机器路径留在本地，默认环境仍可直接使用 `pwsh`。[安装与恢复验证](docs/verification/aspire-powershell-startup.md)
 
 ```powershell
 dotnet tool restore
@@ -39,6 +43,7 @@ dotnet restore Nexora.slnx --locked-mode
 Push-Location src/Web/nexora-web
 pnpm install --frozen-lockfile
 Pop-Location
+pnpm --dir src/Web/nexora-dashboard install --frozen-lockfile
 aspire start --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj --non-interactive
 # 从 P1 的既有 PostgreSQL 卷首次升级时执行：
 # pwsh scripts/p2/Initialize-CatalogDatabase.ps1

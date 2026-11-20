@@ -1,0 +1,390 @@
+diff --git a/src/Web/nexora-dashboard/app/components/WorkspaceMenu.vue b/src/Web/nexora-dashboard/app/components/WorkspaceMenu.vue
+index f12f643..79dc4a2 100644
+--- a/src/Web/nexora-dashboard/app/components/WorkspaceMenu.vue
++++ b/src/Web/nexora-dashboard/app/components/WorkspaceMenu.vue
+@@ -36,6 +36,10 @@ const items = computed<DropdownMenuItem[][]>(() => [
+     disabled: true
+   }],
+   [
++    {
++      label: '工作区操作',
++      type: 'label'
++    },
+     {
+       label: '工作区与权限治理',
+       icon: 'i-carbon-flow',
+@@ -69,11 +73,11 @@ const items = computed<DropdownMenuItem[][]>(() => [
+ </script>
+ 
+ <template>
+-  <div class="space-y-1">
++  <div class="w-full">
+     <UDropdownMenu
+       :items="items"
+       :content="{ align: 'start', collisionPadding: 12 }"
+-      :ui="{ content: collapsed ? 'w-56' : 'w-(--reka-dropdown-menu-trigger-width)' }"
++      :ui="{ content: collapsed ? 'w-64' : 'w-72' }"
+     >
+       <UButton
+         color="neutral"
+@@ -82,6 +86,8 @@ const items = computed<DropdownMenuItem[][]>(() => [
+         :square="collapsed"
+         class="justify-start px-2 data-[state=open]:bg-elevated"
+         :ui="{ base: 'min-w-0' }"
++        :aria-label="collapsed ? workspace.name : undefined"
++        :title="workspace.name"
+       >
+         <template #leading>
+           <span class="flex size-7 shrink-0 items-center justify-center rounded-sm bg-primary text-[11px] font-semibold text-inverted">
+@@ -98,45 +104,6 @@ const items = computed<DropdownMenuItem[][]>(() => [
+         </template>
+       </UButton>
+     </UDropdownMenu>
+-
+-    <div v-if="!collapsed" class="flex items-center gap-1 px-1">
+-      <UButton
+-        size="xs"
+-        color="neutral"
+-        variant="ghost"
+-        icon="i-carbon-flow"
+-        aria-label="工作区与权限治理"
+-        data-testid="workspace-governance-open"
+-        @click="openGovernance('overview')"
+-      />
+-      <UButton
+-        size="xs"
+-        color="neutral"
+-        variant="ghost"
+-        icon="i-carbon-add-alt"
+-        aria-label="新建企业工作区"
+-        data-testid="workspace-create-company"
+-        @click="openGovernance('create-company')"
+-      />
+-      <UButton
+-        size="xs"
+-        color="neutral"
+-        variant="ghost"
+-        icon="i-carbon-user-multiple"
+-        aria-label="新建个人工作区"
+-        data-testid="workspace-create-personal"
+-        @click="openGovernance('create-personal')"
+-      />
+-      <UButton
+-        size="xs"
+-        color="neutral"
+-        variant="ghost"
+-        icon="i-carbon-link"
+-        aria-label="个人账本链接"
+-        data-testid="workspace-ledger-link"
+-        @click="openGovernance('link-ledger')"
+-      />
+-    </div>
+   </div>
+ 
+   <USlideover v-model:open="governanceOpen" :ui="{ content: 'w-full sm:max-w-[1440px]' }">
+diff --git a/src/Web/nexora-dashboard/app/pages/assistant.vue b/src/Web/nexora-dashboard/app/pages/assistant.vue
+index dea0347..ebe9f04 100644
+--- a/src/Web/nexora-dashboard/app/pages/assistant.vue
++++ b/src/Web/nexora-dashboard/app/pages/assistant.vue
+@@ -78,7 +78,11 @@ onBeforeUnmount(() => {
+       <template #body>
+         <AppBreadcrumb current="工作区助手" class="mb-3" />
+ 
+-        <div v-if="!planAvailable" class="rounded-sm border border-default bg-elevated/40 p-6" data-testid="assistant-plan-restricted">
++        <div
++          v-if="!planAvailable"
++          class="rounded-sm border border-default bg-elevated/40 p-6"
++          data-testid="assistant-plan-restricted"
++        >
+           <div class="flex items-start gap-4">
+             <div class="rounded-sm bg-neutral-500/10 p-3">
+               <UIcon name="i-carbon-locked" class="size-6 text-muted" />
+@@ -123,7 +127,7 @@ onBeforeUnmount(() => {
+             data-testid="assistant-role-restricted"
+           />
+ 
+-          <div class="grid min-h-[620px] gap-3 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
++          <div class="grid min-h-155 gap-3 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
+             <AssistantSessionList />
+             <AssistantConversationPanel :key="workspace.id" :role-restricted="roleRestricted" />
+             <AssistantCapabilityPanel :plan-available="planAvailable" :role-restricted="roleRestricted" />
+diff --git a/src/Web/nexora-dashboard/app/pages/catalog.vue b/src/Web/nexora-dashboard/app/pages/catalog.vue
+index 1e95561..ba08a04 100644
+--- a/src/Web/nexora-dashboard/app/pages/catalog.vue
++++ b/src/Web/nexora-dashboard/app/pages/catalog.vue
+@@ -638,7 +638,8 @@ async function onImportFile(event: Event) {
+           data-testid="catalog-batch-bar"
+         >
+           <p class="text-xs text-default">
+-            已选 <span class="font-medium tabular-nums" data-testid="catalog-selected-count">{{ selectedCount }}</span> 个商品
++            已选 <span class="font-medium tabular-nums" data-testid="catalog-selected-count">{{ selectedCount }}</span>
++            个商品
+           </p>
+           <div class="flex flex-wrap gap-2">
+             <UButton
+@@ -797,7 +798,10 @@ async function onImportFile(event: Event) {
+           </div>
+ 
+           <template #footer>
+-            <div v-if="!showSkeleton && !isError && !isForbidden && !isEmpty" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
++            <div
++              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
++              class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
++            >
+               <p class="text-xs text-muted">
+                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
+               </p>
+@@ -1135,7 +1139,8 @@ async function onImportFile(event: Event) {
+                 是否跟踪库存
+               </dt>
+               <dd data-testid="catalog-detail-track-stock">
+-                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking ?? 'none'] + '）' }}
++                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking
++                  ?? 'none'] + '）' }}
+               </dd>
+             </div>
+             <div>
+diff --git a/src/Web/nexora-dashboard/app/pages/finance.vue b/src/Web/nexora-dashboard/app/pages/finance.vue
+index 69e729b..af0e2d5 100644
+--- a/src/Web/nexora-dashboard/app/pages/finance.vue
++++ b/src/Web/nexora-dashboard/app/pages/finance.vue
+@@ -377,10 +377,7 @@ function handleExportAging() {
+             @post="handlePostJournal"
+           />
+ 
+-          <FinanceImportedJournals
+-            v-else-if="activeTab === 'imported'"
+-            :accounts="accounts"
+-          />
++          <FinanceImportedJournals v-else-if="activeTab === 'imported'" :accounts="accounts" />
+ 
+           <FinanceReports
+             v-else-if="activeTab === 'reports'"
+@@ -412,19 +409,11 @@ function handleExportAging() {
+             :initial-bill-id="initialBillId"
+           />
+ 
+-          <FinanceTradeDocuments
+-            v-else-if="activeTab === 'documents'"
+-            :can-post="canPost"
+-          />
++          <FinanceTradeDocuments v-else-if="activeTab === 'documents'" :can-post="canPost" />
+ 
+-          <FinanceDonations
+-            v-else-if="activeTab === 'donations'"
+-          />
++          <FinanceDonations v-else-if="activeTab === 'donations'" />
+ 
+-          <FinanceOpening
+-            v-else-if="activeTab === 'opening'"
+-            :can-post="canPost"
+-          />
++          <FinanceOpening v-else-if="activeTab === 'opening'" :can-post="canPost" />
+ 
+           <FinanceBankRecon
+             v-else-if="activeTab === 'bank'"
+@@ -443,10 +432,7 @@ function handleExportAging() {
+             @undo="handleUndoReconciliation"
+           />
+ 
+-          <FinanceTreasury
+-            v-else-if="activeTab === 'treasury'"
+-            :can-post="canPost"
+-          />
++          <FinanceTreasury v-else-if="activeTab === 'treasury'" :can-post="canPost" />
+ 
+           <FinanceClosing
+             v-else-if="activeTab === 'closing'"
+@@ -456,13 +442,9 @@ function handleExportAging() {
+             :can-post="canPost"
+           />
+ 
+-          <FinanceTaxCenter
+-            v-else-if="activeTab === 'tax-center'"
+-          />
++          <FinanceTaxCenter v-else-if="activeTab === 'tax-center'" />
+ 
+-          <FinanceReportingCenter
+-            v-else-if="activeTab === 'reporting'"
+-          />
++          <FinanceReportingCenter v-else-if="activeTab === 'reporting'" />
+         </div>
+       </template>
+     </UDashboardPanel>
+diff --git a/src/Web/nexora-dashboard/app/pages/index.vue b/src/Web/nexora-dashboard/app/pages/index.vue
+index 268b08f..8fe3774 100644
+--- a/src/Web/nexora-dashboard/app/pages/index.vue
++++ b/src/Web/nexora-dashboard/app/pages/index.vue
+@@ -717,11 +717,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
+               />
+             </div>
+             <div v-else class="nx-reveal" :style="{ '--nx-delay': '300ms' }">
+-              <UTimeline
+-                :items="activityItems"
+-                size="sm"
+-                color="primary"
+-              />
++              <UTimeline :items="activityItems" size="sm" color="primary" />
+               <UButton
+                 to="/change-log"
+                 :label="t('dashboard.activity.viewAll')"
+@@ -736,8 +732,12 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
+         </div>
+ 
+         <p class="text-[11px] text-dimmed">
+-          {{ t('dashboard.footer.dataBefore') }} <code class="font-mono">app/mocks/</code> {{ t('dashboard.footer.dataAfter') }}
+-          {{ t('dashboard.footer.emptyBefore') }} <code class="font-mono">?empty=todos</code>{{ t('dashboard.footer.emptySeparator') }}<code class="font-mono">?empty=documents</code> {{ t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{ t('dashboard.footer.emptyAfter') }}
++          {{ t('dashboard.footer.dataBefore') }} <code class="font-mono">app/mocks/</code> {{
++            t('dashboard.footer.dataAfter') }}
++          {{ t('dashboard.footer.emptyBefore') }} <code class="font-mono">?empty=todos</code>{{
++            t('dashboard.footer.emptySeparator') }}<code class="font-mono">?empty=documents</code> {{
++            t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{
++            t('dashboard.footer.emptyAfter') }}
+         </p>
+       </template>
+     </UDashboardPanel>
+diff --git a/src/Web/nexora-dashboard/app/pages/inventory.vue b/src/Web/nexora-dashboard/app/pages/inventory.vue
+index ca107d1..07b360b 100644
+--- a/src/Web/nexora-dashboard/app/pages/inventory.vue
++++ b/src/Web/nexora-dashboard/app/pages/inventory.vue
+@@ -1087,24 +1087,15 @@ const overflowItems = computed(() => [
+               </UCard>
+             </div>
+ 
+-            <InventoryWarehouseOperations
+-              v-show="tab === 'warehouse-ops'"
+-            />
++            <InventoryWarehouseOperations v-show="tab === 'warehouse-ops'" />
+ 
+-            <InventoryLowStockTab
+-              v-show="tab === 'low-stock'"
+-              :items="lowStockItems"
+-              @open-item="openLowStockItem"
+-            />
++            <InventoryLowStockTab v-show="tab === 'low-stock'" :items="lowStockItems" @open-item="openLowStockItem" />
+           </div>
+         </UCard>
+       </template>
+     </UDashboardPanel>
+ 
+-    <StockReturnDetailSlideover
+-      v-model:open="returnDetailOpen"
+-      :return-id="returnDetailId"
+-    />
++    <StockReturnDetailSlideover v-model:open="returnDetailOpen" :return-id="returnDetailId" />
+ 
+     <InventoryReceiveSlideover
+       v-model:open="receiveOpen"
+diff --git a/src/Web/nexora-dashboard/app/pages/partners.vue b/src/Web/nexora-dashboard/app/pages/partners.vue
+index 500eaa6..3edb624 100644
+--- a/src/Web/nexora-dashboard/app/pages/partners.vue
++++ b/src/Web/nexora-dashboard/app/pages/partners.vue
+@@ -813,11 +813,7 @@ async function reloadPage() {
+       </template>
+     </USlideover>
+ 
+-    <USlideover
+-      v-model:open="editOpen"
+-      :title="editing ? '编辑伙伴' : '新建伙伴'"
+-      :ui="{ content: 'sm:max-w-xl' }"
+-    >
++    <USlideover v-model:open="editOpen" :title="editing ? '编辑伙伴' : '新建伙伴'" :ui="{ content: 'sm:max-w-xl' }">
+       <template #description>
+         <span class="text-sm text-muted">
+           {{ editing ? editing.code + ' · 档案编号只读' : '保存后自动生成档案编号' }} · 修改后仅作用于本次预览
+@@ -929,7 +925,11 @@ async function reloadPage() {
+                   />
+                 </UFormField>
+                 <UFormField label="职务">
+-                  <UInput v-model="contact.title" class="w-full" :data-testid="'partners-edit-contact-title-' + index" />
++                  <UInput
++                    v-model="contact.title"
++                    class="w-full"
++                    :data-testid="'partners-edit-contact-title-' + index"
++                  />
+                 </UFormField>
+                 <UFormField label="联系电话">
+                   <UInput
+diff --git a/src/Web/nexora-dashboard/app/pages/purchase-orders.vue b/src/Web/nexora-dashboard/app/pages/purchase-orders.vue
+index 6ed9916..1925017 100644
+--- a/src/Web/nexora-dashboard/app/pages/purchase-orders.vue
++++ b/src/Web/nexora-dashboard/app/pages/purchase-orders.vue
+@@ -1202,11 +1202,7 @@ async function copyOrderId() {
+             >
+               当前身份无审批权限
+             </p>
+-            <p
+-              v-if="selfApprovalBlocked"
+-              class="text-xs text-error"
+-              data-testid="order-self-approval"
+-            >
++            <p v-if="selfApprovalBlocked" class="text-xs text-error" data-testid="order-self-approval">
+               不能审批自己提交的单据
+             </p>
+             <UButton
+diff --git a/src/Web/nexora-dashboard/app/pages/sales.vue b/src/Web/nexora-dashboard/app/pages/sales.vue
+index 36f6634..27ea5bc 100644
+--- a/src/Web/nexora-dashboard/app/pages/sales.vue
++++ b/src/Web/nexora-dashboard/app/pages/sales.vue
+@@ -1300,9 +1300,7 @@ async function reloadPage() {
+               @open="openRecurring"
+               @toggle="toggleRecurringRow"
+             />
+-            <SalesInvoiceDelivery
+-              v-else
+-            />
++            <SalesInvoiceDelivery v-else />
+           </div>
+ 
+           <template #footer>
+diff --git a/src/Web/nexora-dashboard/app/pages/setup.vue b/src/Web/nexora-dashboard/app/pages/setup.vue
+index b4d73be..a57713c 100644
+--- a/src/Web/nexora-dashboard/app/pages/setup.vue
++++ b/src/Web/nexora-dashboard/app/pages/setup.vue
+@@ -247,7 +247,10 @@ onMounted(() => {
+               <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                 <div class="space-y-1 text-xs text-muted">
+                   <p>会计年度：{{ setup.fiscalYearStart }} 至 {{ setup.fiscalYearEnd }} · 开账日 {{ setup.openingDate }}</p>
+-                  <p>科目模板：{{ chartTemplateOptions.find(item => item.id === setup.chartTemplate)?.name }} · 税制：{{ taxRegimeOptions.find(item => item.id === setup.taxRegime)?.name }}</p>
++                  <p>
++                    科目模板：{{ chartTemplateOptions.find(item => item.id === setup.chartTemplate)?.name }} · 税制：{{
++                      taxRegimeOptions.find(item => item.id === setup.taxRegime)?.name }}
++                  </p>
+                 </div>
+                 <UButton
+                   color="neutral"
+@@ -305,7 +308,8 @@ onMounted(() => {
+                   </span>
+                   <span class="min-w-0">
+                     <span class="block truncate text-xs font-medium text-highlighted">{{ step.title }}</span>
+-                    <span class="block truncate text-[11px] text-muted">{{ step.id === activeStep ? '当前步骤' : step.description }}</span>
++                    <span class="block truncate text-[11px] text-muted">{{ step.id === activeStep ? '当前步骤'
++                      : step.description }}</span>
+                   </span>
+                 </button>
+               </div>
+@@ -355,7 +359,11 @@ onMounted(() => {
+                     <UInput v-model="form.legalName" class="w-full" data-testid="setup-company-legal-name" />
+                   </UFormField>
+                   <UFormField label="统一社会信用代码">
+-                    <UInput v-model="form.registrationNo" class="w-full font-mono" data-testid="setup-company-registration" />
++                    <UInput
++                      v-model="form.registrationNo"
++                      class="w-full font-mono"
++                      data-testid="setup-company-registration"
++                    />
+                   </UFormField>
+                   <UFormField label="纳税人识别号">
+                     <UInput v-model="form.taxNo" class="w-full font-mono" data-testid="setup-company-tax-no" />
+@@ -596,7 +604,10 @@ onMounted(() => {
+                     </p>
+                   </button>
+                 </div>
+-                <div class="rounded-sm border border-default bg-elevated/30 p-4 text-xs text-muted" data-testid="setup-tax-summary">
++                <div
++                  class="rounded-sm border border-default bg-elevated/30 p-4 text-xs text-muted"
++                  data-testid="setup-tax-summary"
++                >
+                   <p class="font-medium text-highlighted">
+                     完成前的配置摘要
+                   </p>

@@ -1,0 +1,21 @@
+{
+  "changedFiles": [
+    "src/Web/nexora-dashboard/app/layouts/default.vue",
+    "src/Web/nexora-dashboard/app/pages/assistant.vue",
+    "src/Web/nexora-dashboard/app/pages/catalog.vue",
+    "src/Web/nexora-dashboard/app/pages/definitions.vue",
+    "src/Web/nexora-dashboard/app/pages/finance.vue",
+    "src/Web/nexora-dashboard/app/pages/index.vue",
+    "src/Web/nexora-dashboard/app/pages/inventory.vue",
+    "src/Web/nexora-dashboard/app/pages/partners.vue",
+    "src/Web/nexora-dashboard/app/pages/purchase-audit.vue",
+    "src/Web/nexora-dashboard/app/pages/purchase-orders.vue",
+    "src/Web/nexora-dashboard/app/pages/sales.vue",
+    "src/Web/nexora-dashboard/app/pages/settings.vue",
+    "src/Web/nexora-dashboard/app/pages/setup.vue"
+  ],
+  "vueFilesCompared": 111,
+  "nonWhitespaceChanges": [],
+  "beforeSha256": "0e05f5a65f8bfaa4982052751370e77d200c0386f0db7ab25690689407d0c115",
+  "afterSha256": "659efb8421ab7684388f8ecba6c353ba2dae4dd207a5fbbc0ca44ca9b0105ed1"
+}

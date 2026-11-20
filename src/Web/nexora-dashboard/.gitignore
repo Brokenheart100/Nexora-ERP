@@ -2,6 +2,14 @@
 .output
 .data
 .nuxt
+.nuxt-live
+.nuxt-msw
+.nuxt-build
+.nuxt-live-build
+.output-live
+.output-dev
+.output-live-dev
+.output-msw-dev
 .nitro
 .cache
 dist

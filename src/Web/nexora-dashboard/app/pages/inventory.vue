@@ -1087,24 +1087,15 @@ const overflowItems = computed(() => [
               </UCard>
             </div>
 
-            <InventoryWarehouseOperations
-              v-show="tab === 'warehouse-ops'"
-            />
+            <InventoryWarehouseOperations v-show="tab === 'warehouse-ops'" />
 
-            <InventoryLowStockTab
-              v-show="tab === 'low-stock'"
-              :items="lowStockItems"
-              @open-item="openLowStockItem"
-            />
+            <InventoryLowStockTab v-show="tab === 'low-stock'" :items="lowStockItems" @open-item="openLowStockItem" />
           </div>
         </UCard>
       </template>
     </UDashboardPanel>
 
-    <StockReturnDetailSlideover
-      v-model:open="returnDetailOpen"
-      :return-id="returnDetailId"
-    />
+    <StockReturnDetailSlideover v-model:open="returnDetailOpen" :return-id="returnDetailId" />
 
     <InventoryReceiveSlideover
       v-model:open="receiveOpen"

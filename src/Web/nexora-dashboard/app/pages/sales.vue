@@ -1300,9 +1300,7 @@ async function reloadPage() {
               @open="openRecurring"
               @toggle="toggleRecurringRow"
             />
-            <SalesInvoiceDelivery
-              v-else
-            />
+            <SalesInvoiceDelivery v-else />
           </div>
 
           <template #footer>

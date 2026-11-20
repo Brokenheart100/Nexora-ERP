@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-19",
+  "typecheck": {
+    "passed": true,
+    "log": "artifacts/p1/runtime/d0-final-typecheck.log"
+  },
+  "unit": {
+    "passed": true,
+    "files": 16,
+    "tests": 70,
+    "log": "artifacts/p1/runtime/d0-final-test-unit.log"
+  },
+  "build": {
+    "passed": true,
+    "durationSeconds": 28.5,
+    "log": "artifacts/p1/runtime/d0-final-build.log"
+  },
+  "lint": {
+    "passed": true,
+    "command": "pnpm --dir src/Web/nexora-dashboard lint",
+    "formattedFiles": 13,
+    "nonWhitespaceVueChanges": 0
+  },
+  "platform": {
+    "passed": true,
+    "brokerPermissionChecks": 4,
+    "faultInjection": false
+  },
+  "openApiSamples": {
+    "passed": true,
+    "branches": 10,
+    "anonymousProblemDetails": true
+  },
+  "initialLint": {
+    "passed": false,
+    "errors": 1523,
+    "warnings": 622,
+    "files": 13
+  },
+  "appHostStopped": true
+}

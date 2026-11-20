@@ -6,11 +6,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 if (!builder.ExecutionContext.IsRunMode)
     throw new InvalidOperationException("This P1 AppHost provisions local demo identities. Production identity provisioning is not implemented yet.");
 const int gatewayPort = 7443;
+const int dashboardPort = 7444;
 const int identityPort = 8088;
 var publicOrigin = $"https://localhost:{gatewayPort}";
+var dashboardOrigin = $"https://localhost:{dashboardPort}";
 var secretDefault = new GenerateParameterDefault { MinLength = 32, Special = false };
 var clientSecret = builder.AddParameter("bff-client-secret", secretDefault, secret: true, persist: true);
 var sessionKey = builder.AddParameter("bff-session-key", secretDefault, secret: true, persist: true);
+var dashboardClientSecret = builder.AddParameter("dashboard-bff-client-secret", secretDefault, secret: true, persist: true);
+var dashboardSessionKey = builder.AddParameter("dashboard-bff-session-key", secretDefault, secret: true, persist: true);
 var otpSecret = builder.AddParameter("email-otp-key", secretDefault, secret: true, persist: true);
 var alicePassword = builder.AddParameter("demo-alice-password", secretDefault, secret: true, persist: true);
 var bobPassword = builder.AddParameter("demo-bob-password", secretDefault, secret: true, persist: true);
@@ -19,7 +23,7 @@ var identityOrigin = builder.AddParameter("identity-public-origin", "https://loc
 
 var postgres = builder
     .AddPostgres("postgres", port: 6543)
-    .WithPgAdmin()
+    // .WithPgAdmin()
     .WithImageSHA256(ContainerImageDigests.Postgres)
     .WithDataVolume("nexora-postgres-data");
 
@@ -191,11 +195,14 @@ var identity = builder.AddKeycloak("identity", identityPort)
 
 var authority = ReferenceExpression.Create($"{identity.GetEndpoint("http")}/realms/nexora");
 
-var identityOnboarding = builder.AddExecutable("identity-onboarding", "pwsh", "../../../scripts/p1",
+var powerShellExecutable = builder.Configuration["Tools:PowerShellExecutable"] ?? "pwsh";
+var identityOnboarding = builder.AddExecutable("identity-onboarding", powerShellExecutable, "../../../scripts/p1",
         "-NoProfile", "-File", "Configure-EmailOnboarding.ps1")
     .WithEnvironment("NEXORA_IDENTITY_ORIGIN", identityOrigin)
     .WithEnvironment("NEXORA_IDENTITY_ADMIN", "admin")
     .WithEnvironment("NEXORA_IDENTITY_PASSWORD", ReferenceExpression.Create($"{identity.Resource.AdminPasswordParameter}"))
+    .WithEnvironment("NEXORA_DASHBOARD_ORIGIN", dashboardOrigin)
+    .WithEnvironment("NEXORA_DASHBOARD_CLIENT_SECRET", dashboardClientSecret)
     .WaitFor(identity);
 
 var organization = builder.AddProject<Projects.Nexora_Organization_Api>("organization")
@@ -252,18 +259,16 @@ var finance = builder.AddProject<Projects.Nexora_Finance_Api>("finance", launchP
     .WithEnvironment("Authentication__Authority", authority)
     .WaitFor(financeDatabase).WaitFor(organization).WaitFor(masterData).WaitFor(broker);
 
-var web = builder.AddJavaScriptApp("web", "../../Web/nexora-web").WithPnpm()
-    .WithHttpEndpoint(port: 3000, env: "NUXT_PORT")
-    .WithEnvironment("NUXT_PUBLIC_BFF_ORIGIN", publicOrigin)
+var dashboard = builder.AddJavaScriptApp("dashboard", "../../Web/nexora-dashboard").WithPnpm()
+    .WithHttpEndpoint(port: 3002, env: "NUXT_PORT")
+    .WithHttpHealthCheck("/alive")
+    .WithEnvironment("NUXT_PUBLIC_DATA_MODE", "live")
+    .WithEnvironment("NUXT_PUBLIC_BFF_ORIGIN", dashboardOrigin)
     .WithEnvironment("NUXT_BFF_ISSUER", ReferenceExpression.Create($"{identityOrigin}/realms/nexora"))
-    .WithEnvironment("NUXT_BFF_CLIENT_SECRET", clientSecret)
-    .WithEnvironment("NUXT_BFF_SESSION_KEY", sessionKey)
+    .WithEnvironment("NUXT_BFF_CLIENT_SECRET", dashboardClientSecret)
+    .WithEnvironment("NUXT_BFF_SESSION_KEY", dashboardSessionKey)
     .WithEnvironment("NUXT_BFF_REDIS_URL", cache.Resource.UriExpression)
-    .WithEnvironment("NUXT_BFF_MFA_ENABLED", builder.Configuration["Web:MfaEnabled"] ?? "true")
-    .WithEnvironment("NUXT_BFF_MFA_REQUIRED", builder.Configuration["Web:MfaRequired"] ?? "true")
-    .WithEnvironment("NUXT_BFF_MFA_STEP_UP_SECONDS", builder.Configuration["Web:MfaStepUpSeconds"] ?? "300")
-    .WithEnvironment("NEXORA_BUILD_VERSION", builder.Configuration["Web:BuildVersion"] ?? "0.1.0-local")
-    .WithEnvironment("NEXORA_STATUS_FILE", Path.GetFullPath("../../../artifacts/p1/runtime/web-status.json", builder.AppHostDirectory))
+    .WithEnvironment("NEXORA_BUILD_VERSION", builder.Configuration["Dashboard:BuildVersion"] ?? "0.1.0-dashboard-local")
     .WithDeveloperCertificateTrust(true)
     .WithCertificateTrustConfiguration(context =>
     {
@@ -320,21 +325,26 @@ var purchasing = builder.AddProject<Projects.Nexora_Purchasing_Api>("purchasing"
 
 var gateway = builder.AddProject<Projects.Nexora_ApiGateway>("gateway", launchProfileName: null)
     .WithHttpsEndpoint(port: gatewayPort)
+    .WithHttpsEndpoint(port: dashboardPort, name: "dashboard-https")
     .WithHttpHealthCheck("/health", endpointName: "https")
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithEnvironment("Authentication__Authority", authority)
+    .WithEnvironment("Dashboard__Origin", dashboardOrigin)
     .WithEnvironment("Ai__Provider", builder.Configuration["Ai:Provider"] ?? "stub")
     .WithEnvironment("Ai__Model", builder.Configuration["Ai:Model"] ?? "nexora-stub")
     .WithEnvironment("Ai__Endpoint", builder.Configuration["Ai:Endpoint"] ?? string.Empty)
     .WithEnvironment("Ai__ApiKey", builder.Configuration["Ai:ApiKey"] ?? string.Empty)
     .WithReference(cache)
-    .WithReference(web).WithReference(organization).WithReference(reporting).WithReference(masterData)
+    // .WithReference(web)
+    .WithReference(dashboard).WithReference(source: organization).WithReference(reporting).WithReference(masterData)
     .WithReference(finance).WithReference(purchasing).WithReference(inventory).WithReference(sales)
     .WithExternalHttpEndpoints()
     .WaitFor(cache)
-    .WaitFor(web).WaitFor(organization).WaitFor(reporting).WaitFor(masterData)
+    // .WaitFor(web)
+    .WaitFor(dashboard).WaitFor(organization).WaitFor(reporting).WaitFor(masterData)
     .WaitFor(finance).WaitFor(purchasing).WaitFor(inventory).WaitFor(sales);
 
-web.WithEnvironment("NUXT_BFF_GATEWAY_URL", gateway.GetEndpoint("https"));
+// web.WithEnvironment("NUXT_BFF_GATEWAY_URL", gateway.GetEndpoint("https"));
+dashboard.WithEnvironment("NUXT_BFF_GATEWAY_URL", gateway.GetEndpoint("https"));
 
 await builder.Build().RunAsync();

@@ -1,0 +1,878 @@
+{
+  "fileCount": 218,
+  "sha256": "0e05f5a65f8bfaa4982052751370e77d200c0386f0db7ab25690689407d0c115",
+  "files": [
+    {
+      "path": "src/Web/nexora-dashboard/.editorconfig",
+      "sha256": "8944c61f67d481cc963b92d0524b97225732dd8a8efcdd3d00190c5c63e1ed31"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/.env.example",
+      "sha256": "05db6181a5ce1e1b59b3d08a9906c4e53bbb0fe4eb1266841f05a64d7980e575"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/.gitignore",
+      "sha256": "ddf3d3f637f646e761f715ce0d094009cf5c6a7143f0b1d27b8047409ec195e0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/.nuxtrc",
+      "sha256": "7bbb79b2eeadf179f56ba87f1bd2a518929c7330848cf838b9820c093e4d5d40"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/app.config.ts",
+      "sha256": "29b53eebf0b689dfb7cba2de1b3656f5dba8c5bf2c0acbd82f43e3e8be9291a0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/app.vue",
+      "sha256": "55d068f158771650fb29acd72963d0286084f45440845f51ae661008b7dc85bd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/assets/css/main.css",
+      "sha256": "03dc384ee1525ffaf0c2bd1749516e8d0d3bd97ea57345e65a8b38a3dbb71d31"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/account/DevicesTab.vue",
+      "sha256": "8525cf30018a41a37e1ea825f4c7f30d149dcf52b4547adb28b37167a1851ecb"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/account/OverviewTab.vue",
+      "sha256": "fd9d8711128a00a7efab8bd33b654d19e0cd2e9edf787c6ed2f7e5c695b3e9bd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/account/SessionsTab.vue",
+      "sha256": "4b4a8c213866cd7f584606b6fb7980a259c64a60e89d56d72dec34faacbe7f2d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/AccountSecuritySlideover.vue",
+      "sha256": "76ad56df3d8b224fa86ef0b88bbc3d0f9103ec7913c1666c3fa12239102ee586"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/AppBreadcrumb.vue",
+      "sha256": "0639b8faef7759479aa4992a92f0f2b2e8e07173536e1c98ba1a188b72fdba3a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/ApprovalTimeline.vue",
+      "sha256": "e9880bfefb054ad3c0ab248065055541c45f60e6238c0c3c4bea13398953b56c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/assistant/CapabilityPanel.vue",
+      "sha256": "9436919b15976e656dcbab99fff5b7ec3667d6a17a2542e3d57692d3db1cd05b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/assistant/ConversationPanel.vue",
+      "sha256": "d405eca1561af1457bb28fec78c761a0e21083b5ee3a551747dda8cb99fb4bf7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/assistant/SessionList.vue",
+      "sha256": "29e352bb92fa44b79ce940a56fd294e29e78a6f478f6941ec0e495dfeb312cc4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/assistant/ToolCard.vue",
+      "sha256": "9fc4e3ffd5e423a791b52ce75cf34770b09a561374b84d35127b2a127ab9b354"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/audit/AuditCenter.vue",
+      "sha256": "14412cbd7954b2bcc005e42a9676ed1b48fa3a4b33038d021ac23e509d09e5b0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/ChangeLogTimeline.vue",
+      "sha256": "0e8760a470896ead2093613a9ee1ec45903b8a82570b5ab82b612f58a9f8862f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/AccountTree.vue",
+      "sha256": "f3c73ac205c60d047232708a68e6bf5a6b50feb328feca731a34d975b5dc868d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/AgingLedger.vue",
+      "sha256": "8b7df4b51d9b7fd2f9753ac57fe1e11cf11d5c498eb72246c8573d852a21cabe"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/BankRecon.vue",
+      "sha256": "380f9f5e00cf65230a6a5fd3d986f03fffa0fc09758fabd599286f039a35f18e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Closing.vue",
+      "sha256": "d5d4e07e79f5f29092195309c11f2d50173b2c18b78a28b3484f780a6ba4a17a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Donations.vue",
+      "sha256": "42d1c3bd885f6e2daf66862d0d09071862cc517237b4512d63a545375bb03d2a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ImportedJournals.vue",
+      "sha256": "1ba085d92b2cb40111e934e02c23044dfa7fba21b0372fcfefbadcb9dbab9e6d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/JournalPanel.vue",
+      "sha256": "52ec4234278db42cc11e421bc59414393ace2d9d2b27341bd8d8881142f1d158"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Opening.vue",
+      "sha256": "f7cc7c2515b12fb97d9a852c36ea0fd53620b4b4ced5b018f21072a4aadcaff4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/PayablesAgingCredits.vue",
+      "sha256": "b194fc2058e0afc3ab7d0500778fc659cb693082b48f4a2e95ce64ddce5f755e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/PayablesBills.vue",
+      "sha256": "49218d8a5e5b8b93345c136e23b680d831f00f1b8d903ee9f7da02771b38cba1"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/PayablesReceipts.vue",
+      "sha256": "a0d5f2eaac2e8eeddf6e0836b9f556518886394d3feb4073b1311ed35440466f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/PayablesSummary.vue",
+      "sha256": "b0e8e1b2103aabd38a92132a92ad76324697a68467436b808a08af6dbddfcc8a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ReportExports.vue",
+      "sha256": "38c24bd935250cfa73911cdf7d4468f379614f8f4704857019a35cf16da1c53f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ReportingCenter.vue",
+      "sha256": "08e653b29ec7aa31eac21442a88df30f511a87506f13ea4ac36a3d523c9cfa13"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ReportingProjectionCard.vue",
+      "sha256": "83887ebbdf07e96ee1e671c094e346aba0f9496d9cb0ee86375ad686812cc0ca"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ReportPrintDocument.vue",
+      "sha256": "6d137ce248f2771191b2730dd9bc1b752a63ec72a59945455bdb38e53d6608be"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/ReportPrintPreview.vue",
+      "sha256": "62a64ee829e80ca1c06262cf97ff85c1e89ffc29c1a0de9e2fdc76f1d2b48343"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Reports.vue",
+      "sha256": "29a1a7ddbbd2887a0cddbbbecdaba62e9ef46001ec0795f657fccd69eb49adc1"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/SupplierPayables.vue",
+      "sha256": "fb64ab70486eee646eba032cee06aff07c7d0bd28406d026eabdfbb47ccb23ee"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Tax.vue",
+      "sha256": "7269461e67064a976f053c7e6e2cd6f993508e09b96347e0b9bdb0f7bf989dae"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/TaxCenter.vue",
+      "sha256": "4e83dddb8775609024b283dc5b7a70aed345365401f3415305c075432aa4acc0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/TradeDocuments.vue",
+      "sha256": "728e478346d5d0b792be2e6cb94b22cf95aa4acb7d909f4237bb189de52a2f48"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Treasury.vue",
+      "sha256": "c43501c3db29d149533405a82d2889d38e9848de7fe1fb1b732052cc2fbd5aeb"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/finance/Workbench.vue",
+      "sha256": "7c12b091981b6be855ad4072b64df13f3ff148df311e6e938985d06b7ad00be4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/IssueSlideover.vue",
+      "sha256": "34c520021aaae70ff8d40b686ed04fdbf01c58d1d5773b09595a390b00815695"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/LowStockTab.vue",
+      "sha256": "14f74f44d5f5452d36bea3e4b9bab7c9067461e2774cf827747167fd15149adb"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/MovementsTab.vue",
+      "sha256": "1cbac2c3e0be9c60982677f61a85f470c8065755544d5d5b1b41251710cfa21e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/OverviewTab.vue",
+      "sha256": "ce60b3810c9143a452d6cbcb1b3be49d7af25e7ea63ffe874d244754c4f70b7b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/PositionsTab.vue",
+      "sha256": "4320007db36fb0f046bc342790fdd5493ea8be51bf8aa86b9ba4d428f05f712a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/ReceiveSlideover.vue",
+      "sha256": "d4d6ca9566df531d97c4b55483a679195712b2cb56490de7be5086919b1eb9e2"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/StockPermitExecutionSlideover.vue",
+      "sha256": "2530563f6ce76724aacf18b9bc7197af7fe94b09dad6b9f837dca29da9fbfcf1"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/StockPermitPanel.vue",
+      "sha256": "9b37043396ef6811c11312910d70f1c510d65d3672b73c481e0bd78f66b0f262"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/StockReturnDetailSlideover.vue",
+      "sha256": "81272c41199e8b4f141e6d49498ee6a499a64ef202fcff3c3873abcc859b4af9"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/StockReturnSlideover.vue",
+      "sha256": "77bebb23d9ae1bc46418c6333f92c19719b08fb71a0d127a9959e02956ace53d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/StocktakeSlideover.vue",
+      "sha256": "96dc18fa7e3bea94fc4638c921646a3455bbb24b5e9d781b01318b75012906a8"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/TransferSlideover.vue",
+      "sha256": "f09ed26d2fa608948603a9cffc554a736ef8b0a8d642fe3ec056c281bb4e5b80"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/WarehouseCard.vue",
+      "sha256": "7ddf7566251462297053162d20dbd78ddfbb5e893f7ed2ed1a13bb56ba402d2c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/inventory/WarehouseOperations.vue",
+      "sha256": "bc0649cb0c73941b500173c5b5b964c74981221a480a6f93605699eceb11cdfd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/ModulePlaceholder.vue",
+      "sha256": "d18d7d5e85bd27e579d619552b185294f5c6f373931d79d4ff428670ae85b219"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/NotificationButton.vue",
+      "sha256": "4d97393df4d709a641bc8e77caf97df1ac4249ee27a0788e2652cb9d23c7a2e5"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/NotificationSlideover.vue",
+      "sha256": "bbdafe0acdba3cb0fb020724decb6862566bdf84763f4a55742947327f419e24"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/PrintPreviewSlideover.vue",
+      "sha256": "e7c320114431fbc088db566137c1a91590918a41db8d6d137e715f37e50aa813"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/ApprovalTimeline.vue",
+      "sha256": "e58dd1374493b12c43596facccc7c6f3bd44da7f5d1f0c677c85ebb3dd87ac63"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/AuditList.vue",
+      "sha256": "92d8054e770081a2c61d62ea531dd76fe9a12a81d10347632596fe2a4027b06b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/OrderFormSlideover.vue",
+      "sha256": "1aa3a1109a9b1bb1652adcb75e7f7a3099e84af0af1274e907bbc45dcb80f051"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/PrintDocument.vue",
+      "sha256": "e8ac7cc9dc1fe919489af93905b101040bfdec84dd6915fc67bea28f822e9b53"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/PrintPreview.vue",
+      "sha256": "047ea8761f3cbfa5992031e2bd815744304a0b0e869eb6877b329a12e63023e8"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/PurchasePayablesCard.vue",
+      "sha256": "9be9ac4e672757179df45f4f83d736c715914e67b4770b745850c6b0cfa71eb6"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/ReceiptSlideover.vue",
+      "sha256": "493d0da746004ef97ef9210f0a727dfb2db96967266620d4a62a148dc72c48ee"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/purchase/ReceiptTable.vue",
+      "sha256": "67f1abf4903bd4c6de211acddd4d1f12133b538df8955de254448880857c7159"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/ResizableTable.vue",
+      "sha256": "4ad7179f75b80469e712446c4b6e4c38c1bc60ae6bc3940e58b893c834ab8721"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/ApprovalTimeline.vue",
+      "sha256": "f548b79f84a059d599180a0340925a725278ca644afc1633dee5ff05466e0a1d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/FormSlideover.vue",
+      "sha256": "3df8262a4fdbfa3ecf7032df8882400682a481e8ce3c369d4b55d058c7715c01"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/FulfillmentSlideover.vue",
+      "sha256": "da88f34063a1a7c24c1ab2342343623dc03954b7b796ef4bba8ec0b772661a1d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/InvoiceDelivery.vue",
+      "sha256": "488f47fd4b3cb2511b71472972b7d0bb5d538448ae1ca88d1e80649ab8b3c468"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/InvoiceDetailSlideover.vue",
+      "sha256": "c4590b50a49e4ee7729779d284dc01d98aaf7c53709b6e2ac5775cda6d95ba39"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/InvoicesTable.vue",
+      "sha256": "9d012cec7785e497518c63ce87f5556f0c2df3c6de5205e3e5c9fc4938182e55"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/OrderDetailSlideover.vue",
+      "sha256": "3dc1aeeca8daace9ddd69aace771343a3799bfa9680c178ea84fc3e1d1010f9c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/OrdersTable.vue",
+      "sha256": "68ef4b28d340ec3b29ffdb048e3fcde9e2da7b085ac09e248d4ca74842089831"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/PdfPreviewPanel.vue",
+      "sha256": "eca86755bf1327990a913ed79c2e1a9f5cd3470daeb221197044087fefaf5afa"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/QuoteDetailSlideover.vue",
+      "sha256": "babbc86aa900ea4c364973782129f1caf9b0794b460f0ab4fbc0b51f5c2c5d3b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/QuotesTable.vue",
+      "sha256": "0ed92d71e741aae45e12d6210343085d77f02671cb6ffc36c85a1e20192f3bca"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/ReceiptFormSlideover.vue",
+      "sha256": "4cbc70be7608a427ea1e705204c99bdd8120f8ade4bce3eb95736eb07827027a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/ReceivableAllocationSlideover.vue",
+      "sha256": "7141fc08076ca42bb1a8ce88a2cbe0ef9ca303e8e13f4fe458dd8df4ba66f91a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/ReceivableWorkbench.vue",
+      "sha256": "cab89a549f7b76776b6c64de3e5cd94ca7893c9c044fdc9a603bb1612d62d925"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/RecurringFormSlideover.vue",
+      "sha256": "5d504631d3c3d492912c152a7d0199fea7deb74ac9292a0ed0feb20bb29ff380"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/RecurringPlanSlideover.vue",
+      "sha256": "ae8eb82449840507a3678f59d9c27ad8753f6119176723ff305b68ae0edc8bfa"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/RecurringTable.vue",
+      "sha256": "2bd8dc2afba7c846b68dd0e55de10715b6bf5143075144e02e9ae66b17cd3599"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/SalesCreditSlideover.vue",
+      "sha256": "e80c01efb88cae928414bdc26bfb8721a82e4ecc05a467ec67a1052efea46dc0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/SalesPrintDocument.vue",
+      "sha256": "4bff7b2ea38558375da20474306feb61876f688886b5689d3b97174486e0efee"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/SalesPrintPreview.vue",
+      "sha256": "f9596e1f3fcc1175450e5f2e0cfc162368cc9911418dc6357377ba3e2683f0d2"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/sales/StatusSteps.vue",
+      "sha256": "ae4330c8e00931dc15cdb143f88eb7f65a411ddb23191ab84925b5bb8c095ca0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/AuditPanel.vue",
+      "sha256": "d87cd91dc30ccc333c4f39a860c01e91267268ee2a4ddc15282de9d3bfda3cf7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/BillingPanel.vue",
+      "sha256": "8ca0c6c4e1da806f6f7b05469fbc11bbc6d600b15b118065680fd90bed84e9a5"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/CompanyPanel.vue",
+      "sha256": "b853549ac21cbe96803f3ad9a2d6f879f056361aaef328472ad003ebec8c09e8"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/DepartmentsPanel.vue",
+      "sha256": "a3fe74fd6d062155425e140c91c02c02181e4f41c18e3a8c8b90e4acb57d39f7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/GovernanceCenter.vue",
+      "sha256": "f7ef3f8635ec876aa31cedbeee4938c4e6020c31c27a34f03ca682236bd9dbff"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/InvitationsPanel.vue",
+      "sha256": "ce1190a9af23f829d3d6848dbf071d2fffd5e00349514289bcd3b806a18a1080"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/MembersPanel.vue",
+      "sha256": "b4ce6f9ca207a5465d4969c6447985e3fa8b968b2ef4955936a718beb12a2b91"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/settings/RolesPanel.vue",
+      "sha256": "fbe20bf4f9a64d0f16539100ed5fdf3b407203b57db3ed422160e70805f19881"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/UserMenu.vue",
+      "sha256": "bd778b45d9dd03b11cd5d82bb511dedddec55db5a5491b48abf7abf1b3983db4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/components/WorkspaceMenu.vue",
+      "sha256": "e88cff9fb5fe2e317c84d8429778124f8d54434b5ade1894cb51390caf477ae7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useBillingCenter.ts",
+      "sha256": "a7657009945e1ed94ac4431ffcda45d33807630e156ec16bceb3b62c82cd70ce"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useClientPagination.ts",
+      "sha256": "2182efb895ccdf787e514e700b0382ffcac1d4311918da85c517f1689084fd5a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useDashboardSearch.ts",
+      "sha256": "9b642019e25e2da986b93ac199f0e9a526c835d9e189825407ad1b84d85b883e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useDemoActor.ts",
+      "sha256": "a3f50c970fd1994fc7a7f08ebc8d31094b41da42688ea069d8a7097275ed970b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useLocaleSwitch.ts",
+      "sha256": "1518d73c93b21ff60788f45e02ec2399b1c22da0eb1d4d84a5b246b6ec92d828"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockAsync.ts",
+      "sha256": "ee46aa58503c8d04fbc8e5b249ad63e9fa54bf9cae00c1b3dc468cd1e1d1052c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockLabels.ts",
+      "sha256": "7d6618216d1498904a4e831c32f1debe00490e0f0eeb2c3d2b5ef3bfb12b11ac"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockPermissions.ts",
+      "sha256": "e02f173a0b476241300c48c4208a7d86b760dc1f8e735f4622b2c4efba70d092"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockRefresh.ts",
+      "sha256": "5ca5c3eb4fa9211830dde635258d4d5ec15d5222c4dcc7ab55b0bfa1ba1a6e68"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockState.ts",
+      "sha256": "fadfe03a565e93f56903c06f15ebc471ed96e4d324aa42ea4e187267600425d2"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useMockWorkspace.ts",
+      "sha256": "6d443f4f1a8fb43c0c2159ac4b9a1046cf1c27206762b407177e682cb493c397"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useNotifications.ts",
+      "sha256": "56ceaa07e8fefb219be7cdb19269b58631d759387652c218ecf7fbd8faf6a748"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/composables/useRecentVisits.ts",
+      "sha256": "fbebed805ef8eab8145d64506c26ef422846d3efbfabbc5403dc961fd4319f56"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/error.vue",
+      "sha256": "18869f8d630c6c069fbf1f34058ce7f37b322de68a1314d71f146b07b498e384"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/layouts/default.vue",
+      "sha256": "e840673928164d7bc292b161950c38678c8f35f21d63db035362e6afa49892a1"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/assistant.ts",
+      "sha256": "98b4c480867f96ec83fd61694007544f1c7bf8d47d2dc48bc423c04855d61856"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/auditCenter.ts",
+      "sha256": "6c894515c03a3b18833ff110003c61b7edf7c7e4ef7e985a9946e5c86c9f12a9"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/billing.ts",
+      "sha256": "24cdb5a8afef8cecfab853ba066517bfeaeaf3fae5184b90cee956487b0fb965"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/billingCenter.ts",
+      "sha256": "091ea6a1d05a930c4700683bb8b2417a4960240a7f63727d1904640c55b01544"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/catalog.ts",
+      "sha256": "8d0680588951b5a172913db37255ba77497341619ae91bfdd0314951b170b5fd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/changeLog.ts",
+      "sha256": "0b4fc1ad7b41f1710a1dd562d3bee211398fadcd7e1f7f5fff0fad887e2718ce"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/closing.ts",
+      "sha256": "b0a984f313a587aec6c427e0cd9118b8f19b46ffcb13812a8fb31d9b3a948b24"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/dashboard.ts",
+      "sha256": "c7ea735f8f35bc27776bb4ce1ccc9a45326f835ad81657207462180c366856d7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/definitions.ts",
+      "sha256": "10bdea5c3f76b50f9b21648fcf7706da1a58d98551c9bc25893d02dbe69e9731"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/deviceAuth.ts",
+      "sha256": "9d3ae1e8cb9102696a02c3076bc42263773ca8918b8b96b7cac4f05b3c0877e3"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/donations.ts",
+      "sha256": "fa3a94e9f3bf27fa3396d9bac608b587b706210792c3bb9cd624dbaa0f3e8181"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/externalJournals.ts",
+      "sha256": "5fa98423489b3fff5d0d42ede3d4392274246e362d937c2a108ddc66ed673c06"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/factories.ts",
+      "sha256": "3721fe03a3a7a9fe99223e51b7242bc3a88fbcf4666357fa3161d12e284b87f4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/finance.ts",
+      "sha256": "04b7ecaf88fbe0ea1fdf8b9c38ea9d93504d73d95dcab25bd15ec25698043c2c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/financeOperations.ts",
+      "sha256": "c144951c84ea1734b9a1a2578ca2945c14110e592b57222a63f13bb6b61b839e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/governance.ts",
+      "sha256": "f73f71d1d89426d34fcce0ffb3fc1de988f294e7e7a695f37b36b457878666a7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/identity.ts",
+      "sha256": "270b2b26bddb70ca099477eb0c3b92b326eb08abd7b5d629a33e4ee05df7fb72"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/index.ts",
+      "sha256": "0f14470dbb063deb386474cdeb218c29ccac7ee46d394b56e7bd9e6adaad2136"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/inventory.ts",
+      "sha256": "c54f0598d7ccc4de58adbb064d988de544a2942f40ee5250fbe7a88768118110"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/invoiceDelivery.ts",
+      "sha256": "02e36a244535a5429f932c669bd84a7fa7293eaecf6bb6fcaf61fedad6634c49"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/organization.ts",
+      "sha256": "6f97913ee25f8ad0fb2e3848e2cf142750fa2b0bc20c158954cdc094a76e842d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/partners.ts",
+      "sha256": "064bd9bfba8a7bc9c854cdfc357f5c989643880da08c26f2f1aa21425bedcf25"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/purchasing.ts",
+      "sha256": "02c0b023a0ec6bd1688ab169d5a132bd929c09065df1150042e7fe95d137adfc"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/receivables.ts",
+      "sha256": "e75ba11c1be9b3dc08f138359d8ebdc0a2dcf30c74700a8006f9a8cc594f90ad"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/reportingCenter.ts",
+      "sha256": "a4f44a5629d61046bdb38f84e827c0831b21466aeff5b3ee2e7d43a74734030f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/sales.ts",
+      "sha256": "fd7b01c552cc8799a796fd76ed5ccdad95d93adc83a473f269abfa5edbd151b5"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/security.ts",
+      "sha256": "410e48561b1f7c1a4b9015672357d8e9b2ebfe10644e8fe9700c43e334e6a633"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/stockFlow.ts",
+      "sha256": "54255db4bc0bb936a94ad098c9d4981906e7486f00afea1f325fd78963c8db76"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/subscription.ts",
+      "sha256": "15b43b07063b58e3bfbf0098387e9dd2fc07076e38532b729a014fd322d8502d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/supplierTrade.ts",
+      "sha256": "695ac4a352b2c750bba220c9cec12c9ffc1c260d86ba126ed22a04ff23a49f7a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/taxCenter.ts",
+      "sha256": "5af88d9bf8a333c1838b2eaec3968d364a72b7121e2d9c2e1be4ced96aee90b7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/tradeDocuments.ts",
+      "sha256": "3fb9213e2c0f2ff6fc28874ca992e689bc055303667af37e2f8b02d964810282"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/treasury.ts",
+      "sha256": "624a18ec89ac1ce486f0c5980c8b88038d32a07848129e6c7ec4317f776c5769"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/types.ts",
+      "sha256": "8226c8e5121318d1df1049b167084eb7ed18d6c1ab33ebb4c452ca34334da1b1"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/mocks/workspaces.ts",
+      "sha256": "63cd248f254f7debb7f832cba9a34f7e12809e972fde9aa9d973742cbb2e58ed"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/assistant.vue",
+      "sha256": "fe1f69a6ec9f8b5c7e56b9096420905ea878c9e37bcbf71702ba80d3d11f94ae"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/catalog.vue",
+      "sha256": "d3f126e8e73a45e2dfc47dea0f042837fc915117b5df55e710dc1b7da3af91ff"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/change-log.vue",
+      "sha256": "6c18540588d403efc4dcb47aab84049294102cdb6bef1322f7ad640eef8058e9"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/definitions.vue",
+      "sha256": "52e5493a93751b53cd974a90663c3a886a0a4f7c07a82280249cef5da0b52223"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/demo/error/[code].vue",
+      "sha256": "f6b81cded8878553d76f217249dd50d0079ef521d9cdb63cc930fd67af17875f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/finance.vue",
+      "sha256": "1b8c9049ffd15252a7bd1ea52775d61bceb0fa4a77a30342544f26c2de816c3c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/index.vue",
+      "sha256": "67c458b8eac4b28103e248811199efb488c3dc37e2611357d093da111c092b0c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/inventory.vue",
+      "sha256": "e5216338f8fad8e6187f560e92c04ed06d7c6e526f2b0cebab8306282a5f45a6"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/partners.vue",
+      "sha256": "4bcaef516a737a55924d4fb065ca315f95e3f89ab04d00f50e7cefd7a72cfae3"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/purchase-audit.vue",
+      "sha256": "3bf15b35626bef38eea607d289a3ed53d6d3293f0eb0b21dfabeb9d7ec156cfa"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/purchase-orders.vue",
+      "sha256": "a2d5d199997d77815fc49313aa77d87063bb58250390562d4c1fe09a763b231b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/sales.vue",
+      "sha256": "677e29385fe29c5f6b9231d48fc520baa7a42dfe586303c1654a4e7b4587e084"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/settings.vue",
+      "sha256": "28c5faa82b5b64ab3bbeeee8cd18b2bd886766dad384e081a1afb5ae362ca8bd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/pages/setup.vue",
+      "sha256": "84369bfd8ff3d417a40532e617e0ad10eaf2b137ee16a9f95803f6b8bfcec9bd"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/assistant.ts",
+      "sha256": "d667e569527b4571c2f80af3facac83b29f361889ba3aa322060457a59c6eb9c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/bankRecon.ts",
+      "sha256": "870cd7a6c6c07244a4c069a96ef41bbb629b97aeb0b1c431d115157d282fae7f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/deviceAuth.ts",
+      "sha256": "02f63a9e592c63b1a422cbbe55f3dcf9c2a2e3a9b696dedff8c13a7441b8bb34"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/donations.ts",
+      "sha256": "6c8f6660a7c76027a1445a872231a479066d3e7bed0715073b0d20c1bd0f3fa7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/externalJournals.ts",
+      "sha256": "43541262669cb0c058b4b60b7c07425c3a6358591703ef784748e7437b3f7197"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/inventory.ts",
+      "sha256": "aa8bad95b65310d24cea0227c32162535e12ef09b225391c4fb8ddd3ad3c6941"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/openingBalances.ts",
+      "sha256": "6845c533fa4910651da078ae7e6994e30601915d598efb77bd6d0c027912e183"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/organization.ts",
+      "sha256": "e3ee96e633e2c0ffe19675a25d4373f94881566f93109d1422047020bc9a4661"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/receivables.ts",
+      "sha256": "34400b2464aa46cff60bbd0e0994715f18d2d42b7d72fc4c6facc89d8e22e90a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/recurringInvoices.ts",
+      "sha256": "5c298ac8c5b641e12a2659368aaeb1684b9f80bce945f5f0d5d701f70f0fe82c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/reportExports.ts",
+      "sha256": "aeecc6a272adf4232d7bdbea98c6a0d39a141e8017159bfc1c77b51f38a2fad2"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/session.ts",
+      "sha256": "9b57fb0f2bd0d6563e665549b081fbc04e69ee08431d1b418cca70b1fccc2f0e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/stockFlow.ts",
+      "sha256": "53c233e461747c81dfe6e6b2b199c7e27ef582bd73e4364aacad2e78a6df8825"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/supplierTrade.ts",
+      "sha256": "cab7e1f74691b988d4b21801b73a8133833aca881d1edf1ca96a9067d9802b00"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/tradeDocuments.ts",
+      "sha256": "e268362289296421ac91e232f99cc291f7151507b6bca899c08d2c54745e5c02"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/treasury.ts",
+      "sha256": "e7560d8b99e0c176290651aa1998c0603ec7f52383bf78d3d01e7f39f50ba789"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/ui.ts",
+      "sha256": "4badbb8f86000e6437c6b797c9fafa74df7fbf7b7699d06bb04397146f97000f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/workspace.ts",
+      "sha256": "c2a879d79a21f578f49552c48f86319be802466d40e05ffc259b67949c95affb"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/stores/workspaceSetup.ts",
+      "sha256": "2ab29408b5620780e09c76e78ca0b2d8cdbf75a6e8bfa70e4e295e291d562d1d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/utils/csv.ts",
+      "sha256": "1433dd92132c076a632b023dbcee624db074bc8f0aafdc043f5ca8dbaa9a9ef8"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/utils/format.ts",
+      "sha256": "800633624ef9d5ca42f99cad1c99b794443dffae0ee7fd1f29d5ba0e82e0f284"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/app/utils/mockSchemas.ts",
+      "sha256": "723359f9227c2628d42212cbb1eb99be8c38087a72b486151a3fe5260784b6da"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/eslint.config.mjs",
+      "sha256": "8a5aa4d53fed594126e09f89f6278e75cfe460ce7499f0c8ad150040ab2b3880"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/i18n/locales/en.json",
+      "sha256": "e08595b2590d7df8a4775f7d382d0a3c4080049afd284151ede414fc1f652fa4"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/i18n/locales/zh-CN.json",
+      "sha256": "588c29c538c31e3a0fece7e46371a1283d87b080c2d1a3c2885e0f3c8098720b"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/LICENSE",
+      "sha256": "e40f408c466e72a3b02eabe846ef35cfab210c14daff782a072dd4903d911f93"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/nuxt.config.ts",
+      "sha256": "fe2e9234ad62ea67ae06bbcc3c27962be25a79170d11177d779efc3ee01e8c03"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/package.json",
+      "sha256": "08d0df2615ac0d72b4c5514a61d5d6fa19b921c5462f6a04f29ac9e9e4d56962"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/pnpm-lock.yaml",
+      "sha256": "59ae21064dc2f9eddb248eadc0701c7822b3fb18f69db49e80f9352eef4f263f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/pnpm-workspace.yaml",
+      "sha256": "da232dd8f1c4885aea25e80fbb246acade6053ccab411a534ba1fff486f0aff9"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/public/apple-touch-icon.png",
+      "sha256": "017fe3cef66b1a6dd1ccf14b2e0a552d103907a41bcfab773c77632cac0ba97e"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/public/favicon.ico",
+      "sha256": "aac2c33bb81184775593355f7291304242fe7f4e2c87fdf67729b0a0247b4f69"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/public/favicon.svg",
+      "sha256": "a480c35327cacf96bee854410ea020cb38faf56c882739c03501ff8a3570aa77"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/README.md",
+      "sha256": "dfef2a2d27b7d0c97242792fbee1ba6b7629fee3511b3fc9f44b6cd6ff61599d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/renovate.json",
+      "sha256": "40ef7e6359e745fce7c87ccff8c87891012428e916ba89fb70d12e4643c983e5"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/account-assistant.test.ts",
+      "sha256": "afe1b6d6bc59ee2a860fcd17386194f2accc54076edc0e44112a2b575727f5ab"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/bank-recon.test.ts",
+      "sha256": "ab02b91913550bf98c3ae1b45f5a3b835c77602c5c6161b82dbccd450a1c654f"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/i18n-locales.test.ts",
+      "sha256": "4fb76b7265ff4f7141596bdd46fc89bca091f1a16a5ccfd0c2a7898d874e9293"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/inventory-return.test.ts",
+      "sha256": "c7946d3c9322ec7c4d61657734a33d16e7e5c826c10659c867884b1333be23c7"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/opening-balances.test.ts",
+      "sha256": "97521c3d57f494acc11511351c9fc0c6f25872eb94c7a442f000e46038363a0d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/organization-authorization.test.ts",
+      "sha256": "270cb9f010692d73b08e39956c229d826b4c8c1b0cf406056f9dbecaab100a4d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/partner-roles.test.ts",
+      "sha256": "66cc303a99f86cf5c5f35c8ceb95f4d45d867b893cb936c1ce71e988f65ca6be"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/recurring-invoices.test.ts",
+      "sha256": "0b79e2a03df10d8518a0d41bf63cbb1203139da82ce6e34454bbd64b8c9df1b0"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/report-exports.test.ts",
+      "sha256": "de47ddfe160e438e27c330d436ffbf4c5db1caf043d24e2aa2d04c41a91669ed"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/resizable-table.test.ts",
+      "sha256": "e16ca276ae143ed7817c5766ba7c23c69a6cf234987651f51ae83804b3a1ede6"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/stock-flow.test.ts",
+      "sha256": "8e99b84cee104f21758717d2b24b2f3b1afad2db441d6558ceae46a28a9ce83a"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/supplier-trade.test.ts",
+      "sha256": "ce31986d764f62ec586a7851e1be31f3ea6edfe4eeb7db11c68ac385e8d8832d"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/trade-documents.test.ts",
+      "sha256": "24cf6bc912158ccac2db372cdc0fd3b0abe3085e4a922936f23931838dc53e73"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/treasury.test.ts",
+      "sha256": "fa03cf038a389dad29cd7549a10a18199f0ee13c9c8a784b8733b79b94abfe17"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/use-client-pagination.test.ts",
+      "sha256": "ad5fbf9c22ae6266cc916d2268ada8b7e60da548d8df3b35268ce48db557ef9c"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/test/workspace-setup.test.ts",
+      "sha256": "1b39d4c75f6daf4f681e8859c54f9abda89cf7d06c5e7878b2876b642699ed93"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/tsconfig.json",
+      "sha256": "e7cf6cc47eea873f00a0e5ba627a594988f66c4dfbdc11ab7990905f46690266"
+    },
+    {
+      "path": "src/Web/nexora-dashboard/vitest.config.ts",
+      "sha256": "0668f9c2be4987894c2eee06e062e230529db2689c9925338d3912ef97171a6b"
+    }
+  ]
+}

@@ -247,7 +247,10 @@ onMounted(() => {
               <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <div class="space-y-1 text-xs text-muted">
                   <p>会计年度：{{ setup.fiscalYearStart }} 至 {{ setup.fiscalYearEnd }} · 开账日 {{ setup.openingDate }}</p>
-                  <p>科目模板：{{ chartTemplateOptions.find(item => item.id === setup.chartTemplate)?.name }} · 税制：{{ taxRegimeOptions.find(item => item.id === setup.taxRegime)?.name }}</p>
+                  <p>
+                    科目模板：{{ chartTemplateOptions.find(item => item.id === setup.chartTemplate)?.name }} · 税制：{{
+                      taxRegimeOptions.find(item => item.id === setup.taxRegime)?.name }}
+                  </p>
                 </div>
                 <UButton
                   color="neutral"
@@ -305,7 +308,8 @@ onMounted(() => {
                   </span>
                   <span class="min-w-0">
                     <span class="block truncate text-xs font-medium text-highlighted">{{ step.title }}</span>
-                    <span class="block truncate text-[11px] text-muted">{{ step.id === activeStep ? '当前步骤' : step.description }}</span>
+                    <span class="block truncate text-[11px] text-muted">{{ step.id === activeStep ? '当前步骤'
+                      : step.description }}</span>
                   </span>
                 </button>
               </div>
@@ -355,7 +359,11 @@ onMounted(() => {
                     <UInput v-model="form.legalName" class="w-full" data-testid="setup-company-legal-name" />
                   </UFormField>
                   <UFormField label="统一社会信用代码">
-                    <UInput v-model="form.registrationNo" class="w-full font-mono" data-testid="setup-company-registration" />
+                    <UInput
+                      v-model="form.registrationNo"
+                      class="w-full font-mono"
+                      data-testid="setup-company-registration"
+                    />
                   </UFormField>
                   <UFormField label="纳税人识别号">
                     <UInput v-model="form.taxNo" class="w-full font-mono" data-testid="setup-company-tax-no" />
@@ -596,7 +604,10 @@ onMounted(() => {
                     </p>
                   </button>
                 </div>
-                <div class="rounded-sm border border-default bg-elevated/30 p-4 text-xs text-muted" data-testid="setup-tax-summary">
+                <div
+                  class="rounded-sm border border-default bg-elevated/30 p-4 text-xs text-muted"
+                  data-testid="setup-tax-summary"
+                >
                   <p class="font-medium text-highlighted">
                     完成前的配置摘要
                   </p>

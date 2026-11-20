@@ -717,11 +717,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
               />
             </div>
             <div v-else class="nx-reveal" :style="{ '--nx-delay': '300ms' }">
-              <UTimeline
-                :items="activityItems"
-                size="sm"
-                color="primary"
-              />
+              <UTimeline :items="activityItems" size="sm" color="primary" />
               <UButton
                 to="/change-log"
                 :label="t('dashboard.activity.viewAll')"
@@ -736,8 +732,12 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
         </div>
 
         <p class="text-[11px] text-dimmed">
-          {{ t('dashboard.footer.dataBefore') }} <code class="font-mono">app/mocks/</code> {{ t('dashboard.footer.dataAfter') }}
-          {{ t('dashboard.footer.emptyBefore') }} <code class="font-mono">?empty=todos</code>{{ t('dashboard.footer.emptySeparator') }}<code class="font-mono">?empty=documents</code> {{ t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{ t('dashboard.footer.emptyAfter') }}
+          {{ t('dashboard.footer.dataBefore') }} <code class="font-mono">app/mocks/</code> {{
+            t('dashboard.footer.dataAfter') }}
+          {{ t('dashboard.footer.emptyBefore') }} <code class="font-mono">?empty=todos</code>{{
+            t('dashboard.footer.emptySeparator') }}<code class="font-mono">?empty=documents</code> {{
+            t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{
+            t('dashboard.footer.emptyAfter') }}
         </p>
       </template>
     </UDashboardPanel>
