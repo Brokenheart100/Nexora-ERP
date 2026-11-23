@@ -29,7 +29,7 @@ P5 已接入工作区「财务报表」。可查询权责发生制的试算平�
 - [依赖就绪、AMQP 权限与本地故障回归](docs/verification/p1-platform-readiness.md)
 - [P2 商品目录与数据库升级](docs/verification/p2-catalog.md)
 
-新版 Dashboard 独立入口为 **https://localhost:7444**，资源 `dashboard` 使用端口 `3002`；模拟预览保留 `3001`。独立构建、运行配置和当前接入范围见 [Dashboard README](src/Web/nexora-dashboard/README.md) 与 [D1/D2 验收](docs/verification/dashboard-d1-d2.md)。
+新版 Dashboard 独立入口为 **https://localhost:7444**，资源 `dashboard` 使用端口 `3002`。原型预览使用 `3001`，MSW 请求预览使用 `3003`。新版 D0–D14 已完成接入和验收。独立 Node 构建、HTTPS 运行、首版暂停恢复及 CI 产物见 [Dashboard README](src/Web/nexora-dashboard/README.md) 与 [D14 验收](docs/verification/dashboard-d14-release.md)。
 
 ## 本地运行
 
@@ -70,7 +70,7 @@ aspire wait gateway --apphost src/Hosting/Nexora.AppHost/Nexora.AppHost.csproj -
 
 AppHost 默认通过 Aspire Community Toolkit 的 `AddMailPit` 启动 Mailpit。可从 Aspire Dashboard 打开 `mailpit` 收件箱，或访问 `http://localhost:8025`。未配置外部渠道时，发票邮件也投递到该收件箱。P4 的 SMTP 故障注入使用同仓库捕获器，见 [P4 验收记录](docs/verification/p4-sales-to-ledger.md)。
 
-可在 AppHost 的 User Secrets 设置 `OnboardingMail:Host`、`OnboardingMail:Port`（默认 `587`）、`OnboardingMail:From` 和 `OnboardingMail:Username`，需要认证时将 SMTP 密码配置为 `Parameters:onboarding-smtp-password`。外部 SMTP 使用 STARTTLS。开发环境生成的邀请链接指向本机 BFF，适合同一台机器上验证。
+可在 AppHost 的 User Secrets 设置 `OnboardingMail:Host`、`OnboardingMail:Port`（默认 `587`）、`OnboardingMail:From` 和 `OnboardingMail:Username`，需要认证时将 SMTP 密码配置为 `Parameters:onboarding-smtp-password`。外部 SMTP 使用 STARTTLS。开发环境的工作区邀请链接使用新版 Dashboard 的 `https://localhost:7444/join`，公开地址随 AppHost 启动时的配置生效。
 
 本地 PostgreSQL 使用一个 `postgres` 实例（端口 `6543`、卷 `nexora-postgres-data`）。Organization、Reporting、Keycloak、MasterData、Finance、Purchasing、Sales 和 Inventory 各使用独立数据库与账号。新卷首次启动时自动初始化，既有卷可使用上述升级脚本补建账号。
 
