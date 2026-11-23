@@ -1,0 +1,66 @@
+name: Dashboard release checks
+on:
+  push:
+    paths:
+      - 'src/Web/nexora-dashboard/**'
+      - '.github/workflows/dashboard-ci.yml'
+  pull_request:
+    paths:
+      - 'src/Web/nexora-dashboard/**'
+      - '.github/workflows/dashboard-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dashboard:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: src/Web/nexora-dashboard
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24.21.0
+      - uses: pnpm/action-setup@v6.1.1
+        with:
+          version: 12.16.1
+          run_install: false
+      - run: pnpm install --frozen-lockfile
+      - name: Lint release checks
+        run: pnpm exec eslint scripts/verify-node-builds.mjs e2e/d14-release-ui.spec.ts playwright.config.ts
+      - run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test:unit --reporter=junit --outputFile="$RUNNER_TEMP/dashboard-unit.xml"
+      - name: Build mock output
+        run: pnpm build
+        env:
+          NUXT_PUBLIC_DATA_MODE: mock
+      - name: Build live output
+        run: pnpm build
+        env:
+          NUXT_PUBLIC_DATA_MODE: live
+      - name: Verify Node output
+        run: node scripts/verify-node-builds.mjs
+      - name: Package live output
+        run: |
+          artifact="nexora-dashboard-${GITHUB_SHA}.tar.gz"
+          tar -czf "$RUNNER_TEMP/$artifact" -C .output-live .
+          (cd "$RUNNER_TEMP" && sha256sum "$artifact" > "$artifact.sha256")
+          printf 'Dashboard commit: `%s`\n\nLive output SHA-256: `%s`\n' "$GITHUB_SHA" "$(cut -d ' ' -f 1 "$RUNNER_TEMP/$artifact.sha256")" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: dashboard-live-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/nexora-dashboard-*.tar.gz
+            ${{ runner.temp }}/nexora-dashboard-*.tar.gz.sha256
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7.0.2
+        if: always()
+        with:
+          name: dashboard-unit-${{ github.sha }}
+          path: ${{ runner.temp }}/dashboard-unit.xml
+          if-no-files-found: warn

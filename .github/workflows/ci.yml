@@ -24,21 +24,3 @@ jobs:
           name: p1-test-results
           path: artifacts/p1/test-results/*.trx
           if-no-files-found: warn
-  frontend:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: src/Web/nexora-web
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: actions/setup-node@v7.1.0
-        with:
-          node-version: 24.21.0
-      - uses: pnpm/action-setup@v6.1.1
-        with:
-          version: 12.16.1
-          run_install: false
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm build
