@@ -59,6 +59,8 @@ pnpm --dir src/Web/nexora-dashboard test:e2e
 
 默认构建输出 `.output/`，BFF live 配置构建输出 `.output-live/`；开发输出独立，分别为 `.output-dev/` 与 `.output-live-dev/`。MSW 仅允许显式 mock 开发环境，未知 BFF 模拟请求返回 501。
 
+本地发布演练可在启动 AppHost 前配置 `Dashboard__UseNodeOutput=true`，让 `dashboard` 运行 `pnpm start:live`。`Dashboard__BuildVersion` 与 `Dashboard__BuildId` 标识实际产物，公开入口仍为 `https://localhost:7444`。独立 CI 打包完整的 `.output-live` 并提供 SHA-256。启动条件、回退步骤和验收记录见 [D14 发布与回退](../../../docs/verification/dashboard-d14-release.md)。
+
 `test:e2e` 使用指定 AppHost、D0 本地开发样例、Mailpit 和受保护的开发凭据，验证真实会话、授权、主数据、前置配置和采购到付款。浏览器使用 Edge 并串行运行，Node 请求加载 AppHost 的开发 CA。`test:msw` 用同一界面验证可重复的交互、冲突和未知提交恢复。D4 的消费者和传输恢复用例通过 `NEXORA_D4_FAULTS=1` 在专用本地栈启用。
 
 临时启动的验证 AppHost 在结束后正常停止，保留数据卷。详细状态见 [D1 验收](../../../docs/verification/dashboard-d1-original-ui.md)、[D2 验收](../../../docs/verification/dashboard-d2-original-ui.md)、[D3 验收](../../../docs/verification/dashboard-d3-original-ui.md)、[D4 验收](../../../docs/verification/dashboard-d4-original-ui.md) 与 [接入 TODO](../../../docs/ui-dashboard-api-integration-todolist.md)。

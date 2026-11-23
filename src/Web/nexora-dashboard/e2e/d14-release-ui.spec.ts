@@ -105,7 +105,7 @@ async function streamAssistant(page: Page, workspace: string) {
   await expect(page.getByTestId('live-assistant-cancel')).toBeHidden()
 }
 
-test('D14 独立 HTTPS 构建、双身份和首版暂停恢复', async ({ browser }, testInfo) => {
+test('D14 独立 HTTPS 构建、双身份和首版暂停恢复', async ({ browser, request }, testInfo) => {
   test.setTimeout(480_000)
   const tag = crypto.randomUUID().slice(0, 8)
   const [owner, maker, reviewer, visitor] = await Promise.all(Array.from({ length: 4 }, () => browser.newPage({ baseURL: origin, locale: 'zh-CN' }))) as [Page, Page, Page, Page]
@@ -135,11 +135,12 @@ test('D14 独立 HTTPS 构建、双身份和首版暂停恢复', async ({ browse
     expect(callbacks.length).toBeGreaterThanOrEqual(2)
     expect(callbacks.every(status => status >= 300 && status < 400)).toBe(true)
     const { finance, ar, workspace } = fixture
-    const identity = (page: Page) => page.request.get('/bff/me')
+    const identity = async (page: Page) => JSON.parse((await api(page, '/bff/me')).text) as { name?: string }
     for (const [page, name] of [[maker, 'alice'], [reviewer, 'bob']] as const) {
-      const me = await identity(page)
-      expect(await me.json()).toMatchObject({ name })
-      expect(me.headers()['cache-control']).toContain('no-store')
+      const me = await api(page, '/bff/me')
+      expect(me.status).toBe(200)
+      expect(JSON.parse(me.text)).toMatchObject({ name })
+      expect(me.headers['cache-control']).toContain('no-store')
     }
     await streamAssistant(maker, workspace)
 
@@ -203,25 +204,26 @@ test('D14 独立 HTTPS 构建、双身份和首版暂停恢复', async ({ browse
     const prior = await readBusiness<PurchaseDetail>(maker, pending.path)
 
     // The release tag above is required before touching the local Dashboard process.
-    let pausedStatus = 0
+    let pausedStatus: number | 'unreachable' = 0
     try {
       await aspire('resource', 'dashboard', 'stop')
       await expect.poll(async () => {
-        pausedStatus = (await identity(maker)).status()
-        return pausedStatus >= 500
+        const response = await request.get('/bff/version', { timeout: 2500 }).catch(() => null)
+        pausedStatus = response?.status() ?? 'unreachable'
+        return pausedStatus === 'unreachable' || pausedStatus >= 500
       }).toBe(true)
-      expect((await maker.request.get('https://localhost:7443/alive')).status()).toBe(200)
+      expect((await request.get('https://localhost:7443/alive')).status()).toBe(200)
     } finally {
       await aspire('resource', 'dashboard', 'start')
       await aspire('wait', 'dashboard', '--timeout', '60')
     }
 
-    await expect.poll(async () => (await maker.request.get('/health')).status(), { timeout: 60_000 }).toBe(200)
+    await expect.poll(async () => (await request.get('/health', { timeout: 3000 }).catch(() => null))?.status(), { timeout: 60_000 }).toBe(200)
     const recovered = await readBusiness<RuntimeBuildInfo>(maker, '/bff/version')
     expect(recovered).toMatchObject({ buildId: before.buildId, version: before.version, environment: before.environment })
     expect(recovered.startedAt).not.toBe(before.startedAt)
-    expect(await (await identity(maker)).json()).toMatchObject({ name: 'alice' })
-    expect(await (await identity(reviewer)).json()).toMatchObject({ name: 'bob' })
+    expect(await identity(maker)).toMatchObject({ name: 'alice' })
+    expect(await identity(reviewer)).toMatchObject({ name: 'bob' })
     expect((await readBusiness<PurchaseDetail>(maker, pending.path)).order.version).toBe(prior.order.version)
     expect((await pending.permit())?.state).toBe('issued')
     await expect.poll(async () => (await readBusiness<ReportExport>(maker, exportPath)).completedAtUtc).not.toBeNull()
