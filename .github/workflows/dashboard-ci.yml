@@ -30,10 +30,15 @@ jobs:
           version: 12.16.1
           run_install: false
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec nuxt prepare
+      - name: Prepare Nuxt tooling
+        run: pnpm exec nuxt prepare
+        env:
+          NODE_ENV: development
       - name: Lint release checks
         run: pnpm exec eslint scripts/verify-node-builds.mjs e2e/d14-release-ui.spec.ts playwright.config.ts
       - run: pnpm typecheck
+        env:
+          NODE_ENV: development
       - name: Unit tests
         run: pnpm test:unit --reporter=junit --outputFile="$RUNNER_TEMP/dashboard-unit.xml"
       - name: Build mock output
