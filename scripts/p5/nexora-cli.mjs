@@ -5,7 +5,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 
-const base = (process.env.NEXORA_CLI_BASE || 'https://localhost:7443').replace(/\/$/, '')
+const base = (process.env.NEXORA_CLI_BASE || 'https://localhost:7444').replace(/\/$/, '')
 const home = process.env.NEXORA_CLI_HOME || join(homedir(), '.nexora-cli')
 const tokenFile = join(home, 'tokens.json')
 const argv = process.argv.slice(2)
@@ -73,8 +73,10 @@ async function login() {
     interval: grant.interval,
   })
   const deadline = Date.now() + grant.expiresIn * 1000
+  let interval = grant.interval
   while (Date.now() < deadline) {
-    await new Promise(done => setTimeout(done, grant.interval * 1000))
+    await new Promise(done => setTimeout(done, Math.min(interval * 1000, deadline - Date.now())))
+    if (Date.now() >= deadline) break
     const token = await request(config.tokenEndpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -94,6 +96,7 @@ async function login() {
       return
     }
     const error = token.body && token.body.error
+    if (error === 'slow_down') interval += 5
     if (error === 'authorization_pending' || error === 'slow_down') continue
     if (error === 'access_denied') { emit({ event: 'denied' }); process.exitCode = 2; return }
     if (error === 'expired_token') { emit({ event: 'expired' }); process.exitCode = 3; return }
@@ -126,11 +129,12 @@ async function logout() {
   const config = await settings(stored.flow === 'mcp' ? 'mcp' : 'cli')
   for (const [token, hint] of [[stored.refreshToken, 'refresh_token'], [stored.accessToken, 'access_token']]) {
     if (!token) continue
-    await request(config.revokeEndpoint, {
+    const result = await request(config.revokeEndpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ token, tokenTypeHint: hint }),
     })
+    if (result.status < 200 || result.status >= 300) throw new Error('Token revocation failed: HTTP ' + result.status)
   }
   rmSync(tokenFile, { force: true })
   emit({ event: 'logged_out' })

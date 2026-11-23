@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -19,6 +20,34 @@ internal static class BillingGate
 
     public static void MapBillingGate(this WebApplication app) =>
         app.UseMiddleware<ModuleEntitlementMiddleware>();
+
+    internal static async Task<(EntitlementSnapshot? Snapshot, HttpStatusCode Status)> ReadEntitlementsAsync(
+        IHttpClientFactory clients, Guid workspaceId, string authorization, CancellationToken cancellationToken)
+    {
+        var client = clients.CreateClient(HttpClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"api/workspaces/{workspaceId}/billing/entitlements");
+        request.Headers.TryAddWithoutValidation("Authorization", authorization);
+        using var response = await client.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode) return (null, response.StatusCode);
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var root = document.RootElement;
+        if (root.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid workspace entitlement response.");
+        var plan = root.TryGetProperty("effectivePlanCode", out var planElement) ? planElement.GetString() ?? "" : "";
+        var modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty("modules", out var modulesElement) && modulesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var item in modulesElement.EnumerateArray())
+            {
+                if (item.GetString() is { Length: > 0 } code) modules.Add(code);
+            }
+        }
+
+        return (new EntitlementSnapshot(plan, modules), response.StatusCode);
+    }
+
+    internal sealed record EntitlementSnapshot(string PlanCode, IReadOnlySet<string> Modules);
 }
 
 internal sealed partial class ModuleEntitlementMiddleware(
@@ -61,34 +90,14 @@ internal sealed partial class ModuleEntitlementMiddleware(
         }, context.RequestAborted);
     }
 
-    private async Task<EntitlementSnapshot?> AllowedAsync(Guid workspaceId, string authorization, CancellationToken cancellationToken)
+    private async Task<BillingGate.EntitlementSnapshot?> AllowedAsync(Guid workspaceId, string authorization, CancellationToken cancellationToken)
     {
         try
         {
-            var client = clients.CreateClient(BillingGate.HttpClientName);
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"api/workspaces/{workspaceId}/billing/entitlements");
-            request.Headers.TryAddWithoutValidation("Authorization", authorization);
-            using var response = await client.SendAsync(request, cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Billing entitlement lookup returned {Status} for workspace {WorkspaceId}; allowing request.", (int)response.StatusCode, workspaceId);
-                return null;
-            }
-
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-            var root = document.RootElement;
-            var plan = root.TryGetProperty("effectivePlanCode", out var planElement) ? planElement.GetString() ?? "" : "";
-            var modules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (root.TryGetProperty("modules", out var modulesElement) && modulesElement.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var item in modulesElement.EnumerateArray())
-                {
-                    if (item.GetString() is { Length: > 0 } code) modules.Add(code);
-                }
-            }
-
-            return new EntitlementSnapshot(plan, modules);
+            var (snapshot, status) = await BillingGate.ReadEntitlementsAsync(clients, workspaceId, authorization, cancellationToken);
+            if (snapshot is null)
+                logger.LogWarning("Billing entitlement lookup returned {Status} for workspace {WorkspaceId}; allowing request.", (int)status, workspaceId);
+            return snapshot;
         }
         catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
         {
@@ -97,7 +106,7 @@ internal sealed partial class ModuleEntitlementMiddleware(
         }
     }
 
-    private static bool TryResolve(string? path, out Guid workspaceId, out string module)
+    internal static bool TryResolve(string? path, out Guid workspaceId, out string module)
     {
         workspaceId = Guid.Empty;
         module = "";
@@ -133,6 +142,4 @@ internal sealed partial class ModuleEntitlementMiddleware(
         };
         return module.Length > 0;
     }
-
-    private sealed record EntitlementSnapshot(string PlanCode, IReadOnlySet<string> Modules);
 }

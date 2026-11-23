@@ -87,7 +87,7 @@ public static class RecordChangeCapture
 
     private static string? ResolveChangedProperties(EntityEntry entry)
     {
-        var names = entry.Properties.Where(property => property.IsModified).Select(property => property.Metadata.Name)
+        var names = entry.Properties.Where(property => property.IsModified && RecordChangeRedaction.CanExpose(property.Metadata.Name)).Select(property => property.Metadata.Name)
             .ToArray();
         return names.Length == 0 ? null : string.Join(',', names);
     }
@@ -97,7 +97,7 @@ public static class RecordChangeCapture
         var values = new SortedDictionary<string, object?>(StringComparer.Ordinal);
         foreach (var property in entry.Properties)
         {
-            if (!IsScalar(property.Metadata.ClrType)) continue;
+            if (!IsScalar(property.Metadata.ClrType) || !RecordChangeRedaction.CanExpose(property.Metadata.Name)) continue;
             var value = original ? property.OriginalValue : property.CurrentValue;
             if (value is string text && text.Length > MaxStringLength) value = text[..MaxStringLength] + "...";
             values[property.Metadata.Name] = value;

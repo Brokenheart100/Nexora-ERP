@@ -10,7 +10,8 @@ public sealed partial class ReceivableUseCases
         RequirePage(page);
         var (current, _) = await access.ReadAsync(workspace, ct);
         return (await recurring.ListAsync(current.Scope, page, ct)).Select(x => new ScheduleView(x.Id, x.Version, x.Paused,
-            x.Terms with { Brand = x.Terms.Brand with { LogoPngBase64 = null } }, x.NextOn, x.LastOn, x.PendingReason, x.Preview(12))).ToArray();
+            x.Terms with { Brand = x.Terms.Brand with { LogoPngBase64 = null } }, x.NextOn, x.LastOn, x.PendingReason,
+            x.Preview(12), Wake(x)?.At)).ToArray();
     }
 
     public async Task<InvoiceOccurrence[]> OccurrencesAsync(Guid workspace, Guid id, int page, IRecurringInvoices recurring, CancellationToken ct)

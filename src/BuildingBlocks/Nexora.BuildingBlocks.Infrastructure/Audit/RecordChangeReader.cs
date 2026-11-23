@@ -33,7 +33,7 @@ public sealed class RecordChangeReader<TContext>(TContext context) : IRecordChan
             .ToArrayAsync(cancellationToken);
         var builder = new StringBuilder();
         builder.AppendLine("occurredAtUtc,service,entityName,entityId,operation,actorIssuer,actorSubject,changedProperties,beforeJson,afterJson");
-        foreach (var row in rows)
+        foreach (var row in rows.Select(Map))
         {
             builder.Append(Escape(row.OccurredAtUtc.ToString("O", CultureInfo.InvariantCulture))).Append(',')
                 .Append(Escape(row.Service)).Append(',')
@@ -67,10 +67,13 @@ public sealed class RecordChangeReader<TContext>(TContext context) : IRecordChan
 
     private static RecordChangeView Map(RecordChange change) => new(change.Id, change.Service, change.EntityName,
         change.EntityId, change.Operation, change.TenantId, change.WorkspaceId, change.ActorIssuer, change.ActorSubject,
-        change.OccurredAtUtc, change.ChangedProperties, change.BeforeJson, change.AfterJson);
+        change.OccurredAtUtc, RecordChangeRedaction.ChangedProperties(change.ChangedProperties),
+        RecordChangeRedaction.Snapshot(change.BeforeJson), RecordChangeRedaction.Snapshot(change.AfterJson));
 
     private static string Escape(string value)
     {
+        if (value.StartsWith('\t') || value.StartsWith('\r') || value.StartsWith('\n') ||
+            value.TrimStart().FirstOrDefault() is '=' or '+' or '-' or '@') value = "'" + value;
         if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r')) return value;
         return '"' + value.Replace("\"", "\"\"", StringComparison.Ordinal) + '"';
     }

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Aspire.Hosting.ApplicationModel;
 using Nexora.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -215,7 +214,7 @@ var organization = builder.AddProject<Projects.Nexora_Organization_Api>("organiz
 var mailSettings = builder.Configuration.GetSection("OnboardingMail");
 var smtpHost = mailSettings["Host"];
 var smtpFrom = mailSettings["From"] ?? "noreply@nexora.invalid";
-organization.WithEnvironment("OnboardingMail__PublicOrigin", publicOrigin)
+organization.WithEnvironment("OnboardingMail__PublicOrigin", dashboardOrigin)
     .WithEnvironment("OnboardingMail__From", smtpFrom);
 identityOnboarding.WithEnvironment("NEXORA_SMTP_FROM", smtpFrom);
 IResourceBuilder<MailPitContainerResource>? localMail = null;
@@ -259,9 +258,9 @@ var finance = builder.AddProject<Projects.Nexora_Finance_Api>("finance", launchP
     .WithEnvironment("Authentication__Authority", authority)
     .WaitFor(financeDatabase).WaitFor(organization).WaitFor(masterData).WaitFor(broker);
 
-var dashboard = builder.AddJavaScriptApp("dashboard", "../../Web/nexora-dashboard").WithPnpm()
-    .WithHttpEndpoint(port: 3002, env: "NUXT_PORT")
-    .WithHttpHealthCheck("/alive")
+var useDashboardOutput = bool.TryParse(builder.Configuration["Dashboard:UseNodeOutput"], out var enabled) && enabled;
+var dashboard = builder.AddJavaScriptApp("dashboard", "../../Web/nexora-dashboard", runScriptName: useDashboardOutput ? "start:live" : "dev").WithPnpm()
+    .WithHttpEndpoint(port: 3002, env: useDashboardOutput ? "NITRO_PORT" : "NUXT_PORT")
     .WithEnvironment("NUXT_PUBLIC_DATA_MODE", "live")
     .WithEnvironment("NUXT_PUBLIC_BFF_ORIGIN", dashboardOrigin)
     .WithEnvironment("NUXT_BFF_ISSUER", ReferenceExpression.Create($"{identityOrigin}/realms/nexora"))
@@ -276,6 +275,14 @@ var dashboard = builder.AddJavaScriptApp("dashboard", "../../Web/nexora-dashboar
         return Task.CompletedTask;
     })
     .WaitFor(cache).WaitFor(identity).WaitForCompletion(identityOnboarding);
+
+if (useDashboardOutput)
+{
+    dashboard.WithEnvironment("NODE_ENV", "production")
+        .WithEnvironment("NITRO_HOST", "127.0.0.1")
+        .WithEnvironment("NEXORA_BUILD_ENV", "d14-local")
+        .WithEnvironment("NEXORA_BUILD_ID", builder.Configuration["Dashboard:BuildId"] ?? string.Empty);
+}
 
 if (builder.Configuration["InvoiceMail:Host"] is { Length: > 0 })
 {
@@ -326,7 +333,7 @@ var purchasing = builder.AddProject<Projects.Nexora_Purchasing_Api>("purchasing"
 var gateway = builder.AddProject<Projects.Nexora_ApiGateway>("gateway", launchProfileName: null)
     .WithHttpsEndpoint(port: gatewayPort)
     .WithHttpsEndpoint(port: dashboardPort, name: "dashboard-https")
-    .WithHttpHealthCheck("/health", endpointName: "https")
+    // .WithHttpHealthCheck("/health", endpointName: "https")
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithEnvironment("Authentication__Authority", authority)
     .WithEnvironment("Dashboard__Origin", dashboardOrigin)
@@ -335,12 +342,10 @@ var gateway = builder.AddProject<Projects.Nexora_ApiGateway>("gateway", launchPr
     .WithEnvironment("Ai__Endpoint", builder.Configuration["Ai:Endpoint"] ?? string.Empty)
     .WithEnvironment("Ai__ApiKey", builder.Configuration["Ai:ApiKey"] ?? string.Empty)
     .WithReference(cache)
-    // .WithReference(web)
-    .WithReference(dashboard).WithReference(source: organization).WithReference(reporting).WithReference(masterData)
+    .WithReference(dashboard).WithReference(organization).WithReference(reporting).WithReference(masterData)
     .WithReference(finance).WithReference(purchasing).WithReference(inventory).WithReference(sales)
     .WithExternalHttpEndpoints()
     .WaitFor(cache)
-    // .WaitFor(web)
     .WaitFor(dashboard).WaitFor(organization).WaitFor(reporting).WaitFor(masterData)
     .WaitFor(finance).WaitFor(purchasing).WaitFor(inventory).WaitFor(sales);
 

@@ -10,7 +10,7 @@ public sealed class SalesOrderStore(SalesDbContext db) : ISalesOrders
     private IQueryable<SalesOrder> Scoped(ResourceScope scope) =>
         db.Orders.Where(x => x.TenantId == scope.TenantId && x.WorkspaceId == scope.WorkspaceId);
 
-    public async Task<IReadOnlyList<SalesOrder>> PageAsync(SalesAccess access, PageWindow page, CancellationToken ct)
+    public async Task<IReadOnlyList<SalesOrder>> PageAsync(SalesAccess access, PageWindow page, CancellationToken ct, bool? isQuote = null)
     {
         var query = Scoped(access.Scope).AsNoTracking();
         if (!access.Allows(SalesPermissions.Read))
@@ -23,12 +23,16 @@ public sealed class SalesOrderStore(SalesDbContext db) : ISalesOrders
                 || (x.MakerIssuer == actor.Issuer && x.MakerSubject == actor.Subject &&
                     (ownCompany || x.DepartmentId.HasValue && ownDepartments.Contains(x.DepartmentId.Value))));
         }
-        return await query.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id)
+        if (isQuote is { } quotes) query = query.Where(x => x.IsQuote == quotes);
+        return await query.Include(x => x.Lines).OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id)
             .Skip(page.Offset).Take(page.Size + 1).ToArrayAsync(ct);
     }
 
     public Task<SalesOrder?> GetAsync(ResourceScope scope, Guid id, CancellationToken ct) =>
         Scoped(scope).AsNoTracking().Include(x => x.Lines).SingleOrDefaultAsync(x => x.Id == id, ct);
+
+    public Task<SalesOrder?> FindConvertedAsync(ResourceScope scope, Guid quoteId, CancellationToken ct) =>
+        Scoped(scope).AsNoTracking().SingleOrDefaultAsync(x => x.QuoteId == quoteId, ct);
 
     public async Task<SalesOrder?> LockAsync(ResourceScope scope, Guid id, CancellationToken ct)
     {

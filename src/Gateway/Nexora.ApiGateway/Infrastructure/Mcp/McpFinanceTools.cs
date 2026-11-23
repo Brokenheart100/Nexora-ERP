@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Nexora.ApiGateway.Infrastructure.Billing;
 
 namespace Nexora.ApiGateway.Infrastructure.Mcp;
 
@@ -116,10 +117,22 @@ internal sealed class McpFinanceTools(IHttpClientFactory clients)
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, path);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        var authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        request.Headers.Authorization = authorization;
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         try
         {
+            if (!ModuleEntitlementMiddleware.TryResolve(path.Split('?', 2)[0], out _, out var module))
+                return McpToolOutcome.Failure(McpToolStatus.Unavailable, "This tool's module is unavailable.", workspace, "module.unmapped");
+
+            var (snapshot, status) = await BillingGate.ReadEntitlementsAsync(clients, workspaceId, authorization.ToString(), cancellationToken);
+            if (status is HttpStatusCode.NotFound or HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized)
+                return McpToolOutcome.Failure(McpToolStatus.Denied, "The caller is not allowed to read this workspace's data.", workspace, status.ToString());
+            if (snapshot is null)
+                return McpToolOutcome.Failure(McpToolStatus.Unavailable, "The workspace plan could not be verified.", workspace, status.ToString());
+            if (!snapshot.Modules.Contains(module))
+                return McpToolOutcome.Failure(McpToolStatus.Denied, "The workspace plan does not include the required module.", workspace, BillingGate.RejectionCode);
+
             using var response = await clients.CreateClient(clientName).SendAsync(request, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
             if (response.IsSuccessStatusCode) return McpToolOutcome.Ok(body, workspace);
@@ -137,7 +150,7 @@ internal sealed class McpFinanceTools(IHttpClientFactory clients)
                     "Finance is temporarily unavailable. Retry later.", workspace, Detail(body)),
             };
         }
-        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException or JsonException)
         {
             return McpToolOutcome.Failure(McpToolStatus.Unavailable, "Finance is temporarily unavailable. Retry later.", workspace, exception.Message);
         }

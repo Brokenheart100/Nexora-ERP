@@ -15,8 +15,9 @@ public static partial class SalesEndpoints
     private const string Order = Orders + "/{id:guid}";
 
     [Authorize, WolverineGet(Orders)]
-    public static Task<SalesList> List(Guid workspaceId, [FromQuery] int? page, [FromQuery] int? pageSize, SalesQueries queries, CancellationToken ct) =>
-        queries.PageAsync(workspaceId, new PageWindow(page ?? 1, pageSize ?? PageWindow.DefaultSize), ct);
+    public static Task<SalesList> List(Guid workspaceId, [FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] bool? isQuote,
+        SalesQueries queries, CancellationToken ct) =>
+        queries.PageAsync(workspaceId, new PageWindow(page ?? 1, pageSize ?? PageWindow.DefaultSize), ct, isQuote);
 
     [Authorize, WolverineGet(Order)]
     [ProducesResponseType<SalesDetail>(StatusCodes.Status200OK)]

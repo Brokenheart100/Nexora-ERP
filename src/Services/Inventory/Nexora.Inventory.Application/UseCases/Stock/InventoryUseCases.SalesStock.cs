@@ -16,8 +16,15 @@ public sealed partial class InventoryUseCases
             throw new ArgumentException("Invalid fulfillment ticket.");
         return new ShipmentTerms(ticket.TenantId, ticket.WorkspaceId, ticket.PermitId, ticket.OrderId, ticket.LineId,
             ticket.ApprovedVersion, ticket.WarehouseId, ticket.ItemId, ticket.UnitId, ticket.CustomerId, ticket.OrderDate,
-            quantity, price, ticket.Currency, ticket.MinorUnits, ticket.ExpiresAtUtc, ticket.ItemName, ticket.CustomerName);
+            quantity, price, ticket.Currency, ticket.MinorUnits, StoredDeadline(ticket.ExpiresAtUtc), ticket.ItemName, ticket.CustomerName);
     }
+
+    // Sales stores the deadline as a PostgreSQL timestamp. Older Inventory snapshots kept the original JSON precision.
+    private static DateTimeOffset StoredDeadline(DateTimeOffset deadline) =>
+        deadline.AddTicks(-(deadline.UtcTicks % TimeSpan.TicksPerMicrosecond));
+
+    private static bool MatchesFulfillmentTicket(ShipmentTerms recorded, ShipmentTerms ticket) =>
+        (recorded with { ExpiresAtUtc = StoredDeadline(recorded.ExpiresAtUtc) }) == ticket;
 
     public async Task<(FulfillmentProgressV1[] Progress, ExpireSalesReservation[] Expiries)> ReserveAsync(
         FulfillmentTicketV1[] tickets, ISalesStock sales, CancellationToken ct)
@@ -38,7 +45,7 @@ public sealed partial class InventoryUseCases
         {
             var row = await sales.FindAsync(scope, terms.PermitId, ct);
             if (row is null) continue;
-            if (row.Terms != terms) throw new StockRuleException("Fulfillment ticket differs from the recorded terms.");
+            if (!MatchesFulfillmentTicket(row.Terms, terms)) throw new StockRuleException("Fulfillment ticket differs from the recorded terms.");
             existing.Add(row.Id, row);
         }
 
@@ -86,7 +93,7 @@ public sealed partial class InventoryUseCases
         }
         else
         {
-            if (current.Terms != terms) throw new StockRuleException("Fulfillment ticket differs from the recorded terms.");
+            if (!MatchesFulfillmentTicket(current.Terms, terms)) throw new StockRuleException("Fulfillment ticket differs from the recorded terms.");
             if (!current.Fenced && current.Remaining > 0)
                 current.Release(await store.PoolAsync(scope, terms.WarehouseId, terms.ItemId, ct));
         }

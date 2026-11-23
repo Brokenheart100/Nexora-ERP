@@ -5,6 +5,8 @@ namespace Nexora.ApiGateway.Infrastructure.Proxy;
 
 internal static class GatewayProxy
 {
+    private const string PublicInvoicePdf = "/public/invoice-pdf";
+
     public static void AddGatewayProxy(this WebApplicationBuilder builder)
     {
         RouteConfig[] routes =
@@ -26,7 +28,7 @@ internal static class GatewayProxy
                 RouteId = "invoice-share-download",
                 ClusterId = "finance",
                 AuthorizationPolicy = "Anonymous",
-                Match = new() { Path = "/public/invoice-pdf", Methods = [HttpMethods.Post] },
+                Match = new() { Path = PublicInvoicePdf, Methods = [HttpMethods.Post] },
                 Transforms = [RemoveHeader("Cookie"), RemoveHeader("Authorization")]
             },
             new RouteConfig
@@ -59,6 +61,12 @@ internal static class GatewayProxy
                         AuthorizationPolicy = "Anonymous", Match = new() { Path = path, Hosts = hosts },
                         Transforms = [new Dictionary<string, string> { ["RequestHeaderOriginalHost"] = "true" }, RemoveHeader("Authorization")]
                     }),
+                new RouteConfig
+                {
+                    RouteId = "dashboard-invoice-pdf", ClusterId = "dashboard", Order = -10,
+                    AuthorizationPolicy = "Anonymous", Match = new() { Path = PublicInvoicePdf, Methods = [HttpMethods.Post], Hosts = hosts },
+                    Transforms = [new Dictionary<string, string> { ["RequestHeaderOriginalHost"] = "true" }, RemoveHeader("Cookie"), RemoveHeader("Authorization")]
+                },
                 new RouteConfig
                 {
                     RouteId = "dashboard-web", ClusterId = "dashboard", Order = 90,

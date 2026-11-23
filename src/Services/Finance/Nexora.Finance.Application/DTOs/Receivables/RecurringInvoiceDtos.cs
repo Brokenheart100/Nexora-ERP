@@ -10,4 +10,4 @@ public sealed record ScheduleWake(InvoiceScheduleDue Command, DateTimeOffset At)
 public sealed record ScheduleChange(Guid Id, long Version, Guid? InvoiceId = null, string? PendingReason = null);
 
 public sealed record ScheduleView(Guid Id, long Version, bool Paused, RecurringTerms Terms, DateOnly? NextOn,
-    DateOnly? LastOn, string? PendingReason, DateOnly[] Preview);
+    DateOnly? LastOn, string? PendingReason, DateOnly[] Preview, DateTimeOffset? NextAtUtc = null);

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Nexora.BuildingBlocks.Application;
+using Nexora.BuildingBlocks.Infrastructure;
 using Nexora.Organization.Api;
 using Nexora.Organization.Application;
 using Nexora.Organization.Domain;
@@ -37,6 +38,107 @@ public sealed partial class WorkspaceSliceTests
     }
     private Task<WorkspaceView> Create(Claim subject) => Api<WorkspaceView>(subject, "/api/workspaces", new CreateWorkspaceRequest(Guid.NewGuid(), "成员验证商贸"), 201);
     private Task<AccessView> Access(Guid workspaceId, Claim subject) => Api<AccessView>(subject, $"/api/workspaces/{workspaceId}/access");
+
+    [Fact]
+    public async Task Invitation_email_uses_the_configured_dashboard_origin()
+    {
+        var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        try
+        {
+            var configuration = org.Services.GetRequiredService<IConfiguration>();
+            configuration["OnboardingMail:Host"] = "127.0.0.1";
+            configuration["OnboardingMail:Port"] = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port.ToString();
+            configuration["OnboardingMail:From"] = "noreply@example.invalid";
+            configuration["OnboardingMail:StartTls"] = "false";
+            configuration["OnboardingMail:PublicOrigin"] = "https://localhost:7444";
+            var message = CaptureInvitationMail(listener, timeout.Token);
+            var workspace = await Create(Alice);
+            var receipt = await Api<InvitationCreatedResult>(Alice, $"/api/workspaces/{workspace.Id}/invitations",
+                new InviteMemberRequest(Guid.NewGuid(), 1, "invite-from-test@example.invalid", GovernanceRoles.Reader), 201);
+            Assert.Equal("Sent", receipt.MailStatus);
+            Assert.True((await message).Contains($"https://localhost:7444/join#{receipt.Invitation.Id}.", StringComparison.Ordinal));
+        }
+        finally { listener.Stop(); }
+    }
+
+    private static async Task<string> CaptureInvitationMail(System.Net.Sockets.TcpListener listener, CancellationToken ct)
+    {
+        using var client = await listener.AcceptTcpClientAsync(ct);
+        await using var stream = client.GetStream();
+        using var reader = new StreamReader(stream, leaveOpen: true);
+        await using var writer = new StreamWriter(stream, leaveOpen: true) { AutoFlush = true, NewLine = "\r\n" };
+        await writer.WriteLineAsync("220 localhost");
+        while (await reader.ReadLineAsync(ct) is { } command)
+        {
+            if (!command.Equals("DATA", StringComparison.OrdinalIgnoreCase))
+            {
+                await writer.WriteLineAsync("250 OK");
+                continue;
+            }
+            await writer.WriteLineAsync("354 Enter message");
+            var message = new StringBuilder();
+            while (await reader.ReadLineAsync(ct) is { } line && line != ".") message.AppendLine(line);
+            await writer.WriteLineAsync("250 Accepted");
+            var parts = message.ToString().Split(Environment.NewLine + Environment.NewLine, 2, StringSplitOptions.None);
+            if (parts.Length != 2) throw new InvalidOperationException("SMTP message has no body.");
+            return parts[0].Contains("Content-Transfer-Encoding: base64", StringComparison.OrdinalIgnoreCase)
+                ? Encoding.UTF8.GetString(Convert.FromBase64String(parts[1]))
+                : parts[1].Replace("=" + Environment.NewLine, "", StringComparison.Ordinal);
+        }
+        throw new InvalidOperationException("SMTP message was not received.");
+    }
+
+    [Fact]
+    public async Task Record_changes_redact_historical_snapshots_for_queries_and_csv()
+    {
+        var workspace = await Create(Alice);
+        var root = $"/api/workspaces/{workspace.Id}";
+        var invitation = await Api<InvitationCreatedResult>(Alice, root + "/invitations",
+            new InviteMemberRequest(Guid.NewGuid(), 1, "records@example.invalid", GovernanceRoles.Reader), 201);
+
+        await using (var scope = org.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrganizationDbContext>();
+            var changes = db.Set<RecordChange>();
+            changes.Add(new RecordChange
+            {
+                Id = Guid.NewGuid(), WorkspaceId = workspace.Id, TenantId = workspace.TenantId,
+                Service = "organization", EntityName = "WorkspaceInvitation", EntityId = invitation.Invitation.Id.ToString(),
+                Operation = "updated", ActorIssuer = Issuer.Value, ActorSubject = Alice.Value, OccurredAtUtc = DateTimeOffset.UtcNow,
+                ChangedProperties = "State,TokenHash", BeforeJson = "{\"State\":\"Pending\",\"TokenHash\":\"synthetic-historical-value\"}",
+                AfterJson = "{\"TokenHash\":\"synthetic-truncated-value"
+            });
+            changes.Add(new RecordChange
+            {
+                Id = Guid.NewGuid(), WorkspaceId = workspace.Id, TenantId = workspace.TenantId,
+                Service = "organization", EntityName = "WorkspaceInvitation", EntityId = invitation.Invitation.Id.ToString(),
+                Operation = "created", ActorIssuer = Issuer.Value, ActorSubject = Alice.Value, OccurredAtUtc = DateTimeOffset.UtcNow,
+                AfterJson = "{\"State\":\"Pending\"}"
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var filter = $"?entityName=WorkspaceInvitation&entityId={invitation.Invitation.Id}&operation=updated";
+        var result = await Api<RecordChangePage>(Alice, root + "/record-changes" + filter);
+        var row = Assert.Single(result.Changes);
+        Assert.Equal("State", row.ChangedProperties);
+        Assert.Equal("{\"State\":\"Pending\"}", row.BeforeJson);
+        Assert.Equal("[snapshot unavailable]", row.AfterJson);
+
+        var csv = await org.Scenario(s =>
+        {
+            s.WithClaim(Issuer); s.WithClaim(Alice);
+            s.Get.Url(root + "/record-changes.csv" + filter);
+            s.StatusCodeShouldBeOk();
+        });
+        var text = csv.ReadAsText();
+        Assert.Contains("WorkspaceInvitation", text);
+        Assert.DoesNotContain("synthetic-", text);
+        Assert.DoesNotContain("TokenHash", text);
+        Assert.DoesNotContain(",created,", text);
+    }
 
     [Fact]
     public async Task Membership_invitation_and_application_authorization_lifecycle()
