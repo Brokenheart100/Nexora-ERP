@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     msw: {
       buildDir: '.nuxt-msw',
       devServer: { port: 3003 },
+      vite: { cacheDir: 'node_modules/.cache/nexora-vite-msw' },
       runtimeConfig: { public: { apiMocking: true } },
       nitro: { output: { dir: '.output-msw-dev' } }
     }
@@ -56,6 +57,11 @@ export default defineNuxtConfig({
         ? (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.output-live' : '.output')
         : (process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? '.output-live-dev' : '.output-dev')
     }
+  },
+
+  // The live AppHost and Playwright's local servers must resolve their own optimized dependencies.
+  vite: {
+    cacheDir: process.env.NUXT_PUBLIC_DATA_MODE === 'live' ? 'node_modules/.cache/nexora-vite-live' : 'node_modules/.cache/nexora-vite-mock'
   },
   typescript: { strict: true },
 

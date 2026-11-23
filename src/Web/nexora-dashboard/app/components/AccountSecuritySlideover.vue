@@ -3,6 +3,7 @@ import { useSessionStore } from '~/stores/session'
 import { useUiStore } from '~/stores/ui'
 
 const ui = useUiStore()
+const auth = useAuthSessionStore()
 const session = useSessionStore()
 const toast = useToast()
 const { t } = useI18n()
@@ -39,12 +40,21 @@ function switchIdentity(key: string) {
   <USlideover
     v-model:open="open"
     :title="t('shell.security.title')"
-    :description="t('shell.security.description')"
+    :description="auth.connected ? '管理身份验证、浏览器会话与设备授权。' : t('shell.security.description')"
     :ui="{ content: 'sm:max-w-4xl' }"
     data-testid="security-slideover"
   >
     <template #body>
-      <div class="space-y-4">
+      <template v-if="auth.connected">
+        <AccountLiveSecurity v-if="auth.user" :key="auth.user.subject" />
+        <UAlert
+          v-else
+          :title="auth.error ? t(auth.error) : t('auth.guest')"
+          color="warning"
+          variant="subtle"
+        />
+      </template>
+      <div v-else class="space-y-4">
         <section class="rounded-sm border border-default p-4">
           <div class="flex flex-wrap items-start gap-4">
             <UAvatar :alt="session.user.name" :icon="session.user.avatarIcon" size="lg" />

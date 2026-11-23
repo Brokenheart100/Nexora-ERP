@@ -3,7 +3,9 @@ import type { TimelineItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 const { notificationSourceLabel } = useMockLabels()
-const { open, items, unread, markAllRead, markRead } = useNotifications()
+const { open, items, unread, markAllRead, markRead, remote } = useNotifications()
+const auth = useAuthSessionStore()
+const live = useLiveSessionStore()
 
 const timelineItems = computed<TimelineItem[]>(() => items.value.map(item => ({
   date: item.at,
@@ -11,7 +13,7 @@ const timelineItems = computed<TimelineItem[]>(() => items.value.map(item => ({
   description: notificationSourceLabel(item.source) + ' · ' + item.description,
   icon: item.icon,
   value: item.id,
-  to: item.to
+  to: item.to || undefined
 })))
 
 function isUnread(item: TimelineItem) {
@@ -24,9 +26,9 @@ function readItem(item: TimelineItem) {
 
 async function selectItem(_event: Event, item: TimelineItem) {
   markRead(String(item.value))
-  const target = typeof item.to === 'string' ? item.to : '/'
+  if (typeof item.to !== 'string') return
   open.value = false
-  await navigateTo(target)
+  await navigateTo(item.to)
 }
 </script>
 
@@ -39,6 +41,15 @@ async function selectItem(_event: Event, item: TimelineItem) {
     data-testid="notification-slideover"
   >
     <template #body>
+      <UButton v-if="auth.connected && (live.canVisit('/purchase-orders') || live.canVisit('/sales'))"
+               :to="{ path: '/', query: { workspace: live.activeWorkspaceId }, hash: '#approval-inbox' }"
+               label="查看审批收件箱"
+               size="sm"
+               color="neutral"
+               variant="outline"
+               class="mb-3"
+               @click="open = false" />
+      <SettingsAdministrationQueryState v-if="auth.connected" :query="remote" />
       <UTimeline
         v-if="timelineItems.length"
         :items="timelineItems"
@@ -66,7 +77,7 @@ async function selectItem(_event: Event, item: TimelineItem) {
         </template>
       </UTimeline>
       <UEmpty
-        v-else
+        v-else-if="!auth.connected || (!remote.loading && !remote.problem)"
         icon="i-carbon-notification"
         :title="t('notifications.emptyTitle')"
         :description="t('notifications.emptyDescription')"

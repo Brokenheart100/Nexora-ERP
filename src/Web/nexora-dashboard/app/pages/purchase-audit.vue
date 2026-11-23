@@ -10,6 +10,7 @@ interface AuditRow extends PurchaseAuditEntry {
 type ActionBadgeColor = 'neutral' | 'warning' | 'success' | 'error'
 
 const route = useRoute()
+const auth = useAuthSessionStore()
 const toast = useToast()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
 
@@ -153,7 +154,7 @@ async function reloadPage() {
           </template>
         </UDashboardNavbar>
 
-        <UDashboardToolbar :ui="{ root: 'flex-wrap gap-3 py-2.5' }">
+        <UDashboardToolbar v-if="!auth.connected" :ui="{ root: 'flex-wrap gap-3 py-2.5' }">
           <template #left>
             <UInput
               v-model="keywordInput"
@@ -229,89 +230,92 @@ async function reloadPage() {
       </template>
 
       <template #body>
-        <AppBreadcrumb current="采购审计" class="mb-3" />
-        <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
-          <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="audit-skeleton">
-            <USkeleton v-for="n in 8" :key="n" class="h-9 w-full" />
-          </div>
-          <div v-else-if="isError" class="p-6" data-testid="audit-state-error">
-            <UAlert
-              color="error"
-              variant="soft"
-              icon="i-carbon-warning-alt"
-              title="采购审计加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
-            />
-          </div>
-          <div v-else-if="isForbidden" class="py-6" data-testid="audit-state-forbidden">
-            <UEmpty
-              variant="naked"
-              icon="i-carbon-view-off"
-              title="没有采购审计读取权限（演示）"
-              description="?state=forbidden 模拟演示身份缺少 purchase.view 权限。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
-            />
-          </div>
-          <div v-else-if="isEmpty" class="py-6" data-testid="audit-state-empty">
-            <UEmpty
-              variant="naked"
-              icon="i-carbon-list-checked"
-              title="空状态演示"
-              description="?state=empty 让采购审计返回 0 条记录。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
-            />
-          </div>
-          <div v-else :key="'audit-page-' + page" class="nx-fade">
-            <ResizableTable
-              :data="pageRows"
-              :columns="columns"
-              class="nx-table"
-              :ui="{ th: 'py-2.5', td: 'py-3' }"
-              data-testid="audit-table"
-            >
-              <template #action-cell="{ row }">
-                <UBadge
-                  :color="actionColor(row.original.action)"
-                  variant="subtle"
-                  size="sm"
-                  :label="row.original.action"
-                />
-              </template>
-              <template #empty>
-                <UEmpty
-                  variant="naked"
-                  icon="i-carbon-list-checked"
-                  title="当前筛选下没有审计记录"
-                  description="清空筛选条件后重试"
-                  data-testid="audit-empty"
-                  :actions="[{ label: '清空筛选', color: 'neutral', variant: 'outline', size: 'sm', onClick: resetFilters }]"
-                />
-              </template>
-            </ResizableTable>
-          </div>
-
-          <template #footer>
-            <div
-              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
-              class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
-            >
-              <p class="text-xs text-muted">
-                第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
-                <span v-if="hasFilters" class="text-primary">
-                  · 当前筛选 {{ filteredRows.length }} 条
-                </span>
-              </p>
-              <UPagination
-                v-model:page="page"
-                :total="filteredRows.length"
-                :items-per-page="pageSize"
-                size="sm"
-                data-testid="audit-pagination"
+        <SettingsLiveAudit v-if="auth.connected" view="audit" fixed-source="purchasing" />
+        <template v-else>
+          <AppBreadcrumb current="采购审计" class="mb-3" />
+          <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
+            <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="audit-skeleton">
+              <USkeleton v-for="n in 8" :key="n" class="h-9 w-full" />
+            </div>
+            <div v-else-if="isError" class="p-6" data-testid="audit-state-error">
+              <UAlert
+                color="error"
+                variant="soft"
+                icon="i-carbon-warning-alt"
+                title="采购审计加载失败（演示）"
+                description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
+                :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
               />
             </div>
-          </template>
-        </UCard>
+            <div v-else-if="isForbidden" class="py-6" data-testid="audit-state-forbidden">
+              <UEmpty
+                variant="naked"
+                icon="i-carbon-view-off"
+                title="没有采购审计读取权限（演示）"
+                description="?state=forbidden 模拟演示身份缺少 purchase.view 权限。"
+                :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              />
+            </div>
+            <div v-else-if="isEmpty" class="py-6" data-testid="audit-state-empty">
+              <UEmpty
+                variant="naked"
+                icon="i-carbon-list-checked"
+                title="空状态演示"
+                description="?state=empty 让采购审计返回 0 条记录。"
+                :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              />
+            </div>
+            <div v-else :key="'audit-page-' + page" class="nx-fade">
+              <ResizableTable
+                :data="pageRows"
+                :columns="columns"
+                class="nx-table"
+                :ui="{ th: 'py-2.5', td: 'py-3' }"
+                data-testid="audit-table"
+              >
+                <template #action-cell="{ row }">
+                  <UBadge
+                    :color="actionColor(row.original.action)"
+                    variant="subtle"
+                    size="sm"
+                    :label="row.original.action"
+                  />
+                </template>
+                <template #empty>
+                  <UEmpty
+                    variant="naked"
+                    icon="i-carbon-list-checked"
+                    title="当前筛选下没有审计记录"
+                    description="清空筛选条件后重试"
+                    data-testid="audit-empty"
+                    :actions="[{ label: '清空筛选', color: 'neutral', variant: 'outline', size: 'sm', onClick: resetFilters }]"
+                  />
+                </template>
+              </ResizableTable>
+            </div>
+
+            <template #footer>
+              <div
+                v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
+                class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
+              >
+                <p class="text-xs text-muted">
+                  第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
+                  <span v-if="hasFilters" class="text-primary">
+                    · 当前筛选 {{ filteredRows.length }} 条
+                  </span>
+                </p>
+                <UPagination
+                  v-model:page="page"
+                  :total="filteredRows.length"
+                  :items-per-page="pageSize"
+                  size="sm"
+                  data-testid="audit-pagination"
+                />
+              </div>
+            </template>
+          </UCard>
+        </template>
       </template>
     </UDashboardPanel>
   </div>

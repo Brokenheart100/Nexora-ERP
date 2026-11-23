@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AgingBucket, BankTransaction, FinanceAccount, FinancePeriod, JournalEntry, TaxFiling } from '~/mocks'
 import { financePeriodStatusColors, financePeriodStatusLabels } from '~/mocks'
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
 
 function money(value: string | number) {
   return formatMoney(Number(value))
@@ -14,6 +15,7 @@ const props = defineProps<{
   bankTransactions: BankTransaction[]
   aging: AgingBucket[]
   booksReady: boolean
+  live?: AccountingBookConnection
 }>()
 
 const emit = defineEmits<{
@@ -132,7 +134,8 @@ function openYearEnd() {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="finance-workbench">
+  <FinanceBookSettings v-if="live" :live="live" />
+  <div v-else class="space-y-4" data-testid="finance-workbench">
     <UCard v-if="!booksReady" class="nx-reveal rounded-sm" data-testid="finance-setup-guide">
       <UEmpty
         icon="i-carbon-book"

@@ -48,7 +48,7 @@ export class PendingResultError extends Error {
   constructor(public location: string) { super('仍在处理中，可稍后从原入口查询。') }
 }
 
-export function createApiClient(scope: RequestScope, transport: ApiTransport) {
+export function createApiClient(scope: RequestScope, transport: ApiTransport, events: { onFailure?: (failure: ApiFailure) => void } = {}) {
   async function request<T>(path: string, options: Partial<Omit<TransportOptions, 'signal'>> & { signal?: AbortSignal } = {}): Promise<ApiResponse<T>> {
     if (!path.startsWith('/bff/') || path.startsWith('//') || /[%\\]/.test(path.split('?')[0]!)) throw new Error('仅支持同源 BFF 请求。')
     const captured = scope.capture()
@@ -63,12 +63,14 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
     try {
       const result = await transport(path, { method: options.method ?? 'GET', headers: options.headers ?? {}, body: options.body, responseType: options.responseType, signal: controller.signal })
       scope.demand(captured)
+      controller.signal.throwIfAborted()
       if (result.status < 200 || result.status >= 300) throw new ApiFailure(result)
       const contentType = result.headers.get('content-type')
       if (options.responseType !== 'blob' && result.status !== 204 && contentType && !/\bapplication\/(?:[\w.-]+\+)?json\b/i.test(contentType)) throw new Error('服务器返回了无法确认的响应。')
       return result as ApiResponse<T>
     } catch (error) {
       scope.demand(captured)
+      if (error instanceof ApiFailure) events.onFailure?.(error)
       if (controller.signal.reason instanceof DOMException && controller.signal.reason.name === 'TimeoutError') throw new Error(controller.signal.reason.message, { cause: error })
       throw error
     } finally {
@@ -79,9 +81,11 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
 
   function createWrite<T>(path: string, payload: JsonObject, options: { method?: 'POST' | 'PUT', etag?: string, operationId?: string, idempotent?: boolean, parse?: (data: unknown) => T } = {}): WriteOperation<T> {
     const identity = scope.key('write-owner')
+    const owner = scope.capture()
     const operationId = options.operationId ?? (typeof payload.operationId === 'string' ? payload.operationId : crypto.randomUUID())
     if (payload.operationId && payload.operationId !== operationId) throw new Error('幂等操作标识不一致。')
-    const body = JSON.parse(JSON.stringify({ ...payload, operationId })) as JsonObject
+    const useIdempotencyHeader = options.idempotent !== false
+    const body = JSON.parse(JSON.stringify(useIdempotencyHeader ? { ...payload, operationId } : payload)) as JsonObject
     let flight: Promise<ApiResponse<T>> | undefined
     let readChecked = false
     const operation = {
@@ -90,6 +94,7 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
       result: undefined as ApiResponse<T> | undefined,
       get retryAvailable(): boolean { return options.idempotent === true && operation.state === 'unknown' && readChecked },
       async send(): Promise<ApiResponse<T>> {
+        scope.demand(owner)
         if (identity !== scope.key('write-owner')) throw new ScopeChangedError()
         if (flight) return flight
         if (operation.state === 'confirmed') return operation.result!
@@ -101,7 +106,7 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
             if (typeof csrf.data.requestToken !== 'string') throw new Error('会话校验响应无效。')
             const response = await request<T>(path, {
               method: options.method ?? 'POST', body,
-              headers: { 'X-CSRF-TOKEN': csrf.data.requestToken, 'Idempotency-Key': operationId, ...(options.etag ? { 'If-Match': options.etag } : {}) }
+              headers: { 'X-CSRF-TOKEN': csrf.data.requestToken, ...(useIdempotencyHeader ? { 'Idempotency-Key': operationId } : {}), ...(options.etag ? { 'If-Match': options.etag } : {}) }
             })
             if (options.parse) response.data = options.parse(response.data)
             operation.result = response
@@ -117,6 +122,7 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
         return flight
       },
       async readBack(read: () => Promise<{ applied: false } | { applied: true, result: ApiResponse<T> }>) {
+        scope.demand(owner)
         if (identity !== scope.key('write-owner')) throw new ScopeChangedError()
         const captured = scope.capture()
         const value = await read()
@@ -129,6 +135,7 @@ export function createApiClient(scope: RequestScope, transport: ApiTransport) {
         return value.applied
       },
       async retryExplicitly() {
+        scope.demand(owner)
         if (identity !== scope.key('write-owner')) throw new ScopeChangedError()
         if (!operation.retryAvailable) throw new ResultUnknownError()
         readChecked = false

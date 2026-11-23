@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import type { WarehouseOperationsConnection } from '~/composables/inventory/useWarehouseOperations'
+
+defineProps<{ live?: WarehouseOperationsConnection }>()
 
 type StocktakeStatus = 'counting' | 'submitted' | 'completed' | 'cancelled'
 type TransferStatus = 'draft' | 'in_transit' | 'completed'
@@ -954,7 +957,8 @@ function switchToReceiver() {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="warehouse-operations">
+  <InventoryWarehouseRecords v-if="live" :work="live" />
+  <div v-else class="space-y-4" data-testid="warehouse-operations">
     <UAlert
       color="neutral"
       variant="soft"

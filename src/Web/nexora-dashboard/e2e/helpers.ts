@@ -26,9 +26,13 @@ async function nextOtp(username: string) {
 }
 
 export async function login(page: Page, username = 'alice') {
+  await page.goto('/bff/login?prompt=login')
+  await completePasswordLogin(page, username)
+}
+
+export async function completePasswordLogin(page: Page, username = 'alice', returnTo = '/') {
   const realm = JSON.parse(readFileSync(resolve(runtime, 'keycloak/nexora-realm.json'), 'utf8'))
   const user = realm.users.find((item: { username: string }) => item.username === username)
-  await page.goto('/bff/login?prompt=login')
   await page.locator('#password').waitFor()
   if (await page.locator('#username').count()) await page.locator('#username').fill(username)
   await page.locator('#password').fill(user.credentials[0].value)
@@ -36,20 +40,24 @@ export async function login(page: Page, username = 'alice') {
   await expect(page.locator('input[name="otp"]')).toBeVisible()
   await page.locator('input[name="otp"]').fill(await nextOtp(username))
   await page.locator('#kc-login').click()
-  await page.waitForURL(url => url.origin === origin && url.pathname === '/', { waitUntil: 'domcontentloaded' })
+  await page.waitForURL(new URL(returnTo, origin).href, { waitUntil: 'domcontentloaded' })
   const identity = await api(page, '/bff/me')
   expect(identity.status, identity.text).toBe(200)
   expect(JSON.parse(identity.text).name).toBe(username)
 }
 
 export async function emailLogin(page: Page, email: string, register = false, join = false) {
+  await page.goto((register ? '/bff/register' : '/bff/email-login') + (join ? '?join=true' : ''))
+  await completeEmailLogin(page, email, join ? '/join' : '/')
+}
+
+export async function completeEmailLogin(page: Page, email: string, returnTo = '/') {
   if (!email.endsWith('@example.invalid')) throw new Error('Only local captured mail is permitted')
   const mailboxUrl = 'http://localhost:8025/api/v1/search?query=' + encodeURIComponent('to:' + email)
   const previous = await (await fetch(mailboxUrl)).json()
   const latest = Math.max(0, ...(previous.messages ?? []).map((mail: { Created: string }) => Date.parse(mail.Created)))
   const cooldown = latest + 61_000 - Date.now()
   if (cooldown > 0) await new Promise(resolve => setTimeout(resolve, cooldown))
-  await page.goto((register ? '/bff/register' : '/bff/email-login') + (join ? '?join=true' : ''))
   const form = page.locator('#otp-form')
   await form.getByLabel('邮箱', { exact: true }).fill(email)
   const sentAt = Date.now() - 1000
@@ -68,9 +76,9 @@ export async function emailLogin(page: Page, email: string, register = false, jo
   await form.getByLabel('六位验证码').fill(code)
   await form.getByRole('button', { name: '验证', exact: true }).click()
   try {
-    await page.waitForURL(url => url.origin === origin && url.pathname === (join ? '/join' : '/'), { waitUntil: 'domcontentloaded' })
+    await page.waitForURL(new URL(returnTo, origin).href, { waitUntil: 'domcontentloaded' })
   } catch {
-    throw new Error('Email flow ended at ' + new URL(page.url()).origin + new URL(page.url()).pathname + '; expected ' + (join ? '/join' : '/'))
+    throw new Error('Email flow ended at ' + new URL(page.url()).origin + new URL(page.url()).pathname + '; expected ' + new URL(returnTo, origin).pathname)
   }
 }
 
@@ -110,5 +118,6 @@ export async function logout(page: Page) {
   }, JSON.parse(csrf.text).requestToken)
   await returned
   await page.waitForLoadState('domcontentloaded')
+  await expect(page.getByTestId('user-menu-trigger')).toHaveAttribute('aria-label', /^(未登录|Signed out)$/)
   expect((await api(page, '/bff/me')).status).toBe(401)
 }

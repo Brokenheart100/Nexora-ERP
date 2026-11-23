@@ -21,6 +21,15 @@ type ActivityFilter = 'all' | ChangeEntityType
 const toast = useToast()
 const route = useRoute()
 const { t, locale } = useI18n()
+const auth = useAuthSessionStore()
+const live = useLiveSessionStore()
+type RefreshPanel = { refresh: () => Promise<unknown> }
+const liveProjection = ref<RefreshPanel | null>(null)
+const liveOverview = ref<RefreshPanel | null>(null)
+const liveQueues = ref<RefreshPanel | null>(null)
+async function refreshConnected() {
+  await Promise.all([liveProjection.value?.refresh(), liveOverview.value?.refresh(), liveQueues.value?.refresh()])
+}
 const { loading: refreshing, run: runRefresh } = useMockRefresh()
 const { workspace } = useMockWorkspace()
 const {
@@ -369,6 +378,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
           <template #right>
             <NotificationButton />
             <UButton
+              v-if="!auth.connected || live.canVisit('/purchase-orders')"
               to="/purchase-orders"
               :label="t('dashboard.newPurchaseOrder')"
               icon="i-carbon-add"
@@ -380,6 +390,22 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
       </template>
 
       <template #body>
+        <template v-if="auth.connected">
+          <UAlert v-if="live.error" color="error" :title="live.error" />
+          <USkeleton v-else-if="live.loading" class="h-32 w-full" />
+          <div v-else-if="live.canVisit('/')" class="space-y-4" data-testid="live-workbench">
+            <UPageHeader
+              :title="live.workspace?.name ?? '工作台'"
+              :links="[{ label: '刷新工作台', icon: 'i-carbon-renew', color: 'neutral', variant: 'outline', onClick: refreshConnected }]"
+              :ui="{ root: 'border-0 py-0', title: 'text-xl font-semibold' }"
+            />
+            <FinanceReportingOverview v-if="live.canVisit('/finance')" ref="liveOverview" />
+            <FinanceWorkspaceProjection ref="liveProjection" page-path="/" />
+            <DashboardWorkbenchQueues ref="liveQueues" />
+          </div>
+          <UAlert v-else color="neutral" title="登录并选择可访问的工作区以查看工作台。" />
+        </template>
+        <template v-else>
         <UPageHeader
           :headline="t('dashboard.headline')"
           :title="workspace.name"
@@ -739,6 +765,7 @@ const overviewLinks = computed<ButtonProps[]>(() => [{
             t('dashboard.footer.emptyOr') }} <code class="font-mono">?empty=activity</code>{{
             t('dashboard.footer.emptyAfter') }}
         </p>
+        </template>
       </template>
     </UDashboardPanel>
   </div>

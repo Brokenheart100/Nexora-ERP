@@ -7,7 +7,6 @@ import type {
   Quote,
   QuoteLine,
   QuoteStatus,
-  RecurringInvoicePlan,
   SalesFulfillment,
   SalesOrder,
   SalesOrderStatus
@@ -22,6 +21,14 @@ import {
   salesStatusLabels
 } from '~/mocks'
 import type { RecurringPlanInput } from '~/stores/recurringInvoices'
+import type { InvoiceScheduleInput } from '#shared/types/invoicing'
+import type { RecurringRow } from '~/utils/sales/recurring'
+import { useSalesConnection } from '~/composables/sales/useSalesConnection'
+import { useSalesFulfillment } from '~/composables/sales/useSalesFulfillment'
+import { useSalesReceivables } from '~/composables/sales/useSalesReceivables'
+import { useRecurringConnection } from '~/composables/sales/useRecurringConnection'
+import { salesInvoiceView, salesOrderView, salesQuoteView } from '~/utils/sales/presentation'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
 interface SalesFormPayload {
   kind: 'order' | 'quote'
@@ -58,13 +65,15 @@ const receivables = useReceivablesStore()
 const recurring = useRecurringInvoicesStore()
 const { workspace } = useMockWorkspace()
 const { can } = useMockPermissions()
-const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
+const mockState = useMockState()
 const { loading, run: runRefresh } = useMockRefresh()
 
 const { actor: demoActor, isMaker, isApprover, setActorRole } = useDemoActor()
-const canCreate = computed(() => can('sales.create') && isMaker.value)
+const canCreate = computed(() => connected.value ? connection.canCreate : can('sales.create') && isMaker.value)
 const canApprove = computed(() => can('sales.create') && isApprover.value)
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const showSkeleton = computed(() => connected.value
+  ? !activeQuery.value.auth.ready || (activeQuery.value.loading && (tab.value !== 'invoice-delivery' || !activeQuery.value.data))
+  : loading.value || mockState.isLoading.value)
 const pageSize = 8
 const PREVIEW_NOTE = '仅本次预览，刷新后恢复。'
 
@@ -78,10 +87,40 @@ const tabItems = [
 ]
 const tab = ref(String(route.query.tab ?? 'orders'))
 if (!tabItems.some(item => item.value === tab.value)) tab.value = 'orders'
+const connection = useSalesConnection(tab, pageSize)
+const fulfillment = useSalesFulfillment(connection)
+const finance = useSalesReceivables(tab)
+const recurringFormOpen = ref(false)
+const selectedRecurringId = ref<string | null>(null)
+const recurringLive = useRecurringConnection(tab, selectedRecurringId, recurringFormOpen)
+const deliveryPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const connected = computed(() => connection.query.connected)
+const salesTab = computed(() => ['orders', 'quotes'].includes(tab.value))
+const financeTab = computed(() => !salesTab.value)
+const activeQuery = computed(() => tab.value === 'recurring' ? recurringLive.query : financeTab.value ? finance.query : connection.query)
+const availableTabs = tabItems
+const canManageRecurring = computed(() => connected.value ? recurringLive.canManage : canCreate.value)
+const isEmpty = computed(() => !connected.value && mockState.isEmpty.value)
+const isError = computed(() => connected.value
+  ? !!activeQuery.value.problem && ![403, 404].includes(activeQuery.value.status)
+  : mockState.isError.value)
+const isForbidden = computed(() => connected.value
+  ? !activeQuery.value.enabled || [403, 404].includes(activeQuery.value.status)
+  : mockState.isForbidden.value)
+const forbiddenDescription = computed(() => {
+  const { auth, session } = connection.query
+  if (!auth.user) return '请从左下角登录后查看销售单据。'
+  if (session.denied || !session.activeWorkspaceId) return '请从左上角选择可访问的工作区。'
+  if (!session.entitlements?.modules.includes('sales')) return '当前工作区尚未开通销售功能。'
+  return financeTab.value ? '当前账号没有此工作区的应收读取权限。' : '当前账号没有此工作区的销售读取权限。'
+})
 
 const orders = ref<SalesOrder[]>([])
 const quoteRows = ref<Quote[]>([])
-const invoiceRows = computed(() => receivables.invoices)
+const invoiceRows = computed(() => connected.value
+  ? finance.documents.filter(row => row.terms.kind === 1).map(row =>
+      salesInvoiceView(row, finance.query.session.activeWorkspaceId, finance.query.data?.shipments ?? []))
+  : receivables.invoices)
 
 function resetRows() {
   orders.value = orderSeed.map(cloneSalesOrder)
@@ -95,18 +134,23 @@ const customerFilter = ref('all')
 const dateFrom = ref('')
 const dateTo = ref('')
 
-const showFilters = computed(() => ['orders', 'quotes', 'invoices'].includes(tab.value))
+const showFilters = computed(() => salesTab.value || tab.value === 'invoices')
 
-const workspaceOrders = computed(() => orders.value.filter(order => order.workspaceId === workspace.value.id))
-const workspaceQuotes = computed(() => quoteRows.value.filter(quote => quote.workspaceId === workspace.value.id))
-const workspaceInvoices = computed(() => invoiceRows.value.filter(invoice => invoice.workspaceId === workspace.value.id))
-const workspaceRecurring = computed(() => recurring.plans.filter(plan => plan.workspaceId === workspace.value.id))
+const workspaceOrders = computed(() => connected.value
+  ? (connection.query.data?.orders ?? []).filter(row => !row.isQuote).map(row => salesOrderView(row, connection.query.session.activeWorkspaceId))
+  : orders.value.filter(order => order.workspaceId === workspace.value.id))
+const workspaceQuotes = computed(() => connected.value
+  ? (connection.query.data?.orders ?? []).filter(row => row.isQuote).map(row => salesQuoteView(row, connection.query.session.activeWorkspaceId))
+  : quoteRows.value.filter(quote => quote.workspaceId === workspace.value.id))
+const workspaceInvoices = computed(() => connected.value ? invoiceRows.value : invoiceRows.value.filter(invoice => invoice.workspaceId === workspace.value.id))
+const workspaceRecurring = computed<RecurringRow[]>(() => connected.value ? recurringLive.rows : recurring.plans.filter(plan => plan.workspaceId === workspace.value.id))
 
 const statusItems = computed(() => {
   if (tab.value === 'quotes') {
+    const states: QuoteStatus[] = connected.value ? ['draft', 'sent', 'converted', 'cancelled'] : ['draft', 'sent', 'accepted', 'rejected', 'expired']
     return [
       { label: '全部状态', value: 'all' },
-      ...(Object.keys(quoteStatusLabels) as QuoteStatus[]).map(value => ({ label: quoteStatusLabels[value], value }))
+      ...states.map(value => ({ label: quoteStatusLabels[value], value }))
     ]
   }
   if (tab.value === 'invoices') {
@@ -148,7 +192,7 @@ const filteredOrders = computed(() => {
     if (!matchesCustomer(order.customerName)) return false
     if (dateFrom.value && order.orderedAt < dateFrom.value) return false
     if (dateTo.value && order.orderedAt > dateTo.value) return false
-    return matchesKeyword(order.id, order.customerName)
+    return matchesKeyword(order.documentNumber ?? order.id, order.customerName)
   })
 })
 
@@ -159,7 +203,7 @@ const filteredQuotes = computed(() => {
     if (!matchesCustomer(quote.customerName)) return false
     if (dateFrom.value && quote.validUntil < dateFrom.value) return false
     if (dateTo.value && quote.validUntil > dateTo.value) return false
-    return matchesKeyword(quote.id, quote.customerName)
+    return matchesKeyword(quote.documentNumber ?? quote.id, quote.customerName)
   })
 })
 
@@ -170,7 +214,7 @@ const filteredInvoices = computed(() => {
     if (!matchesCustomer(invoice.customerName)) return false
     if (dateFrom.value && invoice.issuedAt < dateFrom.value) return false
     if (dateTo.value && invoice.issuedAt > dateTo.value) return false
-    return matchesKeyword(invoice.id, invoice.customerName)
+    return matchesKeyword(invoice.documentNumber ?? invoice.id, invoice.customerName)
   })
 })
 
@@ -189,10 +233,10 @@ const quotePage = quotePagination.page
 const invoicePage = invoicePagination.page
 const recurringPage = recurringPagination.page
 
-const pageOrders = orderPagination.pageRows
-const pageQuotes = quotePagination.pageRows
-const pageInvoices = invoicePagination.pageRows
-const pageRecurring = recurringPagination.pageRows
+const pageOrders = computed(() => connected.value ? filteredOrders.value : orderPagination.pageRows.value)
+const pageQuotes = computed(() => connected.value ? filteredQuotes.value : quotePagination.pageRows.value)
+const pageInvoices = computed(() => connected.value ? filteredInvoices.value : invoicePagination.pageRows.value)
+const pageRecurring = computed(() => connected.value ? filteredRecurring.value : recurringPagination.pageRows.value)
 
 const activeTotal = computed(() => {
   switch (tab.value) {
@@ -222,6 +266,7 @@ watch(tab, () => {
   quotePage.value = 1
   invoicePage.value = 1
   recurringPage.value = 1
+  recurringLive.page = 1
   recurringPlanOpen.value = false
   recurringFormOpen.value = false
   selectedRecurringId.value = null
@@ -309,46 +354,72 @@ function nextInvoiceId() {
 
 const detailOpen = ref(false)
 const selectedOrderId = ref<string | null>(null)
-const selectedOrder = computed(() => orders.value.find(order => order.id === selectedOrderId.value) ?? null)
+const selectedOrder = computed(() => {
+  if (!connected.value) return orders.value.find(order => order.id === selectedOrderId.value) ?? null
+  const value = connection.detail
+  return value && !value.order.isQuote && value.order.id === selectedOrderId.value
+    ? salesOrderView(value.order, connection.query.session.activeWorkspaceId, value)
+    : null
+})
 
 function salesOrderMaker(order: SalesOrder) {
   return order.maker ?? order.approvals?.find(step => step.action === 'submitted')?.actor ?? '张明远'
 }
 const selectedMaker = computed(() => selectedOrder.value ? salesOrderMaker(selectedOrder.value) : '')
-const selfApprovalBlocked = computed(() => Boolean(
-  selectedOrder.value && isApprover.value && selectedMaker.value === demoActor.value.name
-))
-const canWithdrawSelected = computed(() => Boolean(
-  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'pending' && selectedMaker.value === demoActor.value.name
-))
-const canCancelSelected = computed(() => Boolean(
-  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft'
-))
-const canResubmitSelected = computed(() => Boolean(
-  selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft' && selectedMaker.value === demoActor.value.name
-))
-const canApproveSelected = computed(() => Boolean(
-  canApprove.value && selectedOrder.value?.status === 'pending' && !selfApprovalBlocked.value
-))
+const selfApprovalBlocked = computed(() => connected.value
+  ? connection.selfApproval
+  : Boolean(
+      selectedOrder.value && isApprover.value && selectedMaker.value === demoActor.value.name
+    ))
+const canWithdrawSelected = computed(() => connected.value
+  ? connection.decisions.includes('withdraw')
+  : Boolean(
+      selectedOrder.value && canCreate.value && selectedOrder.value.status === 'pending' && selectedMaker.value === demoActor.value.name
+    ))
+const canCancelSelected = computed(() => connected.value
+  ? connection.decisions.includes('cancel')
+  : Boolean(
+      selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft'
+    ))
+const canResubmitSelected = computed(() => connected.value
+  ? connection.decisions.includes('submit')
+  : Boolean(
+      selectedOrder.value && canCreate.value && selectedOrder.value.status === 'draft' && selectedMaker.value === demoActor.value.name
+    ))
+const canApproveSelected = computed(() => connected.value
+  ? connection.decisions.includes('approve')
+  : Boolean(
+      canApprove.value && selectedOrder.value?.status === 'pending' && !selfApprovalBlocked.value
+    ))
 
 const quoteOpen = ref(false)
 const selectedQuoteId = ref<string | null>(null)
-const selectedQuote = computed(() => quoteRows.value.find(quote => quote.id === selectedQuoteId.value) ?? null)
+const selectedQuote = computed(() => {
+  if (!connected.value) return quoteRows.value.find(quote => quote.id === selectedQuoteId.value) ?? null
+  const value = connection.detail
+  return value?.order.isQuote && value.order.id === selectedQuoteId.value
+    ? salesQuoteView(value.order, connection.query.session.activeWorkspaceId, value)
+    : null
+})
 
 const invoiceOpen = ref(false)
+const invoiceEditing = ref(false)
 const selectedInvoiceId = ref<string | null>(null)
-const selectedInvoice = computed(() => invoiceRows.value.find(invoice => invoice.id === selectedInvoiceId.value) ?? null)
+const selectedInvoice = computed(() => {
+  if (connected.value && finance.current?.terms.kind === 1)
+    return salesInvoiceView(finance.current, finance.query.session.activeWorkspaceId, finance.query.data?.shipments ?? [])
+  return invoiceRows.value.find(invoice => invoice.id === selectedInvoiceId.value) ?? null
+})
 const selectedInvoiceOrder = computed(() => orders.value.find(order => order.id === selectedInvoice.value?.sourceOrderId) ?? null)
 
 const recurringPlanOpen = ref(false)
-const selectedRecurringId = ref<string | null>(null)
-const recurringFormOpen = ref(false)
 const recurringEditingId = ref<string | null>(null)
 const recurringFormError = ref('')
-const selectedRecurringPlan = computed(() => selectedRecurringId.value ? recurring.planOf(selectedRecurringId.value) ?? null : null)
-const recurringOccurrences = computed(() => selectedRecurringPlan.value ? recurring.historyFor(selectedRecurringPlan.value.id) : [])
-const recurringPreview = computed(() => selectedRecurringPlan.value ? recurring.previewDates(selectedRecurringPlan.value) : [])
-const recurringEditingPlan = computed(() => recurringEditingId.value ? recurring.planOf(recurringEditingId.value) ?? null : null)
+const demoRecurringPlan = computed(() => selectedRecurringId.value ? recurring.planOf(selectedRecurringId.value) ?? null : null)
+const selectedRecurringPlan = computed(() => connected.value ? recurringLive.plan : demoRecurringPlan.value)
+const recurringOccurrences = computed(() => connected.value ? recurringLive.occurrences : demoRecurringPlan.value ? recurring.historyFor(demoRecurringPlan.value.id) : [])
+const recurringPreview = computed(() => connected.value ? recurringLive.preview : demoRecurringPlan.value ? recurring.previewDates(demoRecurringPlan.value) : [])
+const recurringEditingPlan = computed(() => recurringEditingId.value ? workspaceRecurring.value.find(row => row.id === recurringEditingId.value) ?? null : null)
 const receiptOpen = ref(false)
 const receiptCustomer = ref('')
 const receiptInvoiceId = ref<string | null>(null)
@@ -371,10 +442,11 @@ const fulfillmentOrder = ref<SalesOrder | null>(null)
 
 const convertOpen = ref(false)
 const pendingConvert = ref<{ quoteId: string, orderId: string } | null>(null)
+const convertNumber = ref('')
 const pendingQuote = computed(() => {
   const pending = pendingConvert.value
   if (!pending) return null
-  return quoteRows.value.find(quote => quote.id === pending.quoteId) ?? null
+  return connected.value ? selectedQuote.value : quoteRows.value.find(quote => quote.id === pending.quoteId) ?? null
 })
 
 const { loading: invoiceBusy, run: runInvoiceAction } = useMockAsync(async () => undefined, { delay: 480 })
@@ -382,26 +454,58 @@ const { loading: invoiceBusy, run: runInvoiceAction } = useMockAsync(async () =>
 function openOrder(orderId: string) {
   selectedOrderId.value = orderId
   detailOpen.value = true
+  if (connected.value) void connection.select(orderId)
 }
 
 function openQuote(quoteId: string) {
   selectedQuoteId.value = quoteId
   quoteOpen.value = true
+  if (connected.value) void connection.select(quoteId)
 }
 
 function openInvoice(invoiceId: string) {
   selectedInvoiceId.value = invoiceId
+  if (connected.value) {
+    invoiceEditing.value = false
+    void finance.readDetail(invoiceId)
+  }
   invoiceOpen.value = true
+}
+
+function closeInvoice() {
+  invoiceOpen.value = invoiceEditing.value = false
+  selectedInvoiceId.value = null
+  if (connected.value) finance.clear()
+}
+
+function editLiveInvoice() {
+  if (finance.begin('invoice', { edit: true })) invoiceEditing.value = true
+}
+
+async function saveLiveReceivable() {
+  const result = await finance.save()
+  if (!result) return
+  receiptOpen.value = allocationOpen.value = false
+  openInvoice(result.id)
+}
+
+async function retryLiveReceivable() {
+  const result = await finance.retry()
+  if (!result) return
+  receiptOpen.value = allocationOpen.value = false
+  openInvoice(result.id)
 }
 
 function closeOrderDetail() {
   detailOpen.value = false
   selectedOrderId.value = null
+  if (connected.value) connection.clearSelection()
 }
 
 function closeQuoteDetail() {
   quoteOpen.value = false
   selectedQuoteId.value = null
+  if (connected.value) connection.clearSelection()
 }
 
 function openOrderFromOther(orderId: string) {
@@ -431,11 +535,37 @@ function openQuoteFromOrder(quoteId: string) {
 
 // 支持从库存流水等页面按单号直达订单详情：/sales?tab=orders&order=SO-2026-9003
 onMounted(() => {
+  if (connected.value) return
   const orderId = String(route.query.order ?? '')
   if (orderId) openOrderFromOther(orderId)
 })
+watch(() => [connection.query.enabled, route.query.order, route.query.quote] as const, ([enabled, orderId, quoteId]) => {
+  if (!connected.value || !enabled) return
+  if (typeof orderId === 'string' && orderId !== selectedOrderId.value) openOrderFromOther(orderId)
+  else if (typeof quoteId === 'string' && quoteId !== selectedQuoteId.value) openQuoteFromOrder(quoteId)
+}, { immediate: true })
+
+watch(() => [finance.query.enabled, route.query.document, route.query.invoice, route.query.receipt] as const, ([enabled, ...ids]) => {
+  const id = ids.find(value => typeof value === 'string')
+  if (!connected.value || !enabled || tab.value === 'invoice-delivery' || typeof id !== 'string' || finance.selectedId === id) return
+  if (!financeTab.value) tab.value = 'receivables'
+  openInvoice(id)
+}, { immediate: true })
+
+watch(() => connection.query.owner, () => {
+  if (!connected.value) return
+  detailOpen.value = quoteOpen.value = formOpen.value = convertOpen.value = fulfillmentOpen.value = false
+  invoiceOpen.value = invoiceEditing.value = receiptOpen.value = allocationOpen.value = false
+  recurringPlanOpen.value = recurringFormOpen.value = false
+  selectedRecurringId.value = recurringEditingId.value = null
+  selectedOrderId.value = selectedQuoteId.value = null
+  pendingConvert.value = null
+  convertNumber.value = ''
+  resetFilters()
+}, { flush: 'sync' })
 
 function openCreate(kind: 'order' | 'quote') {
+  if (connected.value && !connection.startEditor()) return
   editingOrder.value = null
   editingQuote.value = null
   formKind.value = kind
@@ -443,6 +573,7 @@ function openCreate(kind: 'order' | 'quote') {
 }
 
 function startEditOrder() {
+  if (connected.value && !connection.startEditor(true)) return
   editingOrder.value = selectedOrder.value
   editingQuote.value = null
   formKind.value = 'order'
@@ -450,6 +581,7 @@ function startEditOrder() {
 }
 
 function startEditQuote() {
+  if (connected.value && !connection.startEditor(true)) return
   editingQuote.value = selectedQuote.value
   editingOrder.value = null
   formKind.value = 'quote'
@@ -457,6 +589,7 @@ function startEditQuote() {
 }
 
 function approveSelectedOrder() {
+  if (connected.value) return void connection.decide('approve')
   const order = selectedOrder.value
   if (!order) return
   if (isApprover.value && salesOrderMaker(order) === demoActor.value.name) {
@@ -479,6 +612,7 @@ function approveSelectedOrder() {
 }
 
 function rejectSelectedOrder() {
+  if (connected.value) return void connection.decide('return')
   const order = selectedOrder.value
   if (!order || !canCreate.value || order.status !== 'pending') return
   const stamp = nowStamp()
@@ -496,6 +630,7 @@ function rejectSelectedOrder() {
 }
 
 function withdrawSelectedOrder() {
+  if (connected.value) return void connection.decide('withdraw')
   const order = selectedOrder.value
   if (!order || !canWithdrawSelected.value) return
   const stamp = nowStamp()
@@ -514,6 +649,7 @@ function withdrawSelectedOrder() {
 }
 
 function cancelSelectedOrderDraft() {
+  if (connected.value) return void connection.decide('cancel')
   const order = selectedOrder.value
   if (!order || !canCancelSelected.value) return
   const stamp = nowStamp()
@@ -525,6 +661,7 @@ function cancelSelectedOrderDraft() {
 }
 
 function resubmitSelectedOrder() {
+  if (connected.value) return void connection.decide('submit')
   const order = selectedOrder.value
   if (!order || !canResubmitSelected.value) return
   const stamp = nowStamp()
@@ -547,6 +684,7 @@ const canSendSelectedQuote = computed(() => Boolean(
 ))
 
 function sendSelectedQuote() {
+  if (connected.value) return void connection.decide('issue-quote')
   const quote = selectedQuote.value
   if (!quote || !canSendSelectedQuote.value) return
   quote.status = 'sent'
@@ -555,9 +693,9 @@ function sendSelectedQuote() {
   toastPreview('报价已正式发出', quote.id + ' · ' + quote.customerName)
 }
 
-function startFulfillment() {
+async function startFulfillment() {
   const order = selectedOrder.value
-  if (!order || !canCreate.value) return
+  if (!order || (connected.value ? !await fulfillment.prepare() : !canCreate.value)) return
   fulfillmentOrder.value = order
   fulfillmentOpen.value = true
 }
@@ -600,8 +738,9 @@ function confirmFulfillment(payload: { shippedAt: string, shipper: string, lines
 
 function openConversion() {
   const quote = selectedQuote.value
-  if (!quote || !canCreate.value) return
-  pendingConvert.value = { quoteId: quote.id, orderId: nextOrderId() }
+  if (!quote || (connected.value ? !connection.canConvert : !canCreate.value)) return
+  pendingConvert.value = { quoteId: quote.id, orderId: connected.value ? '' : nextOrderId() }
+  convertNumber.value = ''
   convertOpen.value = true
 }
 
@@ -610,7 +749,16 @@ function cancelConversion() {
   pendingConvert.value = null
 }
 
-function confirmConversion() {
+async function confirmConversion() {
+  if (connected.value) {
+    const result = await connection.convert(convertNumber.value)
+    if (!result) return
+    cancelConversion()
+    openOrderFromOther(result.id)
+    await nextTick()
+    await connection.query.refresh()
+    return
+  }
   const pending = pendingConvert.value
   const quote = pendingQuote.value
   if (!pending || !quote || !canCreate.value) return
@@ -752,6 +900,32 @@ function handleFormSave(payload: SalesFormPayload) {
   toastPreview(mode === 'draft' ? '已保存报价草稿' : '报价已提交（模拟发送）', id + ' · ' + data.customerName)
 }
 
+function afterConnectedSave() {
+  if (!connected.value) return
+  if (formKind.value === 'quote') openQuote(connection.editor.id)
+  else openOrder(connection.editor.id)
+}
+
+async function retrySalesSubmission() {
+  const pending = connection.submission.record
+  if (!pending || !await connection.submission.retry() || !connection.submission.result) return
+  const id = connection.submission.result.id
+  if (pending.action === 'sales.quote-converted') {
+    cancelConversion()
+    openOrderFromOther(id)
+    await nextTick()
+    await connection.query.refresh()
+  } else if (pending.action === 'sales.created' || pending.action === 'sales.edited') {
+    formOpen.value = false
+    const isQuote = pending.draft?.kind === 'quote'
+    if (isQuote) {
+      tab.value = 'quotes'
+      openQuote(id)
+    } else openOrderFromOther(id)
+    await connection.query.refresh()
+  } else await connection.refresh()
+}
+
 async function sendSelectedInvoice() {
   const invoice = selectedInvoice.value
   if (!invoice || !canCreate.value) return
@@ -782,6 +956,7 @@ async function retryDelivery(deliveryId: string) {
 }
 
 function openReceiptForm(customerName = '', invoiceId: string | null = null) {
+  if (connected.value && !finance.begin('receipt', { invoiceId: invoiceId ?? undefined })) return
   if (!canCreate.value) return
   receiptCustomer.value = customerName
   receiptInvoiceId.value = invoiceId
@@ -808,6 +983,7 @@ function handleReceiptSave(payload: ReceiptFormPayload) {
 }
 
 function openAllocation(invoiceId: string, receiptId: string | null = null) {
+  if (connected.value && !finance.begin('allocation', { invoiceId: invoiceId || undefined, fundsId: receiptId ?? undefined })) return
   if (!canCreate.value) return
   allocationInvoiceId.value = invoiceId || null
   allocationReceiptId.value = receiptId
@@ -901,6 +1077,16 @@ function submitCorrection() {
 }
 
 async function createInvoiceForOrder(orderId: string) {
+  if (connected.value) {
+    if (!financeTab.value) {
+      tab.value = 'receivables'
+      await nextTick()
+      await finance.refresh()
+    }
+    if (!finance.begin('invoice', { orderId })) return
+    invoiceEditing.value = invoiceOpen.value = true
+    return
+  }
   const order = orders.value.find(item => item.id === orderId)
   if (!order || !canCreate.value) return
   if (invoiceRows.value.some(invoice => invoice.sourceOrderId === order.id && invoice.status !== 'cancelled')) return
@@ -952,22 +1138,24 @@ async function createInvoiceForOrder(orderId: string) {
   toastPreview('已生成草稿发票', id + ' · 来自 ' + order.id)
 }
 
-function openRecurring(plan: RecurringInvoicePlan) {
+function openRecurring(plan: RecurringRow) {
   selectedRecurringId.value = plan.id
   recurringPlanOpen.value = true
 }
 
 function openRecurringCreate() {
-  if (!canCreate.value) return
+  if (!canManageRecurring.value) return
   recurringEditingId.value = null
   recurringFormError.value = ''
+  recurringLive.error = ''
   recurringFormOpen.value = true
 }
 
 function openRecurringEdit() {
-  if (!canCreate.value || !selectedRecurringPlan.value) return
+  if (!canManageRecurring.value || !selectedRecurringPlan.value) return
   recurringEditingId.value = selectedRecurringPlan.value.id
   recurringFormError.value = ''
+  recurringLive.error = ''
   recurringFormOpen.value = true
 }
 
@@ -988,7 +1176,16 @@ function saveRecurring(input: RecurringPlanInput) {
   toastPreview(wasEditing ? '已更新定期开票计划' : '已创建定期开票计划', result.message)
 }
 
-function toggleRecurringRow(plan: RecurringInvoicePlan) {
+async function saveLiveRecurring(input: InvoiceScheduleInput) {
+  if (await recurringLive.save(recurringEditingId.value, input)) {
+    recurringFormOpen.value = false
+    recurringPlanOpen.value = true
+    recurringEditingId.value = null
+  }
+}
+
+function toggleRecurringRow(plan: RecurringRow) {
+  if (connected.value) return void recurringLive.pause(plan.id)
   if (!canCreate.value) return
   const result = recurring.togglePlan(plan.id)
   if (!result.ok) {
@@ -1002,7 +1199,11 @@ function toggleSelectedRecurring() {
   if (selectedRecurringPlan.value) toggleRecurringRow(selectedRecurringPlan.value)
 }
 
-function runRecurring(on: string) {
+async function runRecurring(on: string) {
+  if (connected.value) {
+    await recurringLive.occurrence('run', on)
+    return
+  }
   if (!canCreate.value || !selectedRecurringPlan.value) return
   const result = recurring.runPlan(selectedRecurringPlan.value.id, on)
   if (!result.ok) {
@@ -1018,6 +1219,7 @@ function runRecurring(on: string) {
 }
 
 function skipRecurring(on: string) {
+  if (connected.value) return void recurringLive.occurrence('skip', on)
   if (!canCreate.value || !selectedRecurringPlan.value) return
   const result = recurring.skipPlan(selectedRecurringPlan.value.id, on)
   if (!result.ok) {
@@ -1030,10 +1232,14 @@ function skipRecurring(on: string) {
 function openRecurringInvoice(invoiceId: string) {
   recurringPlanOpen.value = false
   selectedRecurringId.value = null
+  if (connected.value) tab.value = 'invoices'
   openInvoice(invoiceId)
 }
 
 function refreshAll() {
+  if (connected.value && tab.value === 'recurring') return void recurringLive.refresh()
+  if (connected.value && tab.value === 'invoice-delivery') return void (deliveryPanel.value?.refresh() ?? finance.refresh())
+  if (connected.value) return void (financeTab.value ? finance.refresh() : connection.refresh())
   runRefresh(() => {
     resetRows()
     receivables.reset()
@@ -1072,11 +1278,12 @@ async function reloadPage() {
               color="neutral"
               variant="subtle"
               size="sm"
-              label="本地原型 · 模拟数据"
+              :label="connected ? connection.query.auth.simulated ? 'MSW 接口' : '当前工作区接口' : '本地原型 · 模拟数据'"
               class="hidden sm:inline-flex"
             />
             <NotificationButton />
             <div
+              v-if="!connected"
               class="flex items-center gap-1 rounded-lg border border-default p-0.5"
               data-testid="sales-actor-switch"
             >
@@ -1104,21 +1311,21 @@ async function reloadPage() {
           <template #left>
             <UTabs
               v-model="tab"
-              :items="tabItems"
+              :items="availableTabs"
               :content="false"
               size="sm"
               data-testid="sales-tabs"
             />
           </template>
           <template #right>
-            <UTooltip text="恢复初始模拟数据">
+            <UTooltip :text="connected ? '刷新销售单据' : '恢复初始模拟数据'">
               <UButton
                 icon="i-carbon-renew"
                 color="neutral"
                 variant="ghost"
                 size="sm"
-                aria-label="刷新模拟数据"
-                :loading="loading"
+                :aria-label="connected ? '刷新销售单据' : '刷新模拟数据'"
+                :loading="connected ? activeQuery.loading : loading"
                 data-testid="sales-refresh"
                 @click="refreshAll"
               />
@@ -1142,11 +1349,20 @@ async function reloadPage() {
               @click="openCreate('quote')"
             />
             <UButton
+              v-else-if="connected && tab === 'invoices'"
+              label="新建发票"
+              icon="i-carbon-add"
+              size="sm"
+              :disabled="!finance.canDraft"
+              data-testid="sales-new-invoice"
+              @click="createInvoiceForOrder('')"
+            />
+            <UButton
               v-else-if="tab === 'recurring'"
               label="新建定期开票"
               icon="i-carbon-add"
               size="sm"
-              :disabled="!canCreate"
+              :disabled="!canManageRecurring"
               data-testid="recurring-new"
               @click="openRecurringCreate"
             />
@@ -1213,6 +1429,24 @@ async function reloadPage() {
 
       <template #body>
         <AppBreadcrumb current="销售与应收" class="mb-3" />
+        <SalesSubmissionStatus
+          v-if="connected && !detailOpen && !quoteOpen && !formOpen && !convertOpen"
+          :connection="connection"
+          class="mb-3"
+          @retry="retrySalesSubmission"
+        />
+        <SalesOperationStatus
+          v-if="connected && !invoiceOpen && !receiptOpen && !allocationOpen && finance.submission.record"
+          :submission="finance.submission"
+          @check="finance.check()"
+          @retry="retryLiveReceivable"
+        />
+        <SalesOperationStatus
+          v-if="connected && !detailOpen && !fulfillmentOpen && fulfillment.submission.record"
+          :submission="fulfillment.submission"
+          @check="fulfillment.check()"
+          @retry="fulfillment.retry()"
+        />
 
         <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="sales-skeleton">
@@ -1224,9 +1458,9 @@ async function reloadPage() {
               color="error"
               variant="soft"
               icon="i-carbon-warning-alt"
-              title="销售与应收加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', onClick: reloadPage }]"
+              :title="connected ? '销售单据加载失败' : '销售与应收加载失败（演示）'"
+              :description="connected ? activeQuery.problem : '?state=error 会模拟一次加载失败。本原型不会访问后端。'"
+              :actions="[{ label: connected ? '重新读取' : '恢复正常', color: 'neutral', variant: 'outline', onClick: connected ? refreshAll : reloadPage }]"
               data-testid="sales-state-error"
             />
           </div>
@@ -1235,8 +1469,8 @@ async function reloadPage() {
             <UEmpty
               variant="naked"
               icon="i-carbon-view-off"
-              title="没有销售与应收读取权限（演示）"
-              description="使用 ?state=forbidden 模拟权限不足；本原型不会访问后端。"
+              :title="connected ? '暂无法读取销售单据' : '没有销售与应收读取权限（演示）'"
+              :description="connected ? forbiddenDescription : '使用 ?state=forbidden 模拟权限不足；本原型不会访问后端。'"
               data-testid="sales-state-forbidden"
             />
           </div>
@@ -1259,6 +1493,13 @@ async function reloadPage() {
             />
           </div>
 
+          <UEmpty
+            v-else-if="connected && !salesTab && !financeTab"
+            class="py-8"
+            icon="i-carbon-document"
+            title="此页签尚未接入当前工作区"
+            :actions="[{ label: '打开销售订单', onClick: () => { tab = 'orders' } }]"
+          />
           <div v-else :key="'sales-tab-' + tab" class="nx-fade">
             <SalesOrdersTable
               v-if="tab === 'orders'"
@@ -1269,6 +1510,7 @@ async function reloadPage() {
             <SalesQuotesTable
               v-else-if="tab === 'quotes'"
               :rows="pageQuotes"
+              :live="connected"
               @open="openQuote"
               @reset="resetFilters"
             />
@@ -1278,6 +1520,7 @@ async function reloadPage() {
                   :invoices="workspaceInvoices"
                   :orders="workspaceOrders"
                   :can-create="canCreate"
+                  :live="connected ? finance : undefined"
                   @open-invoice="openInvoice"
                   @open-order="openOrderFromOther"
                   @create-invoice="createInvoiceForOrder"
@@ -1293,19 +1536,64 @@ async function reloadPage() {
               @open="openInvoice"
               @reset="resetFilters"
             />
-            <SalesRecurringTable
-              v-else-if="tab === 'recurring'"
-              :rows="pageRecurring"
-              :can-create="canCreate"
-              @open="openRecurring"
-              @toggle="toggleRecurringRow"
-            />
-            <SalesInvoiceDelivery v-else />
+            <template v-else-if="tab === 'recurring'">
+              <SalesOperationStatus v-if="connected && !recurringPlanOpen && !recurringFormOpen" class="m-3"
+                :message="recurringLive.error" :submission="recurringLive.submission" @check="recurringLive.check()" @retry="recurringLive.retry()" />
+              <SalesRecurringTable :rows="pageRecurring" :can-create="canManageRecurring" @open="openRecurring" @toggle="toggleRecurringRow" />
+            </template>
+            <SalesInvoiceDelivery v-else ref="deliveryPanel" :live="connected ? finance : undefined" />
           </div>
 
           <template #footer>
+            <div v-if="connected && tab === 'recurring' && (recurringLive.page > 1 || recurringLive.rows.length >= 50)" class="flex items-center gap-2 px-4 py-2.5">
+              <UButton label="上一页" variant="outline" size="sm" :disabled="recurringLive.page <= 1" @click="recurringLive.page--" />
+              <span class="text-xs text-muted">第 {{ recurringLive.page }} 页</span>
+              <UButton label="下一页" variant="outline" size="sm" :disabled="recurringLive.rows.length < 50" @click="recurringLive.page++" />
+            </div>
+            <div v-if="connected && tab === 'invoices' && finance.query.data" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+              <p class="text-xs text-muted">
+                第 {{ finance.pages.documents }} 页 · 筛选范围为当前服务器页
+              </p>
+              <div class="flex gap-2">
+                <UButton
+                  label="上一页"
+                  size="sm"
+                  variant="outline"
+                  :disabled="finance.pages.documents <= 1"
+                  @click="finance.changePage('documents', -1)"
+                />
+                <UButton
+                  label="下一页"
+                  size="sm"
+                  variant="outline"
+                  :disabled="finance.documents.length < finance.pageSize"
+                  @click="finance.changePage('documents', 1)"
+                />
+              </div>
+            </div>
+            <div v-if="connected && salesTab && connection.query.data" class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+              <p class="text-xs text-muted">
+                第 {{ connection.page }} 页 · 筛选范围为当前服务器页
+              </p>
+              <div class="flex gap-2">
+                <UButton
+                  label="上一页"
+                  variant="outline"
+                  size="sm"
+                  :disabled="connection.page <= 1 || connection.query.loading"
+                  @click="connection.page--"
+                />
+                <UButton
+                  label="下一页"
+                  variant="outline"
+                  size="sm"
+                  :disabled="!connection.query.data.hasMore || connection.query.loading"
+                  @click="connection.page++"
+                />
+              </div>
+            </div>
             <div
-              v-if="!showSkeleton && !isError && !isForbidden && !isEmpty && !['receivables', 'invoice-delivery'].includes(tab)"
+              v-if="!connected && !showSkeleton && !isError && !isForbidden && !isEmpty && !['receivables', 'invoice-delivery'].includes(tab)"
               class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
               <p class="text-xs tabular-nums text-muted">
@@ -1350,7 +1638,12 @@ async function reloadPage() {
         <SalesOrderDetailSlideover
           v-model:open="detailOpen"
           :order="selectedOrder"
-          :can-create="canCreate"
+          :can-create="connected ? connection.canEdit : canCreate"
+          :live="connected"
+          :fulfillment="connected ? fulfillment : undefined"
+          :minor-units="connection.detail?.minorUnits"
+          :approved-version="connection.detail?.approvedVersion"
+          :approved-at="connection.detail?.approvedAtUtc"
           :can-approve="canApproveSelected"
           :can-withdraw="canWithdrawSelected"
           :can-cancel="canCancelSelected"
@@ -1365,18 +1658,73 @@ async function reloadPage() {
           @resubmit="resubmitSelectedOrder"
           @back="closeOrderDetail"
           @open-quote="openQuoteFromOrder"
-        />
+        >
+          <template v-if="connected" #feedback>
+            <USkeleton v-if="connection.detailLoading" class="h-12 w-full" />
+            <UAlert
+              v-if="connection.detailError"
+              color="error"
+              variant="soft"
+              :title="connection.detailError"
+            />
+            <SalesSubmissionStatus
+              v-if="!formOpen"
+              :connection="connection"
+              class="mb-3"
+              @retry="retrySalesSubmission"
+            />
+            <UFormField v-if="connection.decisions.includes('cancel') || connection.decisions.includes('return')" label="退回或取消原因" class="mb-3">
+              <UInput
+                v-model="connection.reason"
+                maxlength="300"
+                class="w-full"
+                data-testid="sales-decision-reason"
+              />
+            </UFormField>
+          </template>
+        </SalesOrderDetailSlideover>
 
         <SalesQuoteDetailSlideover
           v-model:open="quoteOpen"
           :quote="selectedQuote"
           :can-create="canCreate"
+          :live="connected"
+          :can-edit="connection.canEdit"
+          :can-send="connection.decisions.includes('issue-quote')"
+          :can-cancel="connection.decisions.includes('cancel')"
+          :can-convert="connection.canConvert"
+          :minor-units="connection.detail?.minorUnits"
           @convert="openConversion"
           @edit="startEditQuote"
           @send="sendSelectedQuote"
+          @cancel="cancelSelectedOrderDraft"
           @back="closeQuoteDetail"
           @open-order="openOrderFromOther"
-        />
+        >
+          <template v-if="connected" #feedback>
+            <USkeleton v-if="connection.detailLoading" class="h-12 w-full" />
+            <UAlert
+              v-if="connection.detailError"
+              color="error"
+              variant="soft"
+              :title="connection.detailError"
+            />
+            <SalesSubmissionStatus
+              v-if="!formOpen && !convertOpen"
+              :connection="connection"
+              class="mb-3"
+              @retry="retrySalesSubmission"
+            />
+            <UFormField v-if="connection.decisions.includes('cancel')" label="取消原因" class="mb-3">
+              <UInput
+                v-model="connection.reason"
+                maxlength="300"
+                class="w-full"
+                data-testid="sales-quote-cancel-reason"
+              />
+            </UFormField>
+          </template>
+        </SalesQuoteDetailSlideover>
 
         <SalesFormSlideover
           v-model:open="formOpen"
@@ -1384,12 +1732,25 @@ async function reloadPage() {
           :order="editingOrder"
           :quote="editingQuote"
           :customers="customerOptions"
+          :connection="connected ? connection : undefined"
           @save="handleFormSave"
-        />
+          @saved="afterConnectedSave"
+        >
+          <template v-if="connected" #feedback>
+            <SalesSubmissionStatus :connection="connection" editing @retry="retrySalesSubmission" />
+            <UAlert
+              v-if="connection.detailError"
+              color="error"
+              variant="soft"
+              :title="connection.detailError"
+            />
+          </template>
+        </SalesFormSlideover>
 
         <SalesFulfillmentSlideover
           v-model:open="fulfillmentOpen"
           :order="fulfillmentOrder"
+          :live="connected ? fulfillment : undefined"
           @confirm="confirmFulfillment"
         />
 
@@ -1399,9 +1760,15 @@ async function reloadPage() {
           :order="selectedInvoiceOrder"
           :can-create="canCreate"
           :busy="invoiceBusy"
+          :live="connected ? finance : undefined"
+          :editing="invoiceEditing"
           @send="sendSelectedInvoice"
           @retry="retryDelivery"
-          @back="invoiceOpen = false; selectedInvoiceId = null"
+          @back="closeInvoice"
+          @open-document="openInvoice"
+          @edit-live="editLiveInvoice"
+          @save-live="saveLiveReceivable"
+          @retry-live="retryLiveReceivable"
           @open-order="openOrderFromOther"
           @register-receipt="openReceiptForm"
           @allocate="openAllocation"
@@ -1415,35 +1782,61 @@ async function reloadPage() {
           :plan="selectedRecurringPlan"
           :occurrences="recurringOccurrences"
           :preview="recurringPreview"
-          :can-manage="canCreate"
+          :can-manage="canManageRecurring"
+          :live="connected"
+          :history-page="recurringLive.historyPage"
+          :history-problem="connected ? recurringLive.history.problem : ''"
           @run="runRecurring"
           @skip="skipRecurring"
           @edit="openRecurringEdit"
           @toggle="toggleSelectedRecurring"
           @open-invoice="openRecurringInvoice"
-        />
+          @refresh="recurringLive.refresh()"
+          @history-page="step => recurringLive.historyPage += step"
+        >
+          <template #operation>
+            <SalesOperationStatus v-if="connected" :message="recurringLive.error" :submission="recurringLive.submission"
+              @check="recurringLive.check()" @retry="recurringLive.retry()" />
+          </template>
+        </SalesRecurringPlanSlideover>
 
         <SalesRecurringFormSlideover
           v-model:open="recurringFormOpen"
           :plan="recurringEditingPlan"
           :customers="customerOptions"
-          :can-manage="canCreate"
-          :error="recurringFormError"
+          :can-manage="canManageRecurring"
+          :error="connected ? recurringLive.error : recurringFormError"
+          :live="connected"
+          :customer-items="recurringLive.options.data?.customers"
+          :service-items="recurringLive.options.data?.services"
+          :lookup-error="connected ? recurringLive.options.problem : ''"
           @save="saveRecurring"
-        />
+          @save-live="saveLiveRecurring"
+        >
+          <template #operation>
+            <SalesOperationStatus v-if="connected && recurringLive.submission.record" :submission="recurringLive.submission"
+              @check="recurringLive.check()" @retry="recurringLive.retry()" />
+          </template>
+        </SalesRecurringFormSlideover>
 
         <SalesReceiptFormSlideover
           v-model:open="receiptOpen"
           :customer-name="receiptCustomer"
           :invoice-id="receiptInvoiceId"
+          :live="connected ? finance : undefined"
           @save="handleReceiptSave"
+          @save-live="saveLiveReceivable"
+          @retry-live="retryLiveReceivable"
         />
 
         <SalesReceivableAllocationSlideover
           v-model:open="allocationOpen"
           :invoice-id="allocationInvoiceId"
           :receipt-id="allocationReceiptId"
+          :live="connected ? finance : undefined"
           @save="handleAllocationSave"
+          @save-live="saveLiveReceivable"
+          @retry-live="retryLiveReceivable"
         />
 
         <SalesCreditSlideover
@@ -1499,7 +1892,9 @@ async function reloadPage() {
         <UModal v-model:open="convertOpen" title="将报价转换为销售订单" data-testid="quote-convert-modal">
           <template #body>
             <div class="space-y-3">
+              <SalesSubmissionStatus v-if="connected" :connection="connection" @retry="retrySalesSubmission" />
               <UAlert
+                v-if="!connected"
                 color="info"
                 variant="soft"
                 icon="i-carbon-information"
@@ -1512,7 +1907,7 @@ async function reloadPage() {
                     报价单
                   </dt>
                   <dd class="font-mono text-default">
-                    {{ pendingQuote?.id }}
+                    {{ pendingQuote?.documentNumber ?? pendingQuote?.id }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-3">
@@ -1536,7 +1931,7 @@ async function reloadPage() {
                     未税金额
                   </dt>
                   <dd class="tabular-nums text-default">
-                    {{ formatMoney(Number(pendingQuote?.totalAmount ?? 0)) }}
+                    {{ connected ? displayDecimal(pendingQuote?.totalAmount ?? '—', connection.detail?.minorUnits) : formatMoney(Number(pendingQuote?.totalAmount ?? 0)) }}
                   </dd>
                 </div>
                 <div class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
@@ -1544,7 +1939,18 @@ async function reloadPage() {
                     转换后销售订单
                   </dt>
                   <dd class="font-mono tabular-nums text-highlighted">
-                    {{ pendingConvert?.orderId }}
+                    <UInput
+                      v-if="connected"
+                      v-model="convertNumber"
+                      aria-label="销售订单号"
+                      placeholder="输入销售订单号"
+                      maxlength="60"
+                      :disabled="connection.frozen"
+                      data-testid="quote-convert-number"
+                    />
+                    <template v-else>
+                      {{ pendingConvert?.orderId }}
+                    </template>
                   </dd>
                 </div>
               </dl>
@@ -1565,6 +1971,8 @@ async function reloadPage() {
               <UButton
                 label="确认转换"
                 icon="i-carbon-arrow-right"
+                :disabled="connected && (!connection.canConvert || connection.conflict)"
+                :loading="connected && connection.submission.mutation.busy"
                 data-testid="quote-convert-confirm"
                 @click="confirmConversion"
               />

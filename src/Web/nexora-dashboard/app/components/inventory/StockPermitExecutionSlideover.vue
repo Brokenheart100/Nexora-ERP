@@ -1,59 +1,109 @@
 <script setup lang="ts">
 import { warehouses } from '~/mocks'
+import type { useWarehouseConnection } from '~/composables/inventory/useWarehouseConnection'
+import { compareDecimal, subtractDecimal } from '#shared/utils/decimal'
 
-const props = defineProps<{ permitId: string | null }>()
+const props = defineProps<{ permitId: string | null, live?: ReturnType<typeof useWarehouseConnection> }>()
 const emit = defineEmits<{
-  confirm: [payload: {
-    permitId: string
-    warehouseId: string
-    operator: string
-    at: string
-    lines: { lineNo: number, quantity: number }[]
-  }]
+  confirm: [
+    payload: { permitId: string, warehouseId: string, operator: string, at: string, lines: { lineNo: number, quantity: number }[] }
+  ]
 }>()
 const open = defineModel<boolean>('open', { default: false })
 const stockFlow = useStockFlowStore()
-
-const permit = computed(() => props.permitId
-  ? stockFlow.permits.find(row => row.id === props.permitId) ?? null
-  : null)
-const lines = computed(() => permit.value?.lines ?? [])
-const warehouseItems = computed(() => warehouses
-  .filter(warehouse => warehouse.status === 'active')
-  .map(warehouse => ({ label: warehouse.name + '（' + warehouse.code + '）', value: warehouse.id })))
-
-const warehouseId = ref('wh-east')
-const operator = ref('陈立')
-const at = ref('2026-11-18')
-const quantities = ref<Record<number, number>>({})
-const error = ref('')
-
+const permit = computed(() =>
+  props.live
+    ? props.live.selected
+      ? {
+          id: props.live.selected.id,
+          direction: props.live.selected.direction,
+          sourceNo: props.live.selected.sourceNo,
+          partner: props.live.selected.partner
+        }
+      : null
+    : props.permitId
+      ? (stockFlow.permits.find(row => row.id === props.permitId) ?? null)
+      : null
+)
+const lines = computed(() =>
+  props.live
+    ? props.live.selected
+      ? [
+          {
+            lineNo: 1,
+            name: props.live.selected.itemName ?? props.live.itemName(props.live.selected.itemId),
+            sku: props.live.selected.itemId,
+            executed: props.live.selected.executed,
+            permitted: props.live.selected.quantity
+          }
+        ]
+      : []
+    : props.permitId
+      ? (stockFlow.permits.find(row => row.id === props.permitId)?.lines ?? [])
+      : []
+)
+const warehouseItems = computed(() =>
+  props.live
+    ? (props.live.query.data?.warehouses.warehouses.map(value => ({
+        label: value.name + '（' + value.code + '）',
+        value: value.id
+      })) ?? [])
+    : warehouses
+        .filter(value => value.status === 'active')
+        .map(value => ({ label: value.name + '（' + value.code + '）', value: value.id }))
+)
+const mockWarehouse = ref('wh-east'),
+  mockOperator = ref('陈立'),
+  mockDate = ref('2026-11-18')
+const warehouseId = computed({
+  get: () => props.live?.warehouseId ?? mockWarehouse.value,
+  set: (value) => {
+    if (!props.live) mockWarehouse.value = value
+  }
+})
+const operator = computed({
+  get: () => props.live?.query.auth.user?.name ?? mockOperator.value,
+  set: (value) => {
+    if (!props.live) mockOperator.value = value
+  }
+})
+const at = computed({
+  get: () => props.live?.form.on ?? mockDate.value,
+  set: (value) => {
+    if (props.live) props.live.updateForm('on', value)
+    else mockDate.value = value
+  }
+})
+const quantities = ref<Record<number, number | string>>({}),
+  error = ref('')
+const locked = computed(() => props.live?.frozen ?? false)
 function syncForm() {
   error.value = ''
   quantities.value = {}
-  for (const line of lines.value) quantities.value[line.lineNo] = 0
+  for (const line of lines.value) quantities.value[line.lineNo] = props.live ? props.live.form.quantity : 0
 }
-
-watch(() => [props.permitId, open.value] as const, () => {
-  if (open.value) syncForm()
-})
-
+watch(
+  () => [props.permitId, open.value] as const,
+  () => {
+    if (open.value) syncForm()
+  }
+)
+function remaining(line: { permitted: number | string, executed: number | string }) {
+  return props.live
+    ? subtractDecimal(String(line.permitted), String(line.executed))
+    : Number(line.permitted) - Number(line.executed)
+}
 function fillRemaining() {
-  for (const line of lines.value) quantities.value[line.lineNo] = line.permitted - line.executed
+  for (const line of lines.value) quantities.value[line.lineNo] = remaining(line)
 }
-
-function submit() {
-  if (!permit.value) return
-  if (!warehouseId.value) {
-    error.value = '请选择仓库。'
+async function submit() {
+  if (props.live) {
+    props.live.updateForm('quantity', String(quantities.value[1] ?? ''))
+    if (await props.live.confirm()) open.value = false
     return
   }
-  if (!operator.value.trim()) {
-    error.value = '请填写经办人。'
-    return
-  }
-  if (!at.value) {
-    error.value = '请选择业务日期。'
+  if (!permit.value || !warehouseId.value || !operator.value.trim() || !at.value) {
+    error.value = '请填写仓库、经办人和业务日期。'
     return
   }
   const payloadLines = lines.value
@@ -63,15 +113,17 @@ function submit() {
     error.value = '至少填写一行执行数量。'
     return
   }
-  for (const line of payloadLines) {
-    const permitLine = lines.value.find(row => row.lineNo === line.lineNo)!
-    const remaining = permitLine.permitted - permitLine.executed
-    if (line.quantity > remaining) {
-      error.value = '第 ' + line.lineNo + ' 行超过许可剩余 ' + remaining + '。'
-      return
-    }
+  if (payloadLines.some(line => line.quantity > Number(remaining(lines.value.find(value => value.lineNo === line.lineNo)!)))) {
+    error.value = '执行数量超过许可剩余。'
+    return
   }
-  emit('confirm', { permitId: permit.value.id, warehouseId: warehouseId.value, operator: operator.value, at: at.value, lines: payloadLines })
+  emit('confirm', {
+    permitId: permit.value.id,
+    warehouseId: warehouseId.value,
+    operator: operator.value,
+    at: at.value,
+    lines: payloadLines
+  })
 }
 </script>
 
@@ -92,85 +144,101 @@ function submit() {
           data-testid="permit-execution-source"
         />
 
-        <div class="grid gap-3 sm:grid-cols-3">
-          <UFormField label="仓库" required>
-            <USelect
-              v-model="warehouseId"
-              :items="warehouseItems"
-              class="w-full"
-              data-testid="permit-execution-warehouse"
-            />
-          </UFormField>
-          <UFormField label="经办人" required>
-            <UInput v-model="operator" class="w-full" data-testid="permit-execution-operator" />
-          </UFormField>
-          <UFormField label="业务日期" required>
-            <UInput
-              v-model="at"
-              type="date"
-              class="w-full"
-              data-testid="permit-execution-date"
-            />
-          </UFormField>
-        </div>
+        <fieldset :disabled="locked" class="contents">
+          <div class="grid gap-3 sm:grid-cols-3">
+            <UFormField label="仓库" required>
+              <USelect
+                v-model="warehouseId"
+                :disabled="!!live"
+                :items="warehouseItems"
+                class="w-full"
+                data-testid="permit-execution-warehouse"
+              />
+            </UFormField>
+            <UFormField label="经办人" required>
+              <UInput
+                v-model="operator"
+                :disabled="!!live"
+                class="w-full"
+                data-testid="permit-execution-operator"
+              />
+            </UFormField>
+            <UFormField label="业务日期" required>
+              <UInput
+                v-model="at"
+                type="date"
+                class="w-full"
+                data-testid="permit-execution-date"
+              />
+            </UFormField>
+          </div>
 
-        <div class="flex items-center justify-between">
-          <p class="text-xs text-muted">
-            按行填写本次执行数量，不得超过许可剩余。
-          </p>
-          <UButton
-            label="填入全部剩余"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            data-testid="permit-execution-fill"
-            @click="fillRemaining"
-          />
-        </div>
-
-        <div class="space-y-2">
-          <div
-            v-for="line in lines"
-            :key="line.lineNo"
-            class="rounded-sm border border-default p-3"
-            data-testid="permit-execution-line"
-          >
-            <div class="flex flex-wrap items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="text-sm text-default">
-                  {{ line.name }}
-                </p>
-                <p class="mt-0.5 font-mono text-[11px] text-muted">
-                  {{ line.sku }} · 第 {{ line.lineNo }} 行
-                </p>
-              </div>
-              <div class="flex items-center gap-2 text-[11px] text-muted">
-                <span>已执行 {{ line.executed }}</span>
-                <UBadge
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                  :label="'剩余 ' + (line.permitted - line.executed)"
-                />
-              </div>
-            </div>
-            <UInput
-              v-model.number="quantities[line.lineNo]"
-              type="number"
-              min="0"
-              :max="line.permitted - line.executed"
-              :disabled="line.executed >= line.permitted"
-              class="mt-2 w-32"
-              :data-testid="'permit-execution-qty-' + line.lineNo"
+          <div class="flex items-center justify-between">
+            <p class="text-xs text-muted">
+              按行填写本次执行数量，不得超过许可剩余。
+            </p>
+            <UButton
+              label="填入全部剩余"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              data-testid="permit-execution-fill"
+              @click="fillRemaining"
             />
           </div>
-        </div>
 
+          <div class="space-y-2">
+            <div
+              v-for="line in lines"
+              :key="line.lineNo"
+              class="rounded-sm border border-default p-3"
+              data-testid="permit-execution-line"
+            >
+              <div class="flex flex-wrap items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-sm text-default">
+                    {{ line.name }}
+                  </p>
+                  <p class="mt-0.5 font-mono text-[11px] text-muted">
+                    {{ line.sku }} · 第 {{ line.lineNo }} 行
+                  </p>
+                </div>
+                <div class="flex items-center gap-2 text-[11px] text-muted">
+                  <span>已执行 {{ line.executed }}</span>
+                  <UBadge
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                    :label="'剩余 ' + remaining(line)"
+                  />
+                </div>
+              </div>
+              <UInput
+                :model-value="String(quantities[line.lineNo] ?? '')"
+                :type="live ? 'text' : 'number'"
+                inputmode="decimal"
+                min="0"
+                :max="String(remaining(line))"
+                :disabled="compareDecimal(String(line.executed), String(line.permitted)) >= 0"
+                class="mt-2 w-32"
+                :data-testid="'permit-execution-qty-' + line.lineNo"
+                @update:model-value="value => quantities[line.lineNo] = live ? String(value) : Number(value)"
+              />
+            </div>
+          </div>
+        </fieldset>
+        <UButton
+          v-if="live?.submission.failure && [409, 412].includes(live.submission.failure.status)"
+          label="读取仓库当前修订，保留数量"
+          variant="outline"
+          data-testid="receipt-read-current"
+          @click="live.readCurrent()"
+        />
         <UAlert
-          v-if="error"
+          v-if="error || live?.error || live?.submission.message"
           color="error"
           variant="soft"
-          :description="error"
+          :description="error || live?.error || live?.submission.message"
           data-testid="permit-execution-error"
         />
       </div>
@@ -185,7 +253,13 @@ function submit() {
           data-testid="permit-execution-cancel"
           @click="open = false"
         />
-        <UButton label="确认执行" data-testid="permit-execution-submit" @click="submit" />
+        <UButton
+          label="确认执行"
+          :loading="live?.submission.mutation.busy"
+          :disabled="locked"
+          data-testid="permit-execution-submit"
+          @click="submit"
+        />
       </div>
     </template>
   </USlideover>

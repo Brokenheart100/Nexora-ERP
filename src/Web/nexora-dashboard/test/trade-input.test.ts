@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { billTerms, paymentTerms } from '../shared/utils/trade-documents'
-import { taxSnapshotSchema } from '../shared/types/trade'
+import { taxSnapshotSchema } from '../shared/types/tax'
 import { roundDecimal } from '../shared/utils/decimal'
 
 const supplierId = '11111111-1111-4111-8111-111111111111'

@@ -2,15 +2,21 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { purchaseOrders, salesOrders } from '~/mocks'
 import { useUiStore } from '~/stores/ui'
+import { useAuthSessionStore } from '~/stores/authSession'
+import { usesConnectedBusinessData } from '~/utils/organization/navigation'
 
 const open = ref(false)
 const ui = useUiStore()
+const auth = useAuthSessionStore()
+const live = useLiveSessionStore()
 const isDesktop = useMediaQuery('(min-width: 1024px)', { ssrWidth: 1440 })
 const { t } = useI18n()
 const { localeModel, localeOptions } = useLocaleSwitch()
 const { workspace } = useMockWorkspace()
-const { groups: searchGroups } = useDashboardSearch()
+const searchOpen = ref(false)
+const { groups: searchGroups, records: searchRecords } = useDashboardSearch(searchOpen)
 const route = useRoute()
+const connectedBusiness = computed(() => auth.connected && usesConnectedBusinessData(route.path, route.query.tab))
 const { recordVisit } = useRecentVisits()
 
 const pendingOrderCount = computed(() => purchaseOrders.filter(order => order.workspaceId === workspace.value.id && (order.status === 'pending' || order.status === 'approved')).length)
@@ -49,7 +55,7 @@ const links = computed<NavigationMenuItem[]>(() => [{
   label: t('nav.purchaseOrders'),
   icon: 'i-carbon-purchase',
   to: '/purchase-orders',
-  badge: pendingOrderCount.value || undefined,
+  badge: auth.connected ? undefined : pendingOrderCount.value || undefined,
   onSelect: () => {
     open.value = false
   }
@@ -64,7 +70,7 @@ const links = computed<NavigationMenuItem[]>(() => [{
   label: t('nav.sales'),
   icon: 'i-carbon-shopping-cart',
   to: '/sales',
-  badge: pendingSalesCount.value || undefined,
+  badge: auth.connected ? undefined : pendingSalesCount.value || undefined,
   onSelect: () => {
     open.value = false
   }
@@ -103,7 +109,7 @@ const links = computed<NavigationMenuItem[]>(() => [{
   onSelect: () => {
     open.value = false
   }
-}])
+}].filter(item => !auth.connected || live.canVisit(item.to)))
 
 watch(() => route.path, (path) => {
   const link = links.value.find(item => typeof item.to === 'string' && item.to === path)
@@ -152,8 +158,8 @@ watch(() => route.path, (path) => {
         />
 
         <p v-if="!collapsed && isDesktop" class="mt-auto px-2 text-[11px] leading-5 text-dimmed">
-          {{ t('shell.sidebarNote') }}<br>
-          {{ t('shell.sidebarDisconnected') }}
+          {{ t(connectedBusiness ? 'auth.catalogSource' : 'shell.sidebarNote') }}<br>
+          {{ t(auth.connected ? connectedBusiness ? auth.simulated ? 'auth.catalogMock' : 'auth.catalogLive' : auth.simulated ? 'auth.simulated' : 'auth.connected' : 'shell.sidebarDisconnected') }}
         </p>
       </template>
 
@@ -178,7 +184,9 @@ watch(() => route.path, (path) => {
     <slot />
 
     <UDashboardSearch
+      v-model:open="searchOpen"
       :groups="searchGroups"
+      :loading="searchRecords.loading"
       :description="t('shell.searchDescription')"
       :placeholder="t('shell.searchPlaceholder')"
       :color-mode="false"
@@ -198,6 +206,9 @@ watch(() => route.path, (path) => {
           class="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-[11px] text-muted"
           data-testid="command-footer"
         >
+          <span v-if="auth.connected" class="basis-full">
+            搜索各模块当前工作区可见的首批记录。<template v-if="searchRecords.data?.partial">部分模块未返回结果。</template>
+          </span>
           <span>
             <UKbd value="↑" />
             <UKbd value="↓" /> {{ t('shell.searchSelect') }}

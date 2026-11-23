@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "start:live": "node .output-live/server/index.mjs",
     "dev": "nuxt dev",
     "dev:msw": "nuxt dev --envName msw --port 3003",
     "preview": "nuxt preview",

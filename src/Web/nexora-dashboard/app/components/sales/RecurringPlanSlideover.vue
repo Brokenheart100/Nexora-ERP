@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import type { RecurringInvoiceOccurrence, RecurringInvoicePlan } from '~/mocks'
 import {
-  recurringIntervalLabels,
   recurringOccurrenceStatusColors,
   recurringOccurrenceStatusLabels,
   recurringPlanStatusLabels
 } from '~/mocks'
+import { recurringNet, type RecurringRow, type RecurringHistoryRow } from '~/utils/sales/recurring'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
 const props = defineProps<{
-  plan: RecurringInvoicePlan | null
-  occurrences: RecurringInvoiceOccurrence[]
+  plan: RecurringRow | null
+  occurrences: RecurringHistoryRow[]
   preview: string[]
   canManage: boolean
+  live?: boolean
+  historyPage?: number
+  historyProblem?: string
 }>()
 
 const emit = defineEmits<{
@@ -20,15 +23,15 @@ const emit = defineEmits<{
   'edit': []
   'toggle': []
   'open-invoice': [invoiceId: string]
+  'history-page': [step: number]
+  'refresh': []
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
 const runDate = ref('')
 
 const nextOn = computed(() => props.plan?.nextRunAt ?? props.preview[0] ?? '')
-const amount = computed(() => (props.plan?.quantity ?? 0) * (props.plan?.unitPrice ?? 0))
-
-watch([() => props.plan?.id, open], () => {
+watch([() => props.plan?.id, open, nextOn], () => {
   if (open.value) runDate.value = nextOn.value
 }, { immediate: true })
 
@@ -47,7 +50,7 @@ function openInvoice(invoiceId?: string) {
               {{ plan.id }}
             </h2>
             <UBadge
-              :label="recurringPlanStatusLabels[plan.status]"
+              :label="live && !plan.nextRunAt ? '已结束' : recurringPlanStatusLabels[plan.status]"
               :color="plan.status === 'active' ? 'success' : 'neutral'"
               variant="subtle"
               size="sm"
@@ -79,13 +82,14 @@ function openInvoice(invoiceId?: string) {
 
     <template #body>
       <div v-if="plan" class="space-y-4" data-testid="recurring-plan-detail">
+        <slot name="operation" />
         <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] sm:grid-cols-4">
           <div>
             <p class="text-xs text-muted">
               数量 × 单价
             </p>
             <p class="mt-0.5 tabular-nums text-default">
-              {{ plan.quantity }} × {{ formatMoney(plan.unitPrice) }}
+              {{ plan.quantity }} × {{ live ? displayDecimal(String(plan.unitPrice)) : formatMoney(Number(plan.unitPrice)) }}
             </p>
           </div>
           <div>
@@ -93,7 +97,7 @@ function openInvoice(invoiceId?: string) {
               每期未税金额
             </p>
             <p class="mt-0.5 tabular-nums text-highlighted" data-testid="recurring-plan-amount">
-              {{ formatMoney(amount) }}
+              {{ recurringNet(plan) }}
             </p>
           </div>
           <div>
@@ -101,7 +105,7 @@ function openInvoice(invoiceId?: string) {
               开票周期
             </p>
             <p class="mt-0.5 text-default">
-              {{ recurringIntervalLabels[plan.intervalMonths] }}
+              每 {{ plan.intervalMonths }} 个月
             </p>
           </div>
           <div>
@@ -114,10 +118,10 @@ function openInvoice(invoiceId?: string) {
           </div>
           <div>
             <p class="text-xs text-muted">
-              首期日期
+              {{ live ? '计划时区' : '首期日期' }}
             </p>
             <p class="mt-0.5 tabular-nums text-default">
-              {{ plan.firstOn }}
+              {{ live ? plan.timeZone : plan.firstOn }}
             </p>
           </div>
           <div>
@@ -143,6 +147,9 @@ function openInvoice(invoiceId?: string) {
             <p class="mt-0.5 font-medium tabular-nums text-highlighted" data-testid="recurring-plan-next">
               {{ plan.nextRunAt ?? '已结束' }}
             </p>
+            <p v-if="plan.nextAtUtc" class="mt-1 text-xs text-muted" data-testid="recurring-plan-next-utc">
+              {{ plan.nextAtUtc }}
+            </p>
           </div>
         </div>
 
@@ -151,7 +158,7 @@ function openInvoice(invoiceId?: string) {
           color="warning"
           variant="soft"
           icon="i-carbon-warning-alt"
-          title="待处理：期间阻断"
+          :title="live ? '等待处理' : '待处理：期间阻断'"
           :description="plan.pendingReason"
           data-testid="recurring-plan-pending"
         />
@@ -161,7 +168,7 @@ function openInvoice(invoiceId?: string) {
             <p class="text-xs font-medium text-highlighted">
               未来执行日期
             </p>
-            <span class="text-[11px] text-muted">按间隔 {{ plan.intervalMonths }} 个月与结束日期推算</span>
+            <span class="text-[11px] text-muted">{{ live ? '按计划时区列出' : '按间隔 ' + plan.intervalMonths + ' 个月与结束日期推算' }}</span>
           </div>
           <div class="mt-2 flex flex-wrap gap-1.5" data-testid="recurring-plan-preview">
             <UBadge
@@ -198,7 +205,7 @@ function openInvoice(invoiceId?: string) {
               icon="i-carbon-skip-forward"
               color="neutral"
               variant="outline"
-              :disabled="!canManage || plan.status !== 'active' || !runDate"
+              :disabled="!canManage || plan.status !== 'active' || !runDate || (live && runDate !== plan.nextRunAt)"
               data-testid="recurring-plan-skip"
               @click="emit('skip', runDate)"
             />
@@ -214,7 +221,9 @@ function openInvoice(invoiceId?: string) {
               执行历史
             </p>
             <span class="text-[11px] text-muted">{{ occurrences.length }} 条</span>
+            <UButton v-if="live" label="刷新记录" size="xs" variant="outline" @click="emit('refresh')" />
           </div>
+          <UAlert v-if="historyProblem" color="warning" variant="soft" :title="historyProblem" />
           <div class="max-h-64 overflow-auto" data-testid="recurring-plan-history">
             <div
               v-for="item in occurrences"
@@ -231,6 +240,7 @@ function openInvoice(invoiceId?: string) {
                   size="sm"
                 />
                 <span class="text-muted">模板 v{{ item.version }}</span>
+                <span v-if="live" class="text-muted">{{ new Date(item.actedAt).toLocaleString() }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <UButton
@@ -249,6 +259,10 @@ function openInvoice(invoiceId?: string) {
               还没有执行记录，可手动执行或跳过到期日。
             </p>
           </div>
+          <div v-if="live && ((historyPage ?? 1) > 1 || occurrences.length >= 50)" class="flex items-center gap-2 px-3 py-2">
+            <UButton label="上一页记录" size="xs" variant="outline" :disabled="(historyPage ?? 1) <= 1" @click="emit('history-page', -1)" />
+            <UButton label="下一页记录" size="xs" variant="outline" :disabled="occurrences.length < 50" @click="emit('history-page', 1)" />
+          </div>
         </div>
       </div>
     </template>
@@ -265,6 +279,7 @@ function openInvoice(invoiceId?: string) {
           @click="emit('edit')"
         />
         <UButton
+          v-if="!live || plan.nextRunAt"
           :label="plan.status === 'active' ? '暂停计划' : '恢复计划'"
           :icon="plan.status === 'active' ? 'i-carbon-pause' : 'i-carbon-play'"
           color="neutral"

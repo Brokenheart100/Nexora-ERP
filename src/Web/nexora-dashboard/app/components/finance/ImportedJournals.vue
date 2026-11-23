@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { ExternalJournal, ExternalJournalStatus, FinanceAccount } from '~/mocks'
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
 import {
   externalJournalProviders,
   externalJournalStatusColors,
@@ -16,6 +17,7 @@ interface FormLine {
 
 const props = defineProps<{
   accounts: FinanceAccount[]
+  live?: AccountingBookConnection
 }>()
 
 const store = useExternalJournalsStore()
@@ -274,7 +276,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="finance-imported">
+  <FinanceLedgerJournals v-if="live" :live="live" imported />
+  <div v-else class="space-y-4" data-testid="finance-imported">
     <UAlert
       color="info"
       variant="soft"

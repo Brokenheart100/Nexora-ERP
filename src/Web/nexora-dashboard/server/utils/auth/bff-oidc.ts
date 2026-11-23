@@ -7,9 +7,10 @@ import { clearCsrf } from './bff-csrf'
 import { hasIndependentFactor } from './bff-mfa'
 import { withBffRedis } from '../session/bff-redis'
 import { enforceSessionIdle, fetchSessionPolicy } from '../session/bff-session-policy'
+import { loginDestination } from '#shared/utils/auth-navigation'
 import {
   claimBffSessionRefresh, clearSessionRevocation, clearSsoHint, invalidateBffSessionRefresh, isHandle, isSessionRevoked, randomHandle, readBffSession, removeBffSession,
-  releaseBffSessionRefresh, saveBffSession, secureCookie, sessionHandle, touchBffSession, updateBffSession, type BffSession
+  releaseBffSessionRefresh, saveBffSession, secureCookie, sessionHandle, updateBffSession, type BffSession
 } from '../session/bff-session'
 
 const clientId = 'nexora-dashboard-bff'
@@ -21,7 +22,7 @@ type LoginMode = 'nexora-email-login' | 'nexora-email-register'
 interface LoginAttempt {
   verifier: string
   nonce: string
-  destination: '/' | '/join'
+  destination: string
   reauth: boolean
 }
 
@@ -40,13 +41,15 @@ function provider(event: H3Event) {
 }
 
 export async function beginLogin(event: H3Event, mode?: LoginMode) {
-  const join = mode !== undefined && getQuery(event).join === 'true'
-  const reauth = getQuery(event).prompt === 'login'
+  const query = getQuery(event)
+  const destination = loginDestination(query.returnTo ?? (mode !== undefined && query.join === 'true' ? '/join' : '/'))
+  const join = new URL(destination, 'https://nexora.invalid').pathname === '/join'
+  const reauth = query.prompt === 'login'
   const state = randomHandle()
   const attempt: LoginAttempt = {
     verifier: oidc.randomPKCECodeVerifier(),
     nonce: oidc.randomNonce(),
-    destination: join ? '/join' : '/',
+    destination,
     reauth
   }
   const settings = bffConfig(event)
@@ -93,7 +96,7 @@ export async function completeLogin(event: H3Event) {
     throw createError({ statusCode: 401, statusMessage: 'Login expired' })
   const sid = typeof claims.sid === 'string' ? claims.sid : undefined
   if (sid && !attempt.reauth && await isSessionRevoked(event, sid))
-    return sendRedirect(event, '/bff/login?prompt=login')
+    return sendRedirect(event, '/bff/login?prompt=login&returnTo=' + encodeURIComponent(loginDestination(attempt.destination)))
   if (sid && attempt.reauth) await clearSessionRevocation(event, sid)
   const refreshLifetime = typeof tokens.refresh_expires_in === 'number' && tokens.refresh_expires_in > 0
     ? tokens.refresh_expires_in
@@ -114,7 +117,7 @@ export async function completeLogin(event: H3Event) {
     ...(mfaVerified ? { mfaAt: Math.min(authTime, now), mfaMethods: amr } : {})
   })
   clearCsrf(event)
-  return sendRedirect(event, attempt.destination)
+  return sendRedirect(event, loginDestination(attempt.destination))
 }
 
 export async function beginLogout(event: H3Event) {
@@ -160,10 +163,7 @@ export async function requireFreshBffSession(event: H3Event): Promise<BffSession
   if (!session || !handle) throw createError({ statusCode: 401, statusMessage: 'Sign in required' })
   const policy = await fetchSessionPolicy(event, session)
   await enforceSessionIdle(event, handle, policy)
-  if (session.expiresAt - Date.now() > 60_000) {
-    await touchBffSession(event, handle, session)
-    return session
-  }
+  if (session.expiresAt - Date.now() > 60_000) return session
   return refreshBffSession(event, handle, session)
 }
 

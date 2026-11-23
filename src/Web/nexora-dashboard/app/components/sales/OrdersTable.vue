@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { SalesOrder } from '~/mocks'
 import { salesStatusColors, salesStatusLabels } from '~/mocks'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
 defineProps<{ rows: SalesOrder[] }>()
 const emit = defineEmits<{ open: [id: string], reset: [] }>()
@@ -48,6 +49,9 @@ const columns: TableColumn<SalesOrder>[] = [{
     :row-activate="row => emit('open', row.id)"
     data-testid="sales-orders-table"
   >
+    <template #id-cell="{ row }">
+      {{ row.original.documentNumber ?? row.original.id }}
+    </template>
     <template #status-cell="{ row }">
       <UBadge
         :color="salesStatusColors[row.original.status]"
@@ -57,7 +61,7 @@ const columns: TableColumn<SalesOrder>[] = [{
       />
     </template>
     <template #amount-cell="{ row }">
-      {{ formatMoney(Number(row.original.totalAmount)) }}
+      {{ row.original.documentNumber ? (row.original.totalAmount ? displayDecimal(row.original.totalAmount) : '—') : formatMoney(Number(row.original.totalAmount)) }}
     </template>
     <template #actions-cell="{ row }">
       <UButton

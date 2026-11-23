@@ -1,36 +1,103 @@
 <script setup lang="ts">
+import type { usePurchaseConnection } from '~/composables/purchasing/usePurchaseConnection'
+import type { SalesFulfillmentConnection } from '~/composables/sales/useSalesFulfillment'
+import { permitStateLabels } from '~/utils/purchasing/order-policy'
 import StockReturnDetailSlideover from '~/components/inventory/StockReturnDetailSlideover.vue'
 import StockReturnSlideover from '~/components/inventory/StockReturnSlideover.vue'
-import {
-  stockPermitStatusColors,
-  stockPermitStatusLabels,
-  stockReturnStatusColors,
-  stockReturnStatusLabels
-} from '~/mocks'
+import { stockPermitStatusColors, stockPermitStatusLabels, stockReturnStatusColors, stockReturnStatusLabels } from '~/mocks'
 
-const props = withDefaults(defineProps<{
-  sourceType: 'purchase' | 'sales'
-  sourceId: string
-  canManage?: boolean
-}>(), { canManage: true })
+const props = withDefaults(
+  defineProps<{
+    live?: ReturnType<typeof usePurchaseConnection>
+    sales?: SalesFulfillmentConnection
+    sourceType: 'purchase' | 'sales'
+    sourceId: string
+    canManage?: boolean
+  }>(),
+  { canManage: true }
+)
 
 const stockFlow = useStockFlowStore()
 const toast = useToast()
+const salesForm = computed(() => props.sales?.form)
+const salesStateLabels = { dispatching: '等待仓库确认', reserved: '已预留', cancelling: '取消同步中', cancelled: '已取消', completed: '已发齐' }
+const salesPermit = (id: string) => props.sales?.permits.find(row => row.id === id)
+const warehouseLink = (id: string, tab = 'operations') => ({
+  path: '/inventory',
+  query: {
+    workspace: props.sales?.sales.query.session.activeWorkspaceId ?? props.live?.query.session.activeWorkspaceId,
+    warehouse: salesPermit(id)?.warehouseId ?? props.live?.permits?.permits.find(row => row.id === id)?.warehouseId,
+    permit: id,
+    tab
+  }
+})
 
-const permits = computed(() => stockFlow.permitsFor(props.sourceType, props.sourceId))
+const permits = computed(() =>
+  props.sales
+    ? props.sales.permits.map(permit => ({
+        id: permit.id, direction: 'outbound' as const,
+        sourceNo: props.sales?.sales.detail?.order.number ?? '', partner: props.sales?.sales.detail?.order.customerName ?? '',
+        status: (permit.state === 'cancelling' ? 'partial' : permit.state === 'cancelled' || permit.state === 'completed' ? permit.state : 'pending') as 'pending' | 'partial' | 'cancelled' | 'completed',
+        lines: [{
+          lineNo: 1, name: props.sales?.sales.detail?.lines.find(line => line.id === permit.lineId)?.itemName ?? permit.lineId,
+          sku: '', executed: permit.executed, permitted: permit.quantity
+        }]
+      }))
+    : props.live
+      ? (props.live.permits?.permits ?? []).map(permit => ({
+          id: permit.id,
+          direction: 'inbound' as const,
+          sourceNo: props.live?.detail?.order.number ?? '',
+          partner: props.live?.detail?.order.supplierName ?? '',
+          status: ({
+            issued: 'pending',
+            dispatching: 'pending',
+            cancelling: 'partial',
+            cancelled: 'cancelled',
+            completed: 'completed'
+          }[permit.state] ?? 'pending') as 'pending' | 'partial' | 'cancelled' | 'completed',
+          lines: [
+            {
+              lineNo: 1,
+              name: props.live?.detail?.lines.find(line => line.id === permit.lineId)?.itemName ?? permit.lineId,
+              sku: '',
+              executed: permit.executed,
+              permitted: permit.quantity
+            }
+          ]
+        }))
+      : stockFlow.permitsFor(props.sourceType, props.sourceId)
+)
 const returnOpen = ref(false)
 const returnExecutionId = ref<string | null>(null)
 const detailOpen = ref(false)
 const detailReturnId = ref<string | null>(null)
 
 function cancelPermit(id: string) {
+  if (props.sales) {
+    const permit = salesPermit(id)
+    if (permit) void props.sales.change(permit)
+    return
+  }
+  if (props.live) {
+    props.live.cancelPermit(id)
+    return
+  }
   const result = stockFlow.cancelPermit(id)
   toast.add({ title: result.ok ? '许可已取消' : '操作未完成', description: result.message, color: result.ok ? 'success' : 'error' })
 }
 
 function closePermit(id: string) {
+  if (props.live) {
+    props.live.closeRemaining()
+    return
+  }
   const result = stockFlow.closePermit(id)
-  toast.add({ title: result.ok ? '已关闭剩余额度' : '操作未完成', description: result.message, color: result.ok ? 'success' : 'error' })
+  toast.add({
+    title: result.ok ? '已关闭剩余额度' : '操作未完成',
+    description: result.message,
+    color: result.ok ? 'success' : 'error'
+  })
 }
 
 function openReturn(executionId: string) {
@@ -68,6 +135,22 @@ function creditLink(direction: 'purchase' | 'sales') {
         <span class="text-xs text-muted">共 {{ permits.length }} 张许可</span>
       </div>
     </template>
+    <div v-if="sales" class="mb-3 space-y-2">
+      <SalesOperationStatus
+        :message="sales.error"
+        :submission="sales.submission"
+        @check="sales.check()"
+        @retry="sales.retry()"
+      />
+      <UFormField v-if="sales.canManage && salesForm" label="取消许可或关闭履约的原因">
+        <UInput
+          v-model="salesForm.reason"
+          maxlength="300"
+          class="w-full"
+          data-testid="sales-fulfillment-reason"
+        />
+      </UFormField>
+    </div>
     <div class="space-y-3" data-testid="stock-permits">
       <p v-if="!permits.length" class="text-xs text-muted" data-testid="stock-permits-empty">
         当前单据尚未签发收发货许可。
@@ -91,10 +174,13 @@ function creditLink(direction: 'purchase' | 'sales') {
             :color="stockPermitStatusColors[permit.status]"
             variant="subtle"
             size="sm"
-            :label="stockPermitStatusLabels[permit.status]"
+            :label="salesPermit(permit.id) ? salesStateLabels[salesPermit(permit.id)!.state] : live ? permitStateLabels[live.permits?.permits.find(value => value.id === permit.id)?.state ?? ''] : stockPermitStatusLabels[permit.status]"
             :data-testid="'stock-permit-status-' + permit.id"
           />
         </div>
+        <p v-if="salesPermit(permit.id)" class="mt-1 text-xs text-muted">
+          预留到期 {{ new Date(salesPermit(permit.id)!.expiresAtUtc).toLocaleString() }}
+        </p>
 
         <div class="mt-2 space-y-1.5">
           <div
@@ -109,16 +195,17 @@ function creditLink(direction: 'purchase' | 'sales') {
 
         <div class="mt-2 flex flex-wrap items-center justify-end gap-1.5">
           <UButton
-            v-if="canManage && permit.status === 'pending'"
+            v-if="sales ? sales.canManage && ['reserved', 'dispatching'].includes(salesPermit(permit.id)?.state ?? '') : canManage && (live ? ['issued', 'dispatching'].includes(live.permits?.permits.find(value => value.id === permit.id)?.state ?? '') : permit.status === 'pending')"
             label="取消许可"
             color="error"
             variant="ghost"
             size="xs"
+            :disabled="sales?.busy || (!!live && (!!live.permitSubmission.record || live.syncingPermit))"
             :data-testid="'stock-permit-cancel-' + permit.id"
             @click="cancelPermit(permit.id)"
           />
           <UButton
-            v-if="canManage && (permit.status === 'pending' || permit.status === 'partial')"
+            v-if="!live && !sales && canManage && (permit.status === 'pending' || permit.status === 'partial')"
             label="关闭剩余额度"
             color="neutral"
             variant="outline"
@@ -128,7 +215,15 @@ function creditLink(direction: 'purchase' | 'sales') {
           />
         </div>
 
-        <div class="mt-3 border-t border-default pt-2">
+        <UButton
+          v-if="live || sales"
+          class="mt-2"
+          label="到仓库查看任务"
+          variant="outline"
+          :to="warehouseLink(permit.id)"
+        />
+        <UButton v-if="live || sales" class="ms-2 mt-2" label="查看流水与退货" variant="ghost" :to="warehouseLink(permit.id, 'movements')" />
+        <div v-else class="mt-3 border-t border-default pt-2">
           <p class="text-[11px] font-medium text-muted">
             执行记录
           </p>
@@ -220,8 +315,42 @@ function creditLink(direction: 'purchase' | 'sales') {
         </div>
       </div>
     </div>
+    <div v-if="sales" class="mt-3 flex flex-wrap gap-2">
+      <UButton
+        label="刷新许可状态"
+        variant="outline"
+        :loading="sales.loading"
+        data-testid="sales-refresh-permits"
+        @click="sales.refresh()"
+      />
+      <UButton
+        v-if="sales.canManage"
+        label="关闭履约"
+        color="warning"
+        variant="outline"
+        :disabled="!sales.canClose || sales.busy"
+        data-testid="sales-close-fulfillment"
+        @click="sales.change()"
+      />
+    </div>
 
-    <StockReturnSlideover v-model:open="returnOpen" :execution-id="returnExecutionId" />
-    <StockReturnDetailSlideover v-model:open="detailOpen" :return-id="detailReturnId" />
+    <div v-if="live" class="mt-3 flex flex-wrap gap-2">
+      <UButton
+        label="刷新许可状态"
+        variant="outline"
+        data-testid="purchase-refresh-permits"
+        @click="live.refresh()"
+      /><UButton
+        v-if="live.permits?.canManage && ['approved', 'receiving', 'received'].includes(live.detail?.order.state ?? '')"
+        label="关闭未签发余量"
+        color="warning"
+        variant="outline"
+        :disabled="live.frozen || live.permits.permits.some(value => !['cancelled', 'completed'].includes(value.state))"
+        data-testid="order-close-receiving"
+        @click="live.closeRemaining()"
+      />
+    </div>
+    <StockReturnSlideover v-if="!live && !sales" v-model:open="returnOpen" :execution-id="returnExecutionId" />
+    <StockReturnDetailSlideover v-if="!live && !sales" v-model:open="detailOpen" :return-id="detailReturnId" />
   </UCard>
 </template>

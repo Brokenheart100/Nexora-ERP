@@ -4,6 +4,7 @@ import { useSessionStore } from '~/stores/session'
 import { useWorkspaceStore } from '~/stores/workspace'
 
 const assistant = useAssistantStore()
+const auth = useAuthSessionStore()
 const session = useSessionStore()
 const workspaceStore = useWorkspaceStore()
 const { workspace } = useMockWorkspace()
@@ -40,6 +41,7 @@ onBeforeUnmount(() => {
           </template>
           <template #right>
             <UBadge
+              v-if="!auth.connected"
               label="本地模拟 · 不连接模型"
               color="neutral"
               variant="subtle"
@@ -49,7 +51,7 @@ onBeforeUnmount(() => {
           </template>
         </UDashboardNavbar>
 
-        <UDashboardToolbar :ui="{ root: 'flex-wrap gap-3 py-2.5' }">
+        <UDashboardToolbar v-if="!auth.connected" :ui="{ root: 'flex-wrap gap-3 py-2.5' }">
           <template #left>
             <USelect
               :model-value="workspaceOption"
@@ -78,8 +80,10 @@ onBeforeUnmount(() => {
       <template #body>
         <AppBreadcrumb current="工作区助手" class="mb-3" />
 
+        <AssistantLiveWorkspace v-if="auth.connected" />
+
         <div
-          v-if="!planAvailable"
+          v-else-if="!planAvailable"
           class="rounded-sm border border-default bg-elevated/40 p-6"
           data-testid="assistant-plan-restricted"
         >

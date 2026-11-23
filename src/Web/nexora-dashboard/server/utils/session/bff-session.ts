@@ -177,35 +177,43 @@ export async function updateBffSession(event: H3Event, handle: string, session: 
     if redis.call('GET', KEYS[1]) ~= ARGV[1] or redis.call('EXISTS', KEYS[2], KEYS[3]) ~= 2
       or redis.call('EXISTS', KEYS[5]) ~= 0 then return 0 end
     redis.call('SET', KEYS[2], ARGV[2], 'EXAT', ARGV[3])
-    redis.call('HSET', KEYS[3], 'lastSeenAt', ARGV[4], 'expiresAt', ARGV[5])
-    redis.call('EXPIRE', KEYS[3], ARGV[6])
-    redis.call('ZADD', KEYS[4], ARGV[5], ARGV[7])
-    redis.call('EXPIRE', KEYS[4], ARGV[8])
+    redis.call('HSET', KEYS[3], 'expiresAt', ARGV[4])
+    redis.call('EXPIRE', KEYS[3], ARGV[5])
+    redis.call('ZADD', KEYS[4], ARGV[4], ARGV[6])
+    redis.call('EXPIRE', KEYS[4], ARGV[7])
     return 1
   `, {
     keys: [refreshLeaseKey(handle), sessionKeyPrefix + handle, sessionMetaPrefix + id, subjectSessionsPrefix + session.subject,
       revokedSidPrefix + (session.sid ?? '')],
-    arguments: [owner, value, String(Math.floor(expiry / 1000)), String(now), String(expiry), String(ttl), id,
+    arguments: [owner, value, String(Math.floor(expiry / 1000)), String(expiry), String(ttl), id,
       String(Math.max(ttl, registryLifetimeSeconds))]
   }))
   if (updated !== 1) throw createError({ statusCode: 401, statusMessage: 'Sign in required' })
 }
 
-export async function touchBffSession(event: H3Event, handle: string, session: BffSession, force = false) {
+export async function touchBffSession(event: H3Event, handle: string, session: BffSession, idleTimeoutMinutes: number) {
   const id = sessionId(handle)
   const now = Date.now()
-  return withBffRedis(event, async (redis) => {
-    const meta = await redis.hGetAll(sessionMetaPrefix + id)
-    if (!meta.handle) {
-      await redis.hSet(sessionMetaPrefix + id, { ...metaFields(session, now, now, (getHeader(event, 'user-agent') ?? '').slice(0, 300)), handle })
-      await redis.expire(sessionMetaPrefix + id, Math.max(1, Math.ceil((sessionExpiry(session) - now) / 1000)))
-      return now
-    }
-    const lastSeenAt = Number(meta.lastSeenAt) || now
-    if (!force && now - lastSeenAt < 30_000) return lastSeenAt
-    await redis.hSet(sessionMetaPrefix + id, { lastSeenAt: String(now) })
+  // Activity and revocation both operate on the existing registry entry.
+  const updated = await withBffRedis(event, redis => redis.eval(`
+    if redis.call('EXISTS', KEYS[1], KEYS[2]) ~= 2 or redis.call('EXISTS', KEYS[3]) ~= 0 then return 0 end
+    local previous = tonumber(redis.call('HGET', KEYS[2], 'lastSeenAt'))
+    if not previous then return 0 end
+    local now = tonumber(ARGV[1])
+    if now - previous >= tonumber(ARGV[2]) then return -1 end
+    if now - previous < 10000 then return previous end
+    redis.call('HSET', KEYS[2], 'lastSeenAt', ARGV[1])
     return now
-  })
+  `, {
+    keys: [sessionKeyPrefix + handle, sessionMetaPrefix + id, revokedSidPrefix + (session.sid ?? '')],
+    arguments: [String(now), String(idleTimeoutMinutes * 60_000)]
+  }))
+  if (typeof updated === 'number' && updated > 0) return updated
+  if (updated === -1) {
+    await removeBffSession(event)
+    throw createError({ statusCode: 401, statusMessage: 'Session idle timeout', data: { code: 'session.idle_timeout' } })
+  }
+  throw createError({ statusCode: 401, statusMessage: 'Sign in required' })
 }
 
 export async function bffSessionLastSeen(event: H3Event, handle: string) {

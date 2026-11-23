@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { CustomerReceipt, Invoice, SalesCredit, SalesOrder } from '~/mocks'
+import type { SalesReceivablesConnection } from '~/composables/sales/useSalesReceivables'
+import { displayDecimal } from '~/utils/api/decimal-display'
+import { sumDecimals } from '#shared/utils/decimal'
 import {
   salesCreditStatusColors,
   salesCreditStatusLabels,
@@ -12,6 +15,7 @@ const props = defineProps<{
   invoices: Invoice[]
   orders: SalesOrder[]
   canCreate: boolean
+  live?: SalesReceivablesConnection
 }>()
 
 const emit = defineEmits<{
@@ -22,6 +26,7 @@ const emit = defineEmits<{
   allocate: [invoiceId: string, receiptId?: string]
   openCredit: [creditId: string]
 }>()
+const documentKinds = { 1: '发票', 2: '收款', 3: '核销', 4: '贷项', 5: '退款' }
 
 const receivables = useReceivablesStore()
 const { workspace } = useMockWorkspace()
@@ -158,7 +163,181 @@ const orderColumns: TableColumn<SalesOrder>[] = [{
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div v-if="live" class="space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <p class="text-xs text-muted">
+        发票、收款和核销分别提交，由独立复核人过账。
+      </p>
+      <div class="flex gap-2">
+        <UButton
+          label="新建发票"
+          icon="i-carbon-add"
+          :disabled="!live.canDraft"
+          data-testid="sales-new-invoice"
+          @click="emit('createInvoice', '')"
+        />
+        <UButton
+          label="登记客户收款"
+          icon="i-carbon-currency"
+          variant="outline"
+          :disabled="!live.canDraft"
+          data-testid="receivable-register-receipt"
+          @click="emit('registerReceipt', '')"
+        />
+      </div>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <UCard class="rounded-sm" data-testid="receivable-total">
+        <p class="text-xs text-muted">
+          应收未结
+        </p>
+        <p class="text-lg font-semibold">
+          {{ live.query.data?.aging ? displayDecimal(live.query.data.aging.total) : '待查询' }}
+        </p>
+        <div v-if="live.query.data?.aging" class="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+          <span v-for="bucket in live.query.data.aging.buckets" :key="bucket.key">{{ bucket.key }} · {{ displayDecimal(bucket.amount) }}</span>
+        </div>
+      </UCard>
+      <UCard class="rounded-sm" data-testid="receivable-unapplied">
+        <p class="text-xs text-muted">
+          当前单据页可核销收款
+        </p>
+        <p class="text-lg font-semibold">
+          {{ displayDecimal(sumDecimals(live.funds.filter(row => row.terms.kind === 2).map(row => row.openBalance))) }}
+        </p>
+      </UCard>
+    </div>
+    <UAlert
+      v-if="live.query.data && !live.query.data.home.accounts"
+      color="warning"
+      variant="soft"
+      title="应收科目映射待配置"
+      description="请在财务的单据流转中完成应收科目映射。"
+    />
+    <UCard class="rounded-sm">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm font-medium">
+            发货计价与可开票来源
+          </h3>
+          <div class="flex gap-2">
+            <UButton
+              label="上一页发货"
+              size="xs"
+              variant="outline"
+              :disabled="live.pages.shipments <= 1"
+              @click="live.changePage('shipments', -1)"
+            />
+            <UButton
+              label="下一页发货"
+              size="xs"
+              variant="outline"
+              :disabled="(live.query.data?.shipments.length ?? 0) < live.pageSize"
+              @click="live.changePage('shipments', 1)"
+            />
+          </div>
+        </div>
+      </template>
+      <p v-if="!live.query.data?.shipments.length" class="text-sm text-muted">
+        当前页暂无财务发货回执。仓库确认后可刷新核对。
+      </p>
+      <div
+        v-for="row in live.query.data?.shipments"
+        :key="row.id"
+        class="flex flex-wrap items-center justify-between gap-2 border-b border-default py-2"
+        :data-testid="'receivable-shipment-' + row.id"
+      >
+        <div>
+          <p class="text-sm">
+            {{ row.itemName }} · {{ row.customerName }}
+          </p>
+          <p class="text-xs text-muted">
+            {{ row.on }} · {{ row.posted ? '可开 ' + row.available + ' / ' + row.quantity : row.pendingReason || '等待财务入账' }}
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <UButton
+            label="查看订单"
+            size="xs"
+            variant="ghost"
+            @click="emit('openOrder', row.orderId)"
+          />
+          <UButton
+            v-if="live.availableSources.some(source => source.id === row.id)"
+            label="开票"
+            size="xs"
+            variant="outline"
+            :disabled="!live.canDraft"
+            data-testid="receivable-generate-invoice"
+            @click="emit('createInvoice', row.orderId)"
+          />
+        </div>
+      </div>
+    </UCard>
+    <UCard class="rounded-sm">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm font-medium">
+            客户单据
+          </h3>
+          <div class="flex gap-2">
+            <UButton
+              label="上一页单据"
+              size="xs"
+              variant="outline"
+              :disabled="live.pages.documents <= 1"
+              @click="live.changePage('documents', -1)"
+            />
+            <UButton
+              label="下一页单据"
+              size="xs"
+              variant="outline"
+              :disabled="live.documents.length < live.pageSize"
+              @click="live.changePage('documents', 1)"
+            />
+          </div>
+        </div>
+      </template>
+      <p v-if="!live.documents.length" class="text-sm text-muted">
+        当前页暂无客户单据。
+      </p>
+      <div
+        v-for="row in live.documents"
+        :key="row.id"
+        class="flex flex-wrap items-center justify-between gap-2 border-b border-default py-2"
+        :data-testid="'receivable-document-' + row.id"
+      >
+        <div>
+          <p class="text-sm">
+            {{ row.terms.number || '待分配编号' }} · {{ row.terms.customerName }}
+          </p>
+          <p class="text-xs text-muted">
+            {{ documentKinds[row.terms.kind] }} · {{ displayDecimal(row.terms.total) }} · {{ row.state === 'posted' ? '已过账' : row.state === 'cancelled' ? '已取消' : '待独立复核' }}
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span v-if="row.state === 'posted' && [1, 2, 4].includes(row.terms.kind)" class="text-sm" data-testid="receivable-row-balance">
+            {{ row.terms.kind === 1 ? '未结' : '可核销' }} {{ displayDecimal(row.openBalance) }}
+          </span>
+          <UButton
+            label="查看"
+            size="xs"
+            variant="ghost"
+            @click="emit('openInvoice', row.id)"
+          />
+          <UButton
+            v-if="live.canDraft && live.funds.some(funds => funds.id === row.id)"
+            label="核销"
+            size="xs"
+            variant="outline"
+            @click="emit('allocate', '', row.id)"
+          />
+        </div>
+      </div>
+    </UCard>
+    <FinanceStockReturnAccounting direction="sale" />
+  </div>
+  <div v-else class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <p class="text-xs text-muted">
         客户收款、核销、销售贷项与退款共用同一台账；应收金额按未结余额计算。

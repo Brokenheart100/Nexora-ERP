@@ -13,29 +13,43 @@ import {
   partners
 } from '~/mocks'
 import { z } from 'zod'
+import { usePartnersConnection } from '~/composables/catalog/usePartnersConnection'
+import { partnerModel } from '~/utils/catalog/partner'
+import { partnerInputSchema } from '#shared/types/masterdata'
 
 const toast = useToast()
 const route = useRoute()
 const { activeWorkspaceId } = useMockWorkspace()
 const { loading, run: runRefresh } = useMockRefresh()
-const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
+const { isLoading: stateLoading, isEmpty: mockEmpty, isError: mockError, isForbidden: mockForbidden } = useMockState()
+const connection = usePartnersConnection()
+const remote = connection.query
+const submission = connection.submission
+const connected = computed(() => remote.connected)
+const isForbidden = computed(() => connected.value ? !remote.auth.user || remote.session.denied || [403, 404].includes(remote.status) || (!remote.loading && !remote.enabled && !remote.problem) : mockForbidden.value)
+const isError = computed(() => connected.value ? !!remote.problem && !isForbidden.value : mockError.value)
+const isEmpty = computed(() => !connected.value && mockEmpty.value)
 const { can } = useMockPermissions()
 
-const rows = ref<Partner[]>(partners.map(partner => ({ ...partner })))
+const prototypeRows = ref<Partner[]>(partners.map(partner => ({ ...partner })))
+const rows = computed({ get: () => connected.value ? connection.rows : prototypeRows.value, set: (value: Partner[]) => {
+  prototypeRows.value = value
+} })
 const searchInput = ref('')
 const search = ref('')
 const type = ref<'all' | PartnerType>('all')
 const status = ref<'all' | PartnerStatus>('all')
 const pageSize = 8
 
-const canEdit = computed(() => can('catalog.edit'))
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const canEdit = computed(() => connected.value ? connection.canEdit : can('catalog.edit'))
+const showSkeleton = computed(() => connected.value ? remote.loading : loading.value || stateLoading.value)
 
-const applySearch = useDebounceFn((value: string) => {
+const applySearch = useDebounceFn((value: string, owner: string) => {
+  if (connected.value && owner !== remote.owner) return
   search.value = value
 }, 220)
 
-watch(searchInput, value => applySearch(value))
+watch(searchInput, value => applySearch(value, remote.owner))
 
 const typeItems = [
   { label: '全部类型', value: 'all' },
@@ -72,14 +86,24 @@ const filteredRows = computed(() => {
 })
 
 const {
-  page,
-  pageRows,
-  pageStart,
-  pageEnd,
+  page: prototypePage,
+  pageRows: prototypePageRows,
+  pageStart: prototypeStart,
+  pageEnd: prototypeEnd,
   resetPage
 } = useClientPagination(filteredRows, pageSize)
 
-watch([search, type, status], resetPage)
+const page = computed({ get: () => connected.value ? connection.page : prototypePage.value, set: (value) => {
+  if (connected.value) connection.page = value
+  else prototypePage.value = value
+} })
+const pageRows = computed(() => connected.value ? filteredRows.value : prototypePageRows.value)
+const pageStart = computed(() => connected.value ? (page.value - 1) * pageSize + 1 : prototypeStart.value)
+const pageEnd = computed(() => connected.value ? (page.value - 1) * pageSize + filteredRows.value.length : prototypeEnd.value)
+const paginationTotal = computed(() => connected.value ? (page.value - 1) * pageSize + rows.value.length + (connection.hasMore ? 1 : 0) : filteredRows.value.length)
+watch([search, type, status], () => {
+  if (!connected.value) resetPage()
+})
 
 const activeFilters = computed(() => searchInput.value.trim() !== '' || type.value !== 'all' || status.value !== 'all')
 
@@ -99,7 +123,7 @@ const emptyTitle = computed(() => {
 const emptyDescription = computed(() => {
   if (search.value.trim()) return '没有与关键词匹配的伙伴，试试更换关键词或清空筛选。'
   if (type.value !== 'all' || status.value !== 'all') return '当前类型或状态筛选没有匹配结果，试试调整筛选条件。'
-  return '新增伙伴后会显示在这里；本原型使用模拟数据。'
+  return connected.value ? '当前页暂无伙伴，可以创建或切换工作区。' : '新增伙伴后会显示在这里；本原型使用模拟数据。'
 })
 
 const columns: TableColumn<Partner>[] = [{
@@ -147,14 +171,28 @@ const detailOpen = ref(false)
 const detailPartner = ref<Partner | null>(null)
 const localEntries = ref<ChangeEntry[]>([])
 
-function openDetail(partner: Partner) {
+async function openDetail(partner: Partner) {
+  if (connected.value) {
+    const value = await connection.read(partner.id)
+    if (!value) return
+    partner = partnerModel(value)
+  }
   detailPartner.value = partner
   detailOpen.value = true
 }
 
+watch(() => [remote.enabled, z.uuid().safeParse(route.query.partner).data] as const, async ([enabled, id]) => {
+  if (!enabled || !id) return
+  const value = await connection.read(id)
+  if (value && route.query.partner === id) {
+    detailPartner.value = partnerModel(value)
+    detailOpen.value = true
+  }
+}, { immediate: true })
+
 const detailEntries = computed(() => {
   const partner = detailPartner.value
-  if (!partner) return []
+  if (!partner || connected.value) return []
   return [
     ...changeLogEntries.filter(entry => entry.entityType === 'partner' && entry.entityId === partner.id),
     ...localEntries.value.filter(entry => entry.entityId === partner.id)
@@ -225,14 +263,20 @@ function resetEditForm() {
   editForm.email = ''
   editForm.taxNo = ''
   editForm.status = 'active'
-  editForm.province = '浙江省'
-  editForm.city = '杭州市'
+  editForm.province = connected.value ? '' : '浙江省'
+  editForm.city = connected.value ? '' : '杭州市'
   editForm.line = ''
   editForm.postalCode = ''
   editForm.contacts = [makeContact()]
 }
 
-function openEditor(partner: Partner) {
+async function openEditor(partner: Partner) {
+  if (connected.value) {
+    if (!connection.start()) return
+    const value = await connection.read(partner.id)
+    if (!value) return
+    partner = partnerModel(value)
+  }
   editing.value = partner
   editForm.name = partner.name
   editForm.code = partner.code
@@ -253,6 +297,7 @@ function openEditor(partner: Partner) {
 }
 
 function openCreate() {
+  if (connected.value && !connection.start()) return
   if (!canEdit.value) {
     toast.add({ title: '没有新建权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -304,7 +349,11 @@ function nextPartnerId() {
   return 'pt-' + (max + 1)
 }
 
-function saveEditor() {
+async function saveEditor() {
+  if (connected.value) {
+    await saveConnectedPartner()
+    return
+  }
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -382,6 +431,10 @@ const overflowItems = [[{
 }]]
 
 function exportPartners() {
+  if (connected.value) {
+    downloadCsv('伙伴当前页.csv', ['编码', '名称', '角色', '状态', '版本'], rows.value.map(value => [value.code, value.name, partnerRoleLabel(value), value.status, value.updatedAt]))
+    return
+  }
   downloadCsv(
     '伙伴档案-' + new Date().toISOString().slice(0, 10) + '.csv',
     ['编码', '伙伴名称', '类型', '联系人', '电话', '邮箱', '税号', '币种', '状态', '更新时间'],
@@ -407,6 +460,10 @@ function exportPartners() {
 }
 
 function refreshPartners() {
+  if (connected.value) {
+    void remote.refresh()
+    return
+  }
   runRefresh(() => {
     toast.add({
       title: '伙伴列表已刷新',
@@ -420,6 +477,53 @@ function refreshPartners() {
 async function reloadPage() {
   await navigateTo({ path: route.path, query: {} })
 }
+
+const displayedColumns = computed(() => connected.value
+  ? columns.filter(column => !('accessorKey' in column && ['contact', 'email'].includes(String(column.accessorKey))))
+      .map(column => 'accessorKey' in column && column.accessorKey === 'updatedAt' ? { ...column, header: '版本' } : column)
+  : columns)
+const connectedPartnerSchema = partnerEditSchema.extend({ code: partnerInputSchema.shape.code, name: partnerInputSchema.shape.name,
+  taxNo: z.string().max(64), line: z.string().max(300), contacts: z.array(z.object({ id: z.string(), name: z.string().trim().min(1).max(160), title: z.string(),
+    email: z.union([z.literal(''), z.email()]), phone: z.string().max(40) })).max(20) })
+async function saveConnectedPartner() {
+  const input = partnerInputSchema.safeParse({ code: editForm.code, name: editForm.name, roles: editForm.roles, taxNumber: editForm.taxNo,
+    address: editForm.line, isActive: editForm.status === 'active', contacts: editForm.contacts.map(contact => ({ id: z.uuid().safeParse(contact.id).success ? contact.id : null,
+      name: contact.name, phone: contact.phone, email: contact.email })) })
+  if (input.success && await connection.save(input.data)) {
+    editOpen.value = false
+    detailOpen.value = false
+    toast.add({ title: '伙伴档案已保存', color: 'success' })
+  }
+}
+async function restorePartner() {
+  const saved = await connection.resume()
+  if (!saved) return
+  const profile = saved.payload.profile as { name: string, roles: PartnerRole[], taxNumber: string | null, address: string | null, contacts: { id: string | null, name: string, phone: string | null, email: string | null }[] }
+  editing.value = connection.baseline ? partnerModel(connection.baseline.partner) : null
+  resetEditForm()
+  editForm.code = String(saved.payload.code ?? editing.value?.code ?? '')
+  editForm.name = profile.name
+  editForm.roles = [...profile.roles]
+  editForm.taxNo = profile.taxNumber ?? ''
+  editForm.line = profile.address ?? ''
+  editForm.status = saved.payload.isActive === false ? 'inactive' : 'active'
+  editForm.contacts = profile.contacts.map(contact => ({ id: contact.id ?? 'new-' + crypto.randomUUID(), name: contact.name, title: '', email: contact.email ?? '', phone: contact.phone ?? '' }))
+  editOpen.value = true
+}
+async function checkPartner(retry = false) {
+  if (await connection.check(retry)) {
+    editOpen.value = false
+    detailOpen.value = false
+  }
+}
+watch(() => remote.owner, () => {
+  editOpen.value = false
+  detailOpen.value = false
+  editing.value = null
+  detailPartner.value = null
+  resetEditForm()
+  resetFilters()
+}, { flush: 'sync' })
 </script>
 
 <template>
@@ -433,7 +537,7 @@ async function reloadPage() {
 
           <template #right>
             <UBadge
-              label="本地原型 · 模拟数据"
+              :label="connected ? remote.auth.simulated ? 'MSW 模拟接口' : '当前工作区接口' : '本地原型 · 模拟数据'"
               color="neutral"
               variant="subtle"
               size="sm"
@@ -466,7 +570,7 @@ async function reloadPage() {
             <UInput
               v-model="searchInput"
               icon="i-carbon-search"
-              placeholder="搜索伙伴名称、编码或联系人"
+              :placeholder="connected ? '搜索当前页伙伴名称或编码' : '搜索伙伴名称、编码或联系人'"
               size="sm"
               class="w-64 max-w-full"
               data-testid="partners-search"
@@ -499,7 +603,7 @@ async function reloadPage() {
 
           <template #right>
             <p class="text-xs text-muted">
-              共 {{ filteredRows.length }} 条结果
+              {{ connected ? '当前页' : '共' }} {{ filteredRows.length }} 条{{ connected ? '' : '结果' }}
             </p>
             <UTooltip text="刷新列表">
               <UButton
@@ -519,6 +623,18 @@ async function reloadPage() {
 
       <template #body>
         <AppBreadcrumb current="伙伴档案" class="mb-3" />
+        <UAlert
+          v-if="connected && (submission.record || connection.message)"
+          class="mb-3"
+          color="warning"
+          title="请核对上次操作"
+          :description="connection.message"
+          data-testid="partners-recovery"
+        >
+          <template #actions>
+            <UButton v-if="submission.record" label="恢复上次提交" @click="restorePartner" />
+          </template>
+        </UAlert>
         <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="partners-skeleton">
             <USkeleton v-for="n in 8" :key="n" class="h-9 w-full" />
@@ -528,8 +644,8 @@ async function reloadPage() {
               color="error"
               variant="soft"
               icon="i-carbon-warning-alt"
-              title="伙伴加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
+              :title="connected ? remote.problem : '伙伴加载失败（演示）'"
+              :description="connected ? '请重新读取当前工作区。' : '?state=error 会模拟一次加载失败。'"
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
           </div>
@@ -537,8 +653,8 @@ async function reloadPage() {
             <UEmpty
               variant="naked"
               icon="i-carbon-view-off"
-              title="没有伙伴读取权限（演示）"
-              description="?state=forbidden 模拟演示身份缺少 catalog.view 权限。"
+              :title="connected ? '当前身份无权读取伙伴' : '没有伙伴读取权限（演示）'"
+              :description="connected ? '请登录并选择有权限的工作区。' : '?state=forbidden 模拟读取权限不足。'"
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
           </div>
@@ -554,7 +670,7 @@ async function reloadPage() {
           <div v-else :key="'partners-page-' + page" class="nx-fade">
             <ResizableTable
               :data="pageRows"
-              :columns="columns"
+              :columns="displayedColumns"
               class="nx-table"
               :ui="{ th: 'py-2.5', td: 'py-3' }"
               :row-activate="openDetail"
@@ -622,12 +738,16 @@ async function reloadPage() {
               v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
               class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
-              <p class="text-xs text-muted">
+              <p v-if="connected" class="text-xs text-muted">
+                当前第 {{ page }} 页，本页 {{ filteredRows.length }} 条{{ connection.hasMore ? '，还有下一页' : '' }}
+              </p>
+              <p v-else class="text-xs text-muted">
                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
               </p>
               <UPagination
                 v-model:page="page"
-                :total="filteredRows.length"
+                :total="paginationTotal"
+                :ui="connected ? { first: 'hidden', last: 'hidden' } : undefined"
                 :items-per-page="pageSize"
                 size="sm"
                 data-testid="partners-pagination"
@@ -636,7 +756,7 @@ async function reloadPage() {
           </template>
         </UCard>
         <p class="mt-2 text-[11px] text-dimmed">
-          本地原型 · 模拟数据 · 写操作仅本次预览，刷新后恢复
+          {{ connected ? '当前页来自工作区接口；搜索与筛选仅作用于当前页。联系人从详情读取。' : '本地原型 · 模拟数据 · 写操作仅本次预览，刷新后恢复' }}
         </p>
       </template>
     </UDashboardPanel>
@@ -711,10 +831,10 @@ async function reloadPage() {
               </div>
               <div>
                 <dt class="text-xs text-muted">
-                  币种
+                  {{ connected ? '工作区币种' : '币种' }}
                 </dt>
                 <dd class="mt-0.5 text-default">
-                  {{ detailPartner.currency }}
+                  {{ connected ? remote.session.workspace?.baseCurrency ?? '—' : detailPartner.currency }}
                 </dd>
               </div>
               <div>
@@ -732,7 +852,7 @@ async function reloadPage() {
               </div>
               <div>
                 <dt class="text-xs text-muted">
-                  更新时间
+                  {{ connected ? '版本' : '更新时间' }}
                 </dt>
                 <dd class="mt-0.5 text-default">
                   {{ detailPartner.updatedAt }}
@@ -785,7 +905,7 @@ async function reloadPage() {
               <ChangeLogTimeline
                 :entries="detailEntries"
                 compact
-                empty-title="该伙伴暂无变更记录"
+                :empty-title="connected ? '完整变更记录尚未加载' : '该伙伴暂无变更记录'"
                 empty-description="创建或编辑伙伴后，变更会记录在这里。"
               />
             </div>
@@ -816,151 +936,199 @@ async function reloadPage() {
     <USlideover v-model:open="editOpen" :title="editing ? '编辑伙伴' : '新建伙伴'" :ui="{ content: 'sm:max-w-xl' }">
       <template #description>
         <span class="text-sm text-muted">
-          {{ editing ? editing.code + ' · 档案编号只读' : '保存后自动生成档案编号' }} · 修改后仅作用于本次预览
+          {{ connected ? editing ? '档案编号只读，保存校验当前版本' : '填写唯一档案编号，新建默认启用' : (editing ? editing.code + ' · 档案编号只读' : '保存后自动生成档案编号') + ' · 修改后仅作用于本次预览' }}
         </span>
       </template>
 
       <template #body>
-        <UForm
-          id="partner-editor"
-          :schema="partnerEditSchema"
-          :state="editForm"
-          class="space-y-4"
-          @submit="saveEditor"
+        <UAlert
+          v-if="connected && submission.message"
+          class="mb-3"
+          color="warning"
+          :title="submission.message"
+          data-testid="partners-feedback"
         >
-          <UFormField label="伙伴名称" name="name" required>
-            <UInput v-model="editForm.name" class="w-full" data-testid="partners-edit-name" />
-          </UFormField>
-
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="档案编号">
-              <UInput
-                :model-value="editing?.code ?? '保存后自动生成'"
-                class="w-full font-mono"
-                readonly
-                data-testid="partners-edit-code"
-              />
-            </UFormField>
-            <UFormField label="状态" name="status">
-              <USelect
-                v-model="editForm.status"
-                :items="[{ label: '合作中', value: 'active' }, { label: '已停用', value: 'inactive' }]"
-                class="w-full"
-                data-testid="partners-edit-status"
-              />
-            </UFormField>
-          </div>
-
-          <UFormField label="业务角色（可多选）" name="roles" required>
-            <div class="flex flex-wrap gap-2" data-testid="partners-edit-roles">
-              <UButton
-                v-for="option in roleOptions"
-                :key="option.value"
-                :label="option.label"
-                size="sm"
-                :color="editForm.roles.includes(option.value) ? 'primary' : 'neutral'"
-                :variant="editForm.roles.includes(option.value) ? 'solid' : 'outline'"
-                :data-testid="'partners-edit-role-' + option.value"
-                @click="toggleRole(option.value)"
-              />
-            </div>
-            <p class="mt-1 text-[11px] text-muted">
-              同一主体可同时是供应商、客户或捐赠人；停用后会退出新单据的选择项，历史单据仍保留原名称。
-            </p>
-          </UFormField>
-
-          <UFormField label="税号" name="taxNo">
-            <UInput v-model="editForm.taxNo" class="w-full" data-testid="partners-edit-taxno" />
-          </UFormField>
-
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <p class="text-xs font-medium text-default">
-                地址
-              </p>
-            </div>
-            <div class="grid gap-3 sm:grid-cols-2">
-              <UFormField label="省份" name="province">
-                <UInput v-model="editForm.province" class="w-full" data-testid="partners-edit-province" />
-              </UFormField>
-              <UFormField label="城市" name="city">
-                <UInput v-model="editForm.city" class="w-full" data-testid="partners-edit-city" />
-              </UFormField>
-            </div>
-            <UFormField label="详细地址" name="line">
-              <UInput v-model="editForm.line" class="w-full" data-testid="partners-edit-line" />
-            </UFormField>
-            <UFormField label="邮编" name="postalCode">
-              <UInput v-model="editForm.postalCode" class="w-full" data-testid="partners-edit-postal" />
-            </UFormField>
-          </div>
-
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <p class="text-xs font-medium text-default">
-                联系人（{{ editForm.contacts.length }}）
-              </p>
-              <UButton
-                label="新增联系人"
-                icon="i-carbon-add"
-                size="xs"
-                color="neutral"
-                variant="outline"
-                data-testid="partners-edit-contact-add"
-                @click="addContact"
-              />
-            </div>
-            <div
-              v-for="(contact, index) in editForm.contacts"
-              :key="contact.id"
-              class="rounded-sm border border-default p-3"
-              :data-testid="'partners-edit-contact-' + index"
+          <template #actions>
+            <UButton v-if="!submission.mutation.unknown" label="读取当前版本" @click="connection.readCurrent()" />
+            <UButton
+              v-if="submission.failure?.kind === 'mfa'"
+              label="重新验证身份"
+              :to="'/bff/login?prompt=login&returnTo=' + encodeURIComponent(route.fullPath)"
+              external
+            />
+          </template>
+        </UAlert>
+        <UAlert
+          v-if="connected && submission.mutation.unknown"
+          class="mb-3"
+          color="warning"
+          title="结果待确认"
+          data-testid="partners-unknown"
+        >
+          <template #actions>
+            <UButton label="查询提交结果" :loading="submission.mutation.busy" @click="checkPartner()" />
+            <UButton label="重试原提交" :disabled="!submission.mutation.operation?.retryAvailable || submission.mutation.busy" @click="checkPartner(true)" />
+          </template>
+        </UAlert>
+        <p v-if="connected && connection.baseline" class="mb-3 text-xs text-muted">
+          当前版本 {{ connection.baseline.partner.version }} · {{ connection.baseline.partner.name }}
+        </p>
+        <fieldset :disabled="connected && !!submission.record" class="contents">
+          <UForm
+            id="partner-editor"
+            :schema="connected ? connectedPartnerSchema : partnerEditSchema"
+            :state="editForm"
+            class="space-y-4"
+            @submit="saveEditor"
+          >
+            <UFormField
+              label="伙伴名称"
+              name="name"
+              required
+              :error="connected ? submission.fieldError('Name') : undefined"
             >
-              <div class="grid gap-3 sm:grid-cols-2">
-                <UFormField :label="index === 0 ? '主联系人' : '联系人 ' + (index + 1)" required>
-                  <UInput
-                    v-model="contact.name"
-                    class="w-full"
-                    :data-testid="index === 0 ? 'partners-edit-contact' : 'partners-edit-contact-name-' + index"
-                  />
-                </UFormField>
-                <UFormField label="职务">
-                  <UInput
-                    v-model="contact.title"
-                    class="w-full"
-                    :data-testid="'partners-edit-contact-title-' + index"
-                  />
-                </UFormField>
-                <UFormField label="联系电话">
-                  <UInput
-                    v-model="contact.phone"
-                    class="w-full"
-                    :data-testid="index === 0 ? 'partners-edit-phone' : 'partners-edit-contact-phone-' + index"
-                  />
-                </UFormField>
-                <UFormField label="邮箱">
-                  <UInput
-                    v-model="contact.email"
-                    class="w-full"
-                    :data-testid="index === 0 ? 'partners-edit-email' : 'partners-edit-contact-email-' + index"
-                  />
-                </UFormField>
-              </div>
-              <div class="mt-2 flex justify-end">
+              <UInput v-model="editForm.name" class="w-full" data-testid="partners-edit-name" />
+            </UFormField>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="档案编号" name="code" :error="connected ? submission.fieldError('Code') : undefined">
+                <UInput
+                  v-if="!connected"
+                  :model-value="editing?.code ?? '保存后自动生成'"
+                  class="w-full font-mono"
+                  readonly
+                  data-testid="partners-edit-code"
+                />
+                <UInput
+                  v-else
+                  v-model="editForm.code"
+                  :disabled="!!editing"
+                  class="w-full"
+                  data-testid="partners-edit-code"
+                />
+              </UFormField>
+              <UFormField label="状态" name="status">
+                <USelect
+                  v-model="editForm.status"
+                  :disabled="connected && !editing"
+                  :items="[{ label: '合作中', value: 'active' }, { label: '已停用', value: 'inactive' }]"
+                  class="w-full"
+                  data-testid="partners-edit-status"
+                />
+              </UFormField>
+            </div>
+
+            <UFormField label="业务角色（可多选）" name="roles" required>
+              <div class="flex flex-wrap gap-2" data-testid="partners-edit-roles">
                 <UButton
-                  label="移除"
-                  icon="i-carbon-trash-can"
-                  size="xs"
-                  color="error"
-                  variant="ghost"
-                  :disabled="editForm.contacts.length === 1"
-                  :data-testid="'partners-edit-contact-remove-' + index"
-                  @click="removeContact(index)"
+                  v-for="option in roleOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  size="sm"
+                  :color="editForm.roles.includes(option.value) ? 'primary' : 'neutral'"
+                  :variant="editForm.roles.includes(option.value) ? 'solid' : 'outline'"
+                  :data-testid="'partners-edit-role-' + option.value"
+                  @click="toggleRole(option.value)"
                 />
               </div>
+              <p class="mt-1 text-[11px] text-muted">
+                同一主体可同时是供应商、客户或捐赠人；停用后会退出新单据的选择项，历史单据仍保留原名称。
+              </p>
+            </UFormField>
+
+            <UFormField label="税号" name="taxNo">
+              <UInput v-model="editForm.taxNo" class="w-full" data-testid="partners-edit-taxno" />
+            </UFormField>
+
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium text-default">
+                  地址
+                </p>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <UFormField v-if="!connected" label="省份" name="province">
+                  <UInput v-model="editForm.province" class="w-full" data-testid="partners-edit-province" />
+                </UFormField>
+                <UFormField v-if="!connected" label="城市" name="city">
+                  <UInput v-model="editForm.city" class="w-full" data-testid="partners-edit-city" />
+                </UFormField>
+              </div>
+              <UFormField label="详细地址" name="line">
+                <UInput v-model="editForm.line" class="w-full" data-testid="partners-edit-line" />
+              </UFormField>
+              <UFormField v-if="!connected" label="邮编" name="postalCode">
+                <UInput v-model="editForm.postalCode" class="w-full" data-testid="partners-edit-postal" />
+              </UFormField>
             </div>
-          </div>
-        </UForm>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium text-default">
+                  联系人（{{ editForm.contacts.length }}）
+                </p>
+                <UButton
+                  label="新增联系人"
+                  icon="i-carbon-add"
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  data-testid="partners-edit-contact-add"
+                  @click="addContact"
+                />
+              </div>
+              <div
+                v-for="(contact, index) in editForm.contacts"
+                :key="contact.id"
+                class="rounded-sm border border-default p-3"
+                :data-testid="'partners-edit-contact-' + index"
+              >
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <UFormField :label="index === 0 ? '主联系人' : '联系人 ' + (index + 1)" required>
+                    <UInput
+                      v-model="contact.name"
+                      class="w-full"
+                      :data-testid="index === 0 ? 'partners-edit-contact' : 'partners-edit-contact-name-' + index"
+                    />
+                  </UFormField>
+                  <UFormField v-if="!connected" label="职务">
+                    <UInput
+                      v-model="contact.title"
+                      class="w-full"
+                      :data-testid="'partners-edit-contact-title-' + index"
+                    />
+                  </UFormField>
+                  <UFormField label="联系电话">
+                    <UInput
+                      v-model="contact.phone"
+                      class="w-full"
+                      :data-testid="index === 0 ? 'partners-edit-phone' : 'partners-edit-contact-phone-' + index"
+                    />
+                  </UFormField>
+                  <UFormField label="邮箱">
+                    <UInput
+                      v-model="contact.email"
+                      class="w-full"
+                      :data-testid="index === 0 ? 'partners-edit-email' : 'partners-edit-contact-email-' + index"
+                    />
+                  </UFormField>
+                </div>
+                <div class="mt-2 flex justify-end">
+                  <UButton
+                    label="移除"
+                    icon="i-carbon-trash-can"
+                    size="xs"
+                    color="error"
+                    variant="ghost"
+                    :disabled="editForm.contacts.length === 1"
+                    :data-testid="'partners-edit-contact-remove-' + index"
+                    @click="removeContact(index)"
+                  />
+                </div>
+              </div>
+            </div>
+          </UForm>
+        </fieldset>
       </template>
 
       <template #footer>
@@ -976,6 +1144,8 @@ async function reloadPage() {
             type="submit"
             form="partner-editor"
             color="primary"
+            :loading="submission.mutation.busy"
+            :disabled="connected && !!submission.record"
             data-testid="partners-edit-save"
           />
         </div>

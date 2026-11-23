@@ -6,11 +6,15 @@ import {
   stockReturnStatusLabels,
   warehouses
 } from '~/mocks'
+import type { WarehouseReturnsConnection } from '~/composables/inventory/useWarehouseReturns'
 
-const props = defineProps<{ returnId: string | null }>()
+const props = defineProps<{ returnId: string | null, live?: WarehouseReturnsConnection }>()
 const open = defineModel<boolean>('open', { default: false })
 const stockFlow = useStockFlowStore()
 const inventory = useInventoryStore()
+const current = computed(() => props.live?.list.find(row => row.id === props.returnId))
+const source = computed(() => current.value ? props.live?.sourceOrder(current.value.originalId) : undefined)
+const workspaceId = computed(() => props.live?.query.session.activeWorkspaceId)
 
 const stockReturn = computed(() => props.returnId
   ? stockFlow.returns.find(row => row.id === props.returnId) ?? null
@@ -47,12 +51,28 @@ function movementQuantity(movement: { type: string, quantity: number }) {
   <USlideover v-model:open="open" title="退货详情" :ui="{ content: 'w-full sm:max-w-3xl' }">
     <template #description>
       <span class="text-sm text-muted">
-        {{ stockReturn ? stockReturn.id + ' · ' + (stockReturn.direction === 'purchase' ? '采购退货' : '销售退货') : '查看退货明细、库存流水与原收发货记录' }}
+        {{ current ? current.id + ' · ' + (current.direction === 'purchase' ? '采购退货' : '销售退货') : stockReturn ? stockReturn.id + ' · ' + (stockReturn.direction === 'purchase' ? '采购退货' : '销售退货') : '查看退货明细、库存流水与原收发货记录' }}
       </span>
     </template>
 
     <template #body>
-      <div v-if="stockReturn" class="space-y-4" data-testid="stock-return-detail">
+      <div v-if="live" class="space-y-4" data-testid="stock-return-detail">
+        <SalesOperationStatus :message="live.error" :submission="live.submission" @check="live.check()" @retry="live.retry()" />
+        <div v-if="current" class="space-y-2 text-sm">
+          <UBadge :color="current.movementId ? 'success' : current.cancelled ? 'neutral' : 'warning'" variant="subtle"
+            :label="current.cancelled ? '已取消' : current.movementId ? '仓库已确认' : '待仓库确认'" data-testid="stock-return-detail-status" />
+          <p>{{ current.on }} · 退货 {{ current.quantity }} 件</p>
+          <p>{{ current.reason }}</p>
+          <p class="break-all text-muted">原流水 {{ current.originalId }}</p>
+          <p v-if="current.movementId" class="break-all text-muted">退货流水 {{ current.movementId }}</p>
+          <div class="flex flex-wrap gap-2">
+            <UButton v-if="source" label="打开原订单" variant="outline" size="xs" :to="{ path: current.direction === 'sale' ? '/sales' : '/purchase-orders', query: { workspace: workspaceId, order: source.sourceNo } }" />
+            <UButton v-if="current.movementId" label="查看财务来源" variant="outline" size="xs" :to="{ path: current.direction === 'sale' ? '/sales' : '/finance', query: { workspace: workspaceId, tab: current.direction === 'sale' ? 'receivables' : 'payables', stockReturn: current.movementId } }" />
+          </div>
+        </div>
+        <p v-else class="text-sm text-muted">{{ live.query.loading ? '正在读取退货单。' : live.listError || '当前仓库列表中没有这张退货单。' }}</p>
+      </div>
+      <div v-else-if="stockReturn" class="space-y-4" data-testid="stock-return-detail">
         <UAlert
           color="neutral"
           variant="soft"
@@ -226,7 +246,7 @@ function movementQuantity(movement: { type: string, quantity: number }) {
     </template>
 
     <template #footer>
-      <div class="flex w-full justify-end">
+      <div class="flex w-full justify-end gap-2">
         <UButton
           label="关闭"
           color="neutral"
@@ -234,6 +254,10 @@ function movementQuantity(movement: { type: string, quantity: number }) {
           data-testid="stock-return-detail-close"
           @click="open = false"
         />
+        <template v-if="live && current && !current.movementId && !current.cancelled">
+          <UButton v-if="live.canAuthorize(current.direction)" label="取消待确认退货" variant="outline" color="error" :disabled="live.frozen" data-testid="stock-return-cancel-pending" @click="live.decide(current, false)" />
+          <UButton label="确认退货" :disabled="live.frozen || !current.canConfirm" data-testid="stock-return-confirm" @click="live.decide(current, true)" />
+        </template>
       </div>
     </template>
   </USlideover>

@@ -1,6 +1,7 @@
 import { storeToRefs } from 'pinia'
 import { announcements, products, purchaseOrders, recentDocuments, salesOrders } from '~/mocks'
 import { useUiStore } from '~/stores/ui'
+import { useWorkspaceAdministration } from './api/useWorkspaceAdministration'
 
 export type NotificationSource = '公告' | '采购审批' | '销售审批' | '库存预警' | '最近单据'
 
@@ -15,16 +16,19 @@ export interface DashboardNotification {
   to: string
 }
 
-/**
- * 通知抽屉的本地模拟数据：公告、采购/销售待审批、库存预警与最近单据。
- * 打开状态与已读标记放在 ui store，刷新页面后恢复未读。
- */
 export function useNotifications() {
   const ui = useUiStore()
   const { t } = useI18n()
   const { readNotificationIds } = storeToRefs(ui)
   const { workspace } = useMockWorkspace()
   const { documentTypeLabel, rawDocumentStatusLabel } = useMockLabels()
+  const auth = useAuthSessionStore()
+  const session = useLiveSessionStore()
+  const api = useWorkspaceAdministration()
+  const remote = useWorkspaceQuery('workspace-announcements', '/', (id, signal) => {
+    if (!id || !session.workspace || session.workspace.id !== id) return Promise.resolve([])
+    return api.announcements(id, signal)
+  })
 
   const open = computed({
     get: () => ui.notificationsOpen,
@@ -34,6 +38,11 @@ export function useNotifications() {
   })
 
   const items = computed<DashboardNotification[]>(() => {
+    if (auth.connected) return (remote.data ?? []).map(item => ({
+      id: JSON.stringify([auth.user?.subject, session.activeWorkspaceId, item.id]), source: '公告',
+      title: item.title, description: item.message, icon: 'i-carbon-notification-new', color: 'info',
+      at: '有效期至 ' + item.endsAtUtc, to: ''
+    }))
     const list: DashboardNotification[] = []
     const separator = t('notifications.listSeparator')
 
@@ -122,5 +131,5 @@ export function useNotifications() {
     ui.markNotificationRead(id)
   }
 
-  return { open, items, unread, markAllRead, markRead }
+  return { open, items, unread, markAllRead, markRead, remote }
 }

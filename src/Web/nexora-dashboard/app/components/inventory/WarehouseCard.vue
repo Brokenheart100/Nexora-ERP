@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { WireWarehouse } from '#shared/types/prerequisites'
 import type { Warehouse, WarehouseSummary } from '~/mocks'
 import { warehouseStatusColors, warehouseStatusLabels } from '~/mocks'
 
 defineProps<{
-  warehouse: Warehouse
-  address: string
-  summary: WarehouseSummary
+  wire?: WireWarehouse
+  warehouse?: Warehouse
+  address?: string
+  summary?: WarehouseSummary
 }>()
 
 const emit = defineEmits<{ open: [] }>()
@@ -20,17 +22,18 @@ const emit = defineEmits<{ open: [] }>()
     <div class="flex items-start justify-between gap-2">
       <div class="min-w-0">
         <p class="font-mono text-[11px] text-muted">
-          {{ warehouse.code }}
+          {{ wire?.code ?? warehouse?.code }}
         </p>
         <h3 class="mt-1 truncate text-sm font-semibold text-highlighted">
-          {{ warehouse.name }}
+          {{ wire?.name ?? warehouse?.name }}
         </h3>
-        <p class="mt-1.5 flex items-start gap-1 text-xs text-muted">
+        <p v-if="!wire" class="mt-1.5 flex items-start gap-1 text-xs text-muted">
           <UIcon name="i-carbon-location" class="mt-0.5 size-3.5 shrink-0" />
           <span class="whitespace-normal">{{ address }}</span>
         </p>
       </div>
       <UBadge
+        v-if="warehouse && !wire"
         :color="warehouseStatusColors[warehouse.status]"
         variant="subtle"
         size="sm"
@@ -38,7 +41,7 @@ const emit = defineEmits<{ open: [] }>()
       />
     </div>
 
-    <dl class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-[12.5px]">
+    <dl v-if="warehouse && summary && !wire" class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-[12.5px]">
       <div>
         <dt class="text-[11px] text-muted">
           负责人
@@ -73,7 +76,10 @@ const emit = defineEmits<{ open: [] }>()
       </div>
     </dl>
 
-    <div class="mt-3 flex items-center justify-between gap-2 rounded-sm bg-elevated/60 px-2.5 py-1.5" data-testid="warehouse-summary">
+    <dl v-if="wire" class="mt-3 grid grid-cols-2 gap-2 text-xs" data-testid="warehouse-capabilities">
+      <dt>库存查看</dt><dd>{{ wire.canReadStock ? '可查看' : '无读取权限' }}</dd><dt>收货执行</dt><dd>{{ wire.canReceive ? '可执行' : '不可执行' }}</dd>
+    </dl>
+    <div v-if="summary && !wire" class="mt-3 flex items-center justify-between gap-2 rounded-sm bg-elevated/60 px-2.5 py-1.5" data-testid="warehouse-summary">
       <span class="text-xs text-muted">低于演示阈值的位置</span>
       <UBadge
         :color="summary.warningCount ? 'warning' : 'neutral'"
@@ -87,9 +93,9 @@ const emit = defineEmits<{ open: [] }>()
 
     <template #footer>
       <div class="flex items-center justify-between gap-2">
-        <span class="text-xs text-muted">{{ summary.zeroCount }} 个位置零库存</span>
+        <span v-if="summary && !wire" class="text-xs text-muted">{{ summary.zeroCount }} 个位置零库存</span>
         <UButton
-          label="查看库存位置"
+          :label="wire ? '查看许可与库存' : '查看库存位置'"
           trailing-icon="i-carbon-arrow-right"
           color="neutral"
           variant="ghost"

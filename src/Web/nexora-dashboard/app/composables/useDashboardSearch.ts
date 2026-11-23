@@ -1,4 +1,10 @@
 import type { CommandPaletteGroup } from '@nuxt/ui'
+import { useWorkspaceQuery } from './api/useWorkspaceQuery'
+import { useMasterDataApi } from './api/useMasterDataApi'
+import { usePartnersApi } from './api/usePartnersApi'
+import { usePurchasingApi } from './api/usePurchasingApi'
+import { useSalesApi } from './api/useSalesApi'
+import { useReceivablesApi } from './api/useReceivablesApi'
 import {
   changeLogEntries,
   invoices,
@@ -37,13 +43,48 @@ const changeLogPath = '/change-log'
 const dashboardPath = '/'
 
 /**
- * 全局命令面板（⌘K）的数据源：页面、商品、伙伴、采购/销售订单、发票、
- * 最近单据与错误页演示。全部取自本地模拟数据，切换工作区后订单与单据同步变化。
+ * 工作区切换后，命令面板仅显示当前范围的查询结果。
  */
-export function useDashboardSearch() {
+export function useDashboardSearch(open: Ref<boolean>) {
+  const auth = useAuthSessionStore()
+  const session = useLiveSessionStore()
   const { t } = useI18n()
   const { workspace } = useMockWorkspace()
   const { visits } = useRecentVisits()
+  const catalog = useMasterDataApi()
+  const partnerApi = usePartnersApi()
+  const purchasing = usePurchasingApi()
+  const selling = useSalesApi()
+  const receivables = useReceivablesApi()
+  const records = useWorkspaceQuery('workbench-search', '/', async (id, signal) => {
+    if (!open.value) return { groups: [], partial: false }
+    const scopedLink = (path: string, query: Record<string, string>) => ({ path, query: { workspace: id, ...query } })
+    const limit = 20
+    const results = await Promise.allSettled([
+      session.canVisit('/catalog') ? catalog.catalog(id, 1, signal, limit).then(result => ({
+        id: 'catalog', label: '商品',
+        items: result.data.page.items.map(row => ({ label: row.code + ' · ' + row.name, to: scopedLink('/catalog', { item: row.id }) }))
+      })) : null,
+      session.canVisit('/partners') ? partnerApi.list(id, 1, undefined, signal, limit).then(result => ({
+        id: 'partners', label: '往来单位',
+        items: result.items.map(row => ({ label: row.code + ' · ' + row.name, to: scopedLink('/partners', { partner: row.id }) }))
+      })) : null,
+      session.canVisit('/purchase-orders') ? purchasing.list(id, 1, signal, limit).then(result => ({
+        id: 'purchase', label: '采购单',
+        items: result.orders.map(row => ({ label: row.number + ' · ' + row.supplierName, to: scopedLink('/purchase-orders', { order: row.id }) }))
+      })) : null,
+      session.canVisit('/sales') ? selling.list(id, false, 1, limit, signal).then(result => ({
+        id: 'sales', label: '销售单',
+        items: result.orders.map(row => ({ label: row.number + ' · ' + row.customerName, to: scopedLink('/sales', { order: row.id, tab: 'orders' }) }))
+      })) : null,
+      session.canVisit('/sales') && session.entitlements?.modules.includes('receivables') ? receivables.documents(id, 1, signal).then(result => ({
+        id: 'receivables', label: '应收单据',
+        items: result.slice(0, limit).map(row => ({ label: row.terms.number + ' · ' + row.terms.customerName, to: scopedLink('/sales', { document: row.id, tab: 'receivables' }) }))
+      })) : null
+    ])
+    const groups = results.flatMap(result => result.status === 'fulfilled' && result.value?.items.length ? [result.value] : [])
+    return { groups, partial: results.some(result => result.status === 'rejected') }
+  }, () => open.value)
   const {
     purchaseStatusLabel,
     salesStatusLabel,
@@ -72,6 +113,10 @@ export function useDashboardSearch() {
   }))
 
   const groups = computed<CommandPaletteGroup[]>(() => {
+    if (auth.connected) return [{ id: 'pages', label: t('search.groups.pages'),
+      items: Object.entries(navKeyByPath).filter(([path]) => session.canVisit(path)).map(([path, key]) => ({
+        to: { path, query: { workspace: session.activeWorkspaceId } }, label: t('nav.' + key), icon: 'i-carbon-application'
+      })) }, ...(records.data?.groups ?? [])]
     const orders = purchaseOrders.filter(order => order.workspaceId === workspace.value.id)
     const sales = salesOrders.filter(order => order.workspaceId === workspace.value.id)
     const workspaceInvoices = invoices.filter(invoice => invoice.workspaceId === workspace.value.id)
@@ -289,5 +334,5 @@ export function useDashboardSearch() {
     ]
   })
 
-  return { groups }
+  return { groups, records }
 }

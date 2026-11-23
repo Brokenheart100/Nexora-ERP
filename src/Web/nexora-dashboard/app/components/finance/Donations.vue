@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { z } from 'zod'
+import { sumDecimals } from '#shared/utils/decimal'
+import type { TradeDocument } from '#shared/types/trade'
+import type { ReceiptDispatch } from '#shared/types/treasury'
+import { useDonationConnection } from '~/composables/finance/useDonationConnection'
+import { displayDecimal } from '~/utils/api/decimal-display'
+import { localBusinessDate, treasuryAmount } from '~/utils/finance/treasury'
 import type {
   Donation,
   DonationDispatch,
@@ -21,7 +28,9 @@ const store = useDonationsStore()
 const toast = useToast()
 
 const search = ref('')
-const statusFilter = ref<'all' | DonationStatus>('all')
+type DonationRow = Omit<Donation, 'status' | 'version'> & { status: DonationStatus | 'cancelled', version: TradeDocument['version'], number?: string }
+type DispatchRow = Omit<DonationDispatch, 'version'> & { version: ReceiptDispatch['version'] }
+const statusFilter = ref<'all' | DonationRow['status']>('all')
 const actorKey = ref<'maker' | 'reviewer'>('maker')
 const detailOpen = ref(false)
 const selectedId = ref('')
@@ -29,6 +38,7 @@ const detailError = ref('')
 const formOpen = ref(false)
 const formError = ref('')
 const formDonorId = ref('')
+const formNumber = ref('')
 const formDate = ref('')
 const formMethod = ref<DonationMethod>('transfer')
 const formAmount = ref('')
@@ -50,6 +60,17 @@ const mailError = ref('')
 const dispatchOpen = ref(false)
 const selectedDispatchId = ref('')
 const dispatchError = ref('')
+const selectedTicketId = ref('')
+const connection = useDonationConnection(selectedId, selectedDispatchId, selectedTicketId)
+const connected = computed(() => connection.home.connected)
+const liveDocument = computed(() => connection.detail.data)
+const liveMailLabel = computed(() => ({
+  'configured': '邮件通道已配置', 'local-only': '本地邮件通道', 'not-configured': '邮件通道未配置'
+}[connection.capabilities.data?.invoiceMail ?? ''] ?? '正在读取邮件能力'))
+const liveBanks = computed(() => (connection.home.data?.banks ?? []).filter(account => (account.kind === 'cash') === (formMethod.value === 'cash')))
+const donorOptions = computed(() => connected.value
+  ? (connection.donors.data ?? []).filter(donor => donor.isActive).map(donor => ({ label: donor.code + ' · ' + donor.name, value: donor.id }))
+  : store.donorOptions)
 
 const actors = {
   maker: { id: 'u-1001', name: '张明远', label: '张明远 · 制单人' },
@@ -57,41 +78,81 @@ const actors = {
 } as const
 
 const actor = computed(() => actors[actorKey.value])
-const statusOptions = [
+const statusOptions = computed(() => [
   { label: '全部状态', value: 'all' },
-  { label: '草稿', value: 'draft' },
+  connected.value ? { label: '已取消', value: 'cancelled' } : { label: '草稿', value: 'draft' },
   { label: '待独立复核', value: 'submitted' },
   { label: '已过账', value: 'posted' },
   { label: '已作废', value: 'reversed' }
-]
-const fundAccountOptions = donationFundAccounts.map(account => ({
+])
+const fundAccountOptions = computed(() => connected.value
+  ? liveBanks.value.map(account => ({ label: account.code + ' · ' + account.name, value: account.id }))
+  : donationFundAccounts.map(account => ({
   label: account.name + (account.type === 'cash' ? '（现金）' : '（银行）'),
   value: account.id
-}))
+})))
 
+function donationRow(document: TradeDocument): DonationRow {
+  const terms = document.terms
+  const donor = connection.donors.data?.find(value => value.id === terms.partnerId)
+  return {
+    id: document.id, workspaceId: connection.workspace(), number: terms.number, donorId: terms.partnerId ?? '',
+    donorName: terms.donationIdentity?.donorName ?? donor?.name ?? terms.partnerId ?? '—', donorCode: donor?.code ?? '',
+    date: terms.on, method: terms.method === 'cheque' ? 'check' : terms.method === 'cash' || terms.method === 'card' ? terms.method : 'transfer',
+    fundAccountId: terms.bankId ?? '', fundAccountName: connection.home.data?.banks.find(row => row.id === terms.bankId)?.name ?? terms.bankId ?? '—',
+    amount: document.state === 'posted' ? document.total : terms.amount, purpose: terms.memo,
+    status: document.reversedById ? 'reversed' : document.state === 'posted' ? 'posted' : document.state === 'cancelled' ? 'cancelled' : 'submitted',
+    version: document.version, makerId: document.isMaker ? 'self' : '', makerName: document.isMaker ? '当前用户' : '其他制单人',
+    journalId: document.journalId ?? undefined, reversalId: document.reversedById ?? undefined, createdAt: terms.on, updatedAt: terms.on,
+    receiptNumber: connection.receipt.data?.donationNumber === terms.number ? connection.receipt.data?.number : undefined
+  }
+}
+function mailRow(value: ReceiptDispatch): DispatchRow {
+  return { ...value, previousId: value.previousId ?? undefined, resentAsId: value.resentAsId ?? undefined, updatedAt: value.updatedAtUtc,
+    detail: value.detail ?? '—', failureReason: ['failed', 'unknown'].includes(value.state) ? value.detail ?? undefined : undefined }
+}
+const rows = computed<DonationRow[]>(() => connected.value ? (connection.documents.data ?? []).filter(value => value.terms.kind === 6).map(donationRow) : store.rows)
+const statusLabel = (row: DonationRow) => row.status === 'cancelled' ? '已取消' : donationStatusLabels[row.status]
+const statusColor = (row: DonationRow) => row.status === 'cancelled' ? 'neutral' : donationStatusColors[row.status]
 const filteredRows = computed(() => {
   const keyword = search.value.trim().toLowerCase()
-  return store.rows
+  return rows.value
     .filter(row => statusFilter.value === 'all' || row.status === statusFilter.value)
     .filter(row =>
       keyword.length === 0
       || row.id.toLowerCase().includes(keyword)
-      || row.donorName.includes(keyword)
-      || row.purpose.includes(keyword)
+      || (row.number ?? '').toLowerCase().includes(keyword)
+      || row.donorName.toLowerCase().includes(keyword)
+      || row.purpose.toLowerCase().includes(keyword)
       || (row.receiptNumber ?? '').toLowerCase().includes(keyword)
     )
     .slice()
     .sort((a, b) => b.id.localeCompare(a.id))
 })
-const selected = computed(() => store.donationOf(selectedId.value))
+const selected = computed<DonationRow | null>(() => connected.value
+  ? liveDocument.value ? donationRow(liveDocument.value) : null
+  : store.donationOf(selectedId.value))
 const selectedDonor = computed(() => partners.find(partner => partner.id === selected.value?.donorId) ?? null)
-const selectedTickets = computed(() => selected.value ? store.ticketsFor(selected.value.id) : [])
-const selectedDispatches = computed(() => selected.value ? store.dispatchesFor(selected.value.id) : [])
-const selectedDispatch = computed(() => store.dispatches.find(dispatch => dispatch.id === selectedDispatchId.value) ?? null)
-const canReview = computed(() => selected.value?.status === 'submitted' && selected.value.makerId !== actor.value.id)
-const isMaker = computed(() => selected.value?.makerId === actor.value.id)
+const selectedTickets = computed(() => connected.value
+  ? (connection.tickets.data ?? []).map(row => ({ ...row, linkedAt: row.linkedAtUtc, type: 'fiscal' as const }))
+  : selected.value ? store.ticketsFor(selected.value.id) : [])
+const selectedDispatches = computed<DispatchRow[]>(() => connected.value
+  ? (connection.dispatches.data ?? []).map(mailRow) : selected.value ? store.dispatchesFor(selected.value.id) : [])
+const selectedDispatch = computed<DispatchRow | null>(() => connected.value
+  ? connection.dispatch.data ? mailRow(connection.dispatch.data.value) : null
+  : store.dispatches.find(dispatch => dispatch.id === selectedDispatchId.value) ?? null)
+const isMaker = computed(() => connected.value ? liveDocument.value?.isMaker === true : selected.value?.makerId === actor.value.id)
+const canReview = computed(() => selected.value?.status === 'submitted' && !isMaker.value && (!connected.value || connection.canApprove))
+const liveContacts = computed(() => [...new Set(connection.donor.data?.contacts.flatMap(contact => contact.email ? [contact.email] : []) ?? [])])
+watch(liveContacts, (values) => { if (connected.value && !values.includes(mailRecipient.value)) mailRecipient.value = values[0] ?? '' })
+watch(() => connection.home.owner, () => {
+  detailOpen.value = formOpen.value = dispatchOpen.value = false
+  selectedId.value = selectedDispatchId.value = selectedTicketId.value = ''
+  mailRecipient.value = ''
+  statusFilter.value = 'all'
+}, { flush: 'sync' })
 
-const columns: TableColumn<Donation>[] = [
+const columns: TableColumn<DonationRow>[] = [
   { accessorKey: 'id', header: '捐赠单' },
   { accessorKey: 'donorName', header: '捐赠人' },
   { accessorKey: 'date', header: '日期 / 方式' },
@@ -102,7 +163,7 @@ const columns: TableColumn<Donation>[] = [
   { id: 'actions', header: '操作', meta: { class: { th: 'text-right', td: 'text-right' } } }
 ]
 
-const dispatchColumns: TableColumn<DonationDispatch>[] = [
+const dispatchColumns: TableColumn<DispatchRow>[] = [
   { accessorKey: 'id', header: '投递记录' },
   { accessorKey: 'recipient', header: '收件人' },
   { accessorKey: 'state', header: '状态' },
@@ -112,7 +173,7 @@ const dispatchColumns: TableColumn<DonationDispatch>[] = [
 ]
 
 function money(value: string | number) {
-  return formatMoney(Number(value))
+  return connected.value ? displayDecimal(String(value), connection.home.data?.minorUnits ?? 2) : formatMoney(Number(value))
 }
 
 function toDateInput() {
@@ -127,37 +188,59 @@ function ticketTypeLabel(type: 'fiscal' | 'ordinary') {
   return type === 'fiscal' ? '财政票据（外部已开具）' : '普通捐赠收据'
 }
 
-function openDetail(row: Donation) {
+function openDetail(row: DonationRow) {
   selectedId.value = row.id
+  selectedDispatchId.value = selectedTicketId.value = ''
+  ticketCode.value = ticketNumber.value = ticketIssuedOn.value = ''
   detailError.value = ''
   ticketError.value = ''
   mailError.value = ''
-  mailRecipient.value = partners.find(partner => partner.id === row.donorId)?.email ?? ''
+  mailRecipient.value = connected.value ? '' : partners.find(partner => partner.id === row.donorId)?.email ?? ''
   detailOpen.value = true
 }
 
 function openCreate() {
   formError.value = ''
-  formDonorId.value = store.donorOptions[0]?.value ?? ''
-  formDate.value = toDateInput()
+  formDonorId.value = donorOptions.value[0]?.value ?? ''
+  formDate.value = connected.value ? localBusinessDate() : toDateInput()
+  formNumber.value = ''
   formMethod.value = 'transfer'
   formAmount.value = ''
-  formFundAccountId.value = 'ba-2026-01'
+  formFundAccountId.value = connected.value ? liveBanks.value.find(account => account.isDefault)?.id ?? liveBanks.value[0]?.id ?? '' : 'ba-2026-01'
   formPurpose.value = ''
   formNote.value = ''
   formOpen.value = true
 }
 
 watch(formMethod, (method) => {
-  if (method === 'cash') {
+  if (connected.value) {
+    if (!liveBanks.value.some(account => account.id === formFundAccountId.value))
+      formFundAccountId.value = liveBanks.value.find(account => account.isDefault)?.id ?? liveBanks.value[0]?.id ?? ''
+  } else if (method === 'cash') {
     formFundAccountId.value = 'fund-cash'
   } else if (formFundAccountId.value === 'fund-cash') {
     formFundAccountId.value = 'ba-2026-01'
   }
 })
 
-function saveDonation(submit: boolean) {
+async function saveDonation(submit: boolean) {
   formError.value = ''
+  if (connected.value) {
+    try {
+      const number = formNumber.value.trim()
+      const memo = [formPurpose.value.trim(), formNote.value.trim()].filter(Boolean).join(' · ')
+      if (!number || number.length > 60 || !memo || memo.length > 300 || !z.iso.date().safeParse(formDate.value).success
+        || !donorOptions.value.some(donor => donor.value === formDonorId.value) || !liveBanks.value.some(bank => bank.id === formFundAccountId.value))
+        throw new Error('请填写捐赠单号、捐赠人、业务日期、用途及适用的资金账户。摘要最多 300 字符。')
+      if (await connection.submit({ kind: 6, number, on: formDate.value, memo, partnerId: formDonorId.value, bankId: formFundAccountId.value,
+        amount: treasuryAmount(String(formAmount.value), connection.home.data?.minorUnits ?? 2), quantity: '0',
+        method: formMethod.value === 'check' ? 'cheque' : formMethod.value })) {
+        formOpen.value = false
+        detailOpen.value = true
+      } else formError.value = connection.write.submission.message
+    } catch (failure) { formError.value = failure instanceof Error ? failure.message : '无法提交捐赠单。' }
+    return
+  }
   const result = store.createDonation({
     donorId: formDonorId.value,
     date: formDate.value,
@@ -176,9 +259,13 @@ function saveDonation(submit: boolean) {
   if (result.donation) openDetail(result.donation)
 }
 
-function approveDonation() {
+async function approveDonation() {
   if (!selected.value) return
   detailError.value = ''
+  if (connected.value && liveDocument.value) {
+    await connection.decide(liveDocument.value, 'approve')
+    return
+  }
   const result = store.reviewDonation(selected.value.id, 'approve', actor.value.id, actor.value.name)
   if (!result.ok) {
     detailError.value = result.message
@@ -222,9 +309,19 @@ function reverseDonation() {
   toast.add({ title: '捐赠单已作废', description: result.message, color: 'success', icon: 'i-carbon-undo' })
 }
 
-function linkTicket() {
+async function linkTicket() {
   if (!selected.value) return
   ticketError.value = ''
+  if (connected.value) {
+    const code = ticketCode.value.trim(), number = ticketNumber.value.trim(), issuedOn = ticketIssuedOn.value
+    if (!code || !number || !z.iso.date().safeParse(issuedOn).success) {
+      ticketError.value = '请填写外部票据代码、号码与开具日期。'
+      return
+    }
+    if (await connection.linkTicket({ code, number, issuedOn })) ticketCode.value = ticketNumber.value = ticketIssuedOn.value = ''
+    else ticketError.value = connection.write.submission.message
+    return
+  }
   const result = store.linkFiscalTicket(selected.value.id, {
     code: ticketCode.value,
     number: ticketNumber.value,
@@ -245,9 +342,17 @@ function enableChannel() {
   toast.add({ title: '演示邮件通道已启用', description: result.message, color: 'success', icon: 'i-carbon-email' })
 }
 
-function sendReceipt() {
+async function sendReceipt() {
   if (!selected.value) return
   mailError.value = ''
+  if (connected.value) {
+    if (!liveContacts.value.includes(mailRecipient.value)) {
+      mailError.value = '请选择捐赠人档案中的有效邮箱。'
+      return
+    }
+    if (!await connection.queueMail(mailRecipient.value)) mailError.value = connection.write.submission.message
+    return
+  }
   const result = store.queueMail(selected.value.id, mailRecipient.value)
   if (!result.ok) {
     mailError.value = result.message
@@ -256,15 +361,20 @@ function sendReceipt() {
   toast.add({ title: '收据邮件已提交', description: result.message, color: 'success', icon: 'i-carbon-email' })
 }
 
-function openDispatch(dispatch: DonationDispatch) {
+function openDispatch(dispatch: DispatchRow) {
   selectedDispatchId.value = dispatch.id
   dispatchError.value = ''
   dispatchOpen.value = true
 }
 
-function dispatchDecision(decision: 'retry' | 'resend' | 'abandon') {
+async function dispatchDecision(decision: 'retry' | 'resend' | 'abandon') {
   if (!selectedDispatch.value) return
   dispatchError.value = ''
+  if (connected.value) {
+    await connection.decideMail(decision)
+    dispatchError.value = connection.write.submission.message
+    return
+  }
   const result = store.decideMail(selectedDispatch.value.id, decision)
   if (!result.ok) {
     dispatchError.value = result.message
@@ -280,6 +390,11 @@ function openReversal() {
   const donation = store.donationOf(target)
   if (donation) openDetail(donation)
 }
+defineExpose({
+  async refresh() {
+    await Promise.all([connection.refresh(), connection.donors.refresh(), connection.capabilities.refresh(), connection.donor.refresh()])
+  }
+})
 </script>
 
 <template>
@@ -288,39 +403,42 @@ function openReversal() {
       color="info"
       variant="soft"
       icon="i-carbon-gift"
-      title="C11 捐赠收据、财政票据与邮件投递"
-      description="捐赠单由制单人登记、独立复核后过账并生成普通收据。法定财政票据只登记外部已开具的票据代码与号码，本工作区不能签发。收据邮件按捐赠人档案联系人校验，失败与结果未知记录可重试、补发或放弃。"
+      title="捐赠收据、财政票据与邮件投递"
+      description="捐赠由独立复核人过账并生成普通收据。财政票据可关联外部已开具的记录。邮件收件人取自捐赠人档案。"
     />
+
+    <FinanceTreasurySubmission v-if="connected" :write="connection.write" :check="connection.check" :retry="connection.retry"
+      :error="connection.home.problem || connection.documents.problem || connection.donors.problem || connection.capabilities.problem" />
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <div class="rounded-sm border border-default bg-default p-3">
         <p class="text-xs text-muted">
-          已过账捐赠合计
+          {{ connected ? '本页已过账捐赠净额' : '已过账捐赠合计' }}
         </p><p class="mt-1 text-2xl font-semibold tabular-nums" data-testid="donation-stat-posted">
-          {{ money(store.postedTotal) }}
+          {{ money(connected ? sumDecimals(rows.filter(row => row.status === 'posted').map(row => row.amount)) : store.postedTotal) }}
         </p><p class="mt-0.5 text-[11px] text-muted">
           含冲销记录后的净额
         </p>
       </div>
       <div class="rounded-sm border border-default bg-default p-3">
         <p class="text-xs text-muted">
-          待独立复核
+          {{ connected ? '本页待独立复核' : '待独立复核' }}
         </p><p class="mt-1 text-2xl font-semibold tabular-nums" data-testid="donation-stat-submitted">
-          {{ store.submittedCount }}
+          {{ connected ? rows.filter(row => row.status === 'submitted').length : store.submittedCount }}
         </p><p class="mt-0.5 text-[11px] text-muted">
           制单人不能自行复核
         </p>
       </div>
       <div class="rounded-sm border border-default bg-default p-3">
         <p class="text-xs text-muted">
-          已作废
+          {{ connected ? '本页已作废' : '已作废' }}
         </p><p class="mt-1 text-2xl font-semibold tabular-nums" data-testid="donation-stat-reversed">
-          {{ store.reversedCount }}
+          {{ connected ? rows.filter(row => row.status === 'reversed').length : store.reversedCount }}
         </p><p class="mt-0.5 text-[11px] text-muted">
           保留原单与冲销记录
         </p>
       </div>
-      <div class="rounded-sm border border-default bg-default p-3">
+      <div v-if="!connected" class="rounded-sm border border-default bg-default p-3">
         <p class="text-xs text-muted">
           投递异常
         </p><p class="mt-1 text-2xl font-semibold tabular-nums" data-testid="donation-stat-mail-issue">
@@ -339,12 +457,13 @@ function openReversal() {
               捐赠记录
             </p>
             <p class="mt-0.5 text-xs text-muted">
-              普通收据与外部财政票据分别追溯 · 过账后可预览演示收据
+              {{ connected ? '过账后可下载普通收据，并登记外部财政票据。' : '普通收据与外部财政票据分别追溯 · 过账后可预览演示收据' }}
             </p>
           </div>
           <UButton
             label="登记捐赠"
             icon="i-carbon-add"
+            :disabled="connected && (!connection.canSubmit || connection.write.blocked)"
             data-testid="donation-new"
             @click="openCreate"
           />
@@ -369,7 +488,7 @@ function openReversal() {
                 data-testid="donation-status-filter"
               />
             </UFormField>
-            <div class="flex items-center gap-2 pb-2">
+            <div v-if="!connected" class="flex items-center gap-2 pb-2">
               <span class="text-xs text-muted">当前演示身份</span>
               <UButton
                 size="xs"
@@ -401,7 +520,7 @@ function openReversal() {
             >
               <template #id-cell="{ row }">
                 <p class="font-medium text-highlighted">
-                  {{ row.original.id }}
+                  {{ row.original.number ?? row.original.id }}
                 </p>
                 <p class="mt-0.5 text-[11px] text-muted">
                   制单 {{ row.original.makerName }} · v{{ row.original.version }}
@@ -431,7 +550,7 @@ function openReversal() {
                 />
               </template>
               <template #amount-cell="{ row }">
-                <span class="tabular-nums" :class="Number(row.original.amount) < 0 ? 'text-warning' : ''">
+                <span class="tabular-nums" :class="row.original.amount.startsWith('-') ? 'text-warning' : ''">
                   {{ money(row.original.amount) }}
                 </span>
               </template>
@@ -442,8 +561,8 @@ function openReversal() {
               </template>
               <template #status-cell="{ row }">
                 <UBadge
-                  :label="donationStatusLabels[row.original.status]"
-                  :color="donationStatusColors[row.original.status]"
+                  :label="statusLabel(row.original)"
+                  :color="statusColor(row.original)"
                   variant="subtle"
                   size="sm"
                   :data-testid="'donation-status-' + row.original.id"
@@ -454,10 +573,10 @@ function openReversal() {
                   {{ row.original.receiptNumber }}
                 </p>
                 <p v-else class="text-xs text-muted">
-                  尚未生成
+                  {{ connected && ['posted', 'reversed'].includes(row.original.status) ? '已生成 · 查看详情' : '尚未生成' }}
                 </p>
                 <UBadge
-                  v-if="store.ticketsFor(row.original.id).length"
+                  v-if="!connected && store.ticketsFor(row.original.id).length"
                   label="财政票据"
                   color="info"
                   variant="subtle"
@@ -480,6 +599,11 @@ function openReversal() {
               没有符合条件的捐赠记录。
             </div>
           </div>
+          <div v-if="connected && (connection.page > 1 || (connection.documents.data?.length ?? 0) >= 50)" class="flex items-center gap-2">
+            <UButton label="上一页" variant="outline" size="sm" :disabled="connection.page === 1" @click="connection.page--" />
+            <span class="text-xs text-muted">交易单据第 {{ connection.page }} 页</span>
+            <UButton label="下一页" variant="outline" size="sm" :disabled="(connection.documents.data?.length ?? 0) < 50" @click="connection.page++" />
+          </div>
         </div>
       </template>
     </UDashboardPanel>
@@ -492,19 +616,21 @@ function openReversal() {
               捐赠详情
             </p>
             <p v-if="selected" class="mt-0.5 truncate text-xs text-muted">
-              {{ selected.id }} · {{ selected.donorName }}
+              {{ selected.number ?? selected.id }} · {{ selected.donorName }}
             </p>
           </div>
           <UBadge
             v-if="selected"
-            :label="donationStatusLabels[selected.status]"
-            :color="donationStatusColors[selected.status]"
+            :label="statusLabel(selected)"
+            :color="statusColor(selected)"
             variant="subtle"
             size="sm"
           />
         </div>
       </template>
       <template #body>
+        <FinanceTreasurySubmission v-if="connected" :write="connection.write" :check="connection.check" :retry="connection.retry"
+          :error="connection.detail.problem || connection.receipt.problem || connection.tickets.problem || connection.donor.problem" />
         <div v-if="selected" class="space-y-4" data-testid="donation-detail">
           <UAlert
             v-if="detailError"
@@ -582,11 +708,12 @@ function openReversal() {
                 <p class="text-sm font-medium text-highlighted">
                   待独立复核
                 </p><p class="mt-0.5 text-xs text-muted">
-                  当前身份 {{ actor.label }}；制单人 {{ selected.makerName }} 不能复核自己的捐赠单。
+                  {{ connected ? '由另一位具有财务复核权限的成员过账。' : '当前身份 ' + actor.label + '，制单人不能复核自己的捐赠单。' }}
                 </p>
               </div>
               <div class="flex gap-2">
                 <UButton
+                  v-if="!connected"
                   label="退回修改"
                   color="neutral"
                   variant="outline"
@@ -600,7 +727,7 @@ function openReversal() {
                   icon="i-carbon-checkmark"
                   color="success"
                   size="sm"
-                  :disabled="!canReview"
+                  :disabled="!canReview || (connected && connection.write.blocked)"
                   data-testid="donation-review-approve"
                   @click="approveDonation"
                 />
@@ -628,7 +755,9 @@ function openReversal() {
                 复核过账后生成
               </p>
               <div class="mt-3 flex flex-wrap gap-2">
-                <UButton
+                <UButton v-if="connected && connection.receipt.data" label="下载普通收据 PDF" icon="i-carbon-document" size="sm"
+                  variant="outline" :href="connection.receiptPdf" external data-testid="donation-receipt-open" />
+                <UButton v-else-if="!connected"
                   label="预览演示收据"
                   icon="i-carbon-document"
                   size="sm"
@@ -647,7 +776,7 @@ function openReversal() {
                 />
               </div>
               <p class="mt-2 text-[11px] text-muted">
-                本工作区不支持法定捐赠票据签发，演示收据不具备税前扣除效力。
+                {{ connected ? '普通捐赠收据由系统在过账后生成。' : '演示收据仅用于预览。' }}
               </p>
             </div>
 
@@ -676,11 +805,19 @@ function openReversal() {
                 <p class="mt-0.5 text-muted">
                   {{ ticketTypeLabel(ticket.type) }} · 开具 {{ ticket.issuedOn }} · 关联 {{ ticket.linkedAt }}
                 </p>
+                <UButton v-if="connected" label="查看票据详情" size="xs" variant="link" data-testid="donation-ticket-open"
+                  @click="selectedTicketId = ticket.id" />
               </div>
-              <p v-if="!store.statutoryReceiptAvailable" class="mt-2 text-[11px] text-muted" data-testid="donation-ticket-capability">
-                能力样例：法定财政票据不可签发，仅登记外部已开具票据。
+              <p v-if="connection.ticket.data" class="mt-2 break-all text-xs" data-testid="donation-ticket-detail">
+                {{ connection.ticket.data.code }} / {{ connection.ticket.data.number }} · 票据 ID {{ connection.ticket.data.id }}
               </p>
-              <div v-if="selected.status === 'posted' && !selected.reversalOf && selectedTickets.length === 0" class="mt-3 space-y-2">
+              <p v-if="connection.ticket.problem" class="mt-2 text-xs text-error">{{ connection.ticket.problem }}</p>
+              <p v-if="connected ? connection.capabilities.data?.statutoryDonationReceipt === false : !store.statutoryReceiptAvailable"
+                class="mt-2 text-[11px] text-muted" data-testid="donation-ticket-capability">
+                当前仅支持登记外部已开具的财政票据。
+              </p>
+              <div v-if="selected.status === 'posted' && !selected.reversalOf && selectedTickets.length === 0
+                && (!connected || (connection.canApprove && connection.tickets.data))" class="mt-3 space-y-2">
                 <UAlert
                   v-if="ticketError"
                   color="error"
@@ -715,6 +852,7 @@ function openReversal() {
                   color="neutral"
                   variant="outline"
                   data-testid="donation-ticket-link"
+                  :disabled="connected && connection.write.blocked"
                   @click="linkTicket"
                 />
               </div>
@@ -726,7 +864,14 @@ function openReversal() {
               <p class="text-xs font-medium text-muted">
                 资金流水
               </p>
-              <template v-if="selected.fundFlow">
+              <template v-if="connected && selected.journalId && selected.fundAccountId">
+                <p class="mt-2 text-sm" data-testid="donation-fund-flow">{{ selected.fundAccountName }}</p>
+                <ULink :to="{ path: '/finance', query: { tab: 'treasury', bank: selected.fundAccountId, document: selected.id } }"
+                  class="mt-2 inline-flex items-center gap-1 text-xs text-primary" data-testid="donation-fund-link">
+                  查看资金流水 <UIcon name="i-carbon-arrow-up-right" class="size-3" />
+                </ULink>
+              </template>
+              <template v-else-if="selected.fundFlow">
                 <p class="mt-2 text-sm" data-testid="donation-fund-flow">
                   {{ selected.fundFlow.id }} · {{ selected.fundFlow.accountName }}
                 </p>
@@ -753,7 +898,7 @@ function openReversal() {
               </p>
               <ULink
                 v-if="selected.journalId"
-                to="/finance?tab=journals"
+                :to="connected ? { path: '/finance', query: { tab: 'journals', journal: selected.journalId } } : '/finance?tab=journals'"
                 class="mt-2 inline-flex items-center gap-1 text-xs text-primary"
                 data-testid="donation-journal-link"
               >
@@ -763,7 +908,7 @@ function openReversal() {
           </div>
 
           <UAlert
-            v-if="selected.status === 'reversed'"
+            v-if="!connected && selected.status === 'reversed'"
             color="warning"
             variant="soft"
             icon="i-carbon-undo"
@@ -782,6 +927,8 @@ function openReversal() {
               />
             </template>
           </UAlert>
+          <UButton v-if="connected && selected.reversalId" label="查看冲销单" size="sm" variant="outline"
+            :to="{ path: '/finance', query: { tab: 'treasury', bank: selected.fundAccountId, document: selected.reversalId } }" />
           <UAlert
             v-if="selected.reversalOf"
             color="neutral"
@@ -803,7 +950,7 @@ function openReversal() {
             </template>
           </UAlert>
 
-          <UDashboardPanel>
+          <UDashboardPanel v-if="!connected || (selected.journalId && connection.canApprove)">
             <template #header>
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -815,8 +962,8 @@ function openReversal() {
                   </p>
                 </div>
                 <UBadge
-                  :label="store.channel.status === 'active' ? '演示通道已启用' : '演示通道已停用'"
-                  :color="store.channel.status === 'active' ? 'success' : 'warning'"
+                  :label="connected ? liveMailLabel : store.channel.status === 'active' ? '演示通道已启用' : '演示通道已停用'"
+                  :color="(connected ? connection.mailReady : store.channel.status === 'active') ? 'success' : 'warning'"
                   variant="subtle"
                   size="sm"
                   data-testid="donation-channel-state"
@@ -826,7 +973,7 @@ function openReversal() {
             <template #body>
               <div class="space-y-3">
                 <UAlert
-                  v-if="store.channel.status === 'disabled'"
+                  v-if="!connected && store.channel.status === 'disabled'"
                   color="warning"
                   variant="soft"
                   icon="i-carbon-email"
@@ -847,7 +994,9 @@ function openReversal() {
                 </UAlert>
                 <div class="flex flex-wrap items-end gap-2">
                   <UFormField label="收件人" class="min-w-[260px] flex-1">
-                    <UInput
+                    <USelect v-if="connected" v-model="mailRecipient" :items="liveContacts" placeholder="选择捐赠人档案邮箱"
+                      class="w-full" data-testid="donation-mail-recipient" />
+                    <UInput v-else
                       v-model="mailRecipient"
                       placeholder="捐赠人档案联系人邮箱"
                       data-testid="donation-mail-recipient"
@@ -857,19 +1006,20 @@ function openReversal() {
                     label="发送普通收据"
                     icon="i-carbon-email"
                     size="sm"
-                    :disabled="selected.status !== 'posted'"
+                    :disabled="selected.status !== 'posted' || (connected && (!connection.mailReady || !mailRecipient || connection.write.blocked))"
                     data-testid="donation-mail-send"
                     @click="sendReceipt"
                   />
+                  <UButton v-if="connected" label="刷新投递" size="sm" variant="outline" :loading="connection.dispatches.loading" @click="connection.refreshDispatches()" />
                 </div>
-                <p v-if="selectedDonor" class="text-[11px] text-muted">
+                <p v-if="!connected && selectedDonor" class="text-[11px] text-muted">
                   档案联系人 {{ selectedDonor.contact }} · {{ selectedDonor.email }}
                 </p>
                 <UAlert
-                  v-if="mailError"
+                  v-if="mailError || connection.dispatches.problem"
                   color="error"
                   variant="soft"
-                  :title="mailError"
+                  :title="mailError || connection.dispatches.problem"
                   data-testid="donation-mail-error"
                 />
                 <div class="rounded-sm border border-default">
@@ -930,7 +1080,7 @@ function openReversal() {
               data-testid="donation-detail-close"
               @click="detailOpen = false"
             />
-            <span class="text-[11px] text-muted">当前身份 {{ actor.label }}</span>
+            <span v-if="!connected" class="text-[11px] text-muted">当前身份 {{ actor.label }}</span>
           </div>
           <div class="flex items-center gap-2">
             <UButton
@@ -942,8 +1092,11 @@ function openReversal() {
               disabled
               data-testid="donation-self-review-hint"
             />
+            <UButton v-if="connected && liveDocument?.state === 'submitted' && liveDocument.isMaker"
+              label="取消本人申请" variant="outline" :disabled="connection.write.blocked"
+              data-testid="donation-cancel" @click="connection.decide(liveDocument, 'cancel')" />
             <UButton
-              v-if="selected?.status === 'posted' && !selected.reversalOf"
+              v-if="!connected && selected?.status === 'posted' && !selected.reversalOf"
               label="作废捐赠单"
               icon="i-carbon-close-outline"
               color="error"
@@ -970,6 +1123,7 @@ function openReversal() {
       </template>
       <template #body>
         <div class="space-y-4" data-testid="donation-form">
+          <FinanceTreasurySubmission v-if="connected && connection.write.submission.record" :write="connection.write" :check="connection.check" :retry="connection.retry" />
           <UAlert
             v-if="formError"
             color="error"
@@ -982,10 +1136,13 @@ function openReversal() {
             <UFormField label="捐赠人" required>
               <USelect
                 v-model="formDonorId"
-                :items="store.donorOptions"
+                :items="donorOptions"
                 class="w-full"
                 data-testid="donation-form-donor"
               />
+            </UFormField>
+            <UFormField v-if="connected" label="捐赠单号" required>
+              <UInput v-model="formNumber" :maxlength="60" class="w-full" data-testid="donation-form-number" />
             </UFormField>
             <UFormField label="捐赠日期" required>
               <UInput
@@ -1006,9 +1163,8 @@ function openReversal() {
             <UFormField label="金额" required>
               <UInput
                 v-model="formAmount"
-                type="number"
-                step="0.01"
-                min="0"
+                :type="connected ? 'text' : 'number'"
+                inputmode="decimal"
                 class="w-full text-right"
                 data-testid="donation-form-amount"
               />
@@ -1043,7 +1199,7 @@ function openReversal() {
             variant="soft"
             icon="i-carbon-information"
             title="复核与收据"
-            description="保存草稿后可稍后提交；提交后必须切换到陈立（财务负责人）复核。过账时生成普通收据号、资金流水和记账凭证。"
+            :description="connected ? '提交后由另一位有权限的成员复核。过账生成普通收据、资金流水和凭证。' : '保存草稿后可稍后提交。提交后切换到陈立复核。'"
           />
         </div>
       </template>
@@ -1057,6 +1213,7 @@ function openReversal() {
             @click="formOpen = false"
           />
           <UButton
+            v-if="!connected"
             label="保存草稿"
             color="neutral"
             variant="outline"
@@ -1066,6 +1223,7 @@ function openReversal() {
           <UButton
             label="提交复核"
             icon="i-carbon-send-alt"
+            :disabled="connected && (!connection.canSubmit || connection.write.blocked)"
             data-testid="donation-form-submit"
             @click="saveDonation(true)"
           />
@@ -1176,6 +1334,8 @@ function openReversal() {
         </div>
       </template>
       <template #body>
+        <FinanceTreasurySubmission v-if="connected" :write="connection.write" :check="connection.check" :retry="connection.retry"
+          :error="connection.dispatch.problem || dispatchError" />
         <div v-if="selectedDispatch" class="space-y-3" data-testid="donation-dispatch-detail">
           <UAlert
             v-if="dispatchError"
@@ -1242,6 +1402,7 @@ function openReversal() {
               icon="i-carbon-restart"
               size="sm"
               data-testid="donation-dispatch-retry"
+              :disabled="connected && (connection.write.blocked || !connection.mailReady || selected?.status === 'reversed')"
               @click="dispatchDecision('retry')"
             />
             <UButton
@@ -1251,18 +1412,19 @@ function openReversal() {
               size="sm"
               color="neutral"
               variant="outline"
-              :disabled="Boolean(selectedDispatch.resentAsId)"
+              :disabled="Boolean(selectedDispatch.resentAsId) || (connected && (connection.write.blocked || !connection.mailReady || selected?.status === 'reversed'))"
               data-testid="donation-dispatch-resend"
               @click="dispatchDecision('resend')"
             />
             <UButton
-              v-if="['queued', 'sending', 'failed', 'unknown'].includes(selectedDispatch.state)"
+              v-if="(connected ? ['queued', 'failed', 'unknown'] : ['queued', 'sending', 'failed', 'unknown']).includes(selectedDispatch.state)"
               label="放弃本次投递"
               icon="i-carbon-close-outline"
               size="sm"
               color="error"
               variant="outline"
               data-testid="donation-dispatch-abandon"
+              :disabled="connected && (connection.write.blocked || Boolean(selectedDispatch.resentAsId))"
               @click="dispatchDecision('abandon')"
             />
           </div>
@@ -1282,6 +1444,7 @@ function openReversal() {
     </UModal>
 
     <PrintPreviewSlideover
+      v-if="!connected"
       v-model:open="printOpen"
       title="普通捐赠收据（演示样张）"
       alert-description="本页为纯前端演示样张，不具备法定财政票据或税前扣除凭证效力。"

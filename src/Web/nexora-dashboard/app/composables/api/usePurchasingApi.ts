@@ -11,7 +11,7 @@ export function usePurchasingApi() {
     return api.createWrite<T>(path, body, { method, idempotent: true, parse: value => schema.parse(value) })
   }
   return {
-    list: async (id: string, page = 1, signal?: AbortSignal) => purchaseListSchema.parse((await api.get(`${root(id)}?page=${page}&pageSize=20`, { signal })).data),
+    list: async (id: string, page = 1, signal?: AbortSignal, pageSize = 20) => purchaseListSchema.parse((await api.get(`${root(id)}?page=${page}&pageSize=${pageSize}`, { signal })).data),
     detail: async (id: string, orderId: string) => purchaseDetailSchema.parse((await api.get(`${root(id)}/${orderId}`)).data),
     create: (id: string, input: PurchaseInput) => write(root(id), input, changeSchema),
     edit: (id: string, orderId: string, version: WireWorkspace['version'], input: PurchaseInput) => write(`${root(id)}/${orderId}`, { expectedVersion: version, draft: input.draft }, changeSchema, 'PUT'),

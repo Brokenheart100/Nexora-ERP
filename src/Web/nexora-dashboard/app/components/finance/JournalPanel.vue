@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { FinanceAccount, JournalEntry, JournalLine } from '~/mocks'
 import { journalStatusColors, journalStatusLabels } from '~/mocks'
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
 
 function money(value: string | number) {
   return formatMoney(Number(value))
@@ -11,6 +12,7 @@ const props = defineProps<{
   journals: JournalEntry[]
   accounts: FinanceAccount[]
   canPost: boolean
+  live?: AccountingBookConnection
 }>()
 
 const emit = defineEmits<{
@@ -215,7 +217,8 @@ function postSelected() {
 </script>
 
 <template>
-  <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }" data-testid="journal-panel">
+  <FinanceLedgerJournals v-if="live" :live="live" />
+  <UCard v-else class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }" data-testid="journal-panel">
     <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>

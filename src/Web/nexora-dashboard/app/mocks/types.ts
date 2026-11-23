@@ -332,6 +332,7 @@ export interface DemoSession {
 export type InvoiceStatus = 'draft' | 'issued' | 'paid' | 'overdue' | 'cancelled'
 export interface Invoice {
   id: string
+  documentNumber?: string
   workspaceId: string
   customerName: string
   status: InvoiceStatus
@@ -539,7 +540,7 @@ export interface Partner {
   contacts?: PartnerContact[]
 }
 
-export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired'
+export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted' | 'cancelled'
 export interface QuoteLine {
   lineNo: number
   sku: string
@@ -551,6 +552,7 @@ export interface QuoteLine {
 }
 export interface Quote {
   id: string
+  documentNumber?: string
   workspaceId: string
   customerName: string
   status: QuoteStatus
@@ -562,6 +564,7 @@ export interface Quote {
   sentAt?: string
   /** 已转换的销售单号（B5 演示）。 */
   convertedOrderId?: string
+  convertedOrderNumber?: string
   updatedAt: string
 }
 
@@ -577,6 +580,7 @@ export interface SalesOrderLine {
 }
 export interface SalesOrder {
   id: string
+  documentNumber?: string
   workspaceId: string
   customerName: string
   status: SalesOrderStatus

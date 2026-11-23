@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { z } from 'zod'
+import { compareDecimal, subtractDecimal } from '#shared/utils/decimal'
+import type { TradeDocument } from '#shared/types/trade'
+import type { StatementLine } from '#shared/types/treasury'
+import { useTreasuryConnection } from '~/composables/finance/useTreasuryConnection'
+import { displayDecimal } from '~/utils/api/decimal-display'
+import { localBusinessDate, tradeKindLabels, treasuryAmount } from '~/utils/finance/treasury'
 import type {
   TreasuryAccountKind,
   TreasuryFlow,
@@ -30,40 +37,61 @@ import {
 } from '~/mocks/treasury'
 import type { TreasuryFlowInput } from '~/stores/treasury'
 
-defineProps<{ canPost: boolean }>()
+defineProps<{ canPost: boolean, bankOnly?: boolean }>()
 
 const store = useTreasuryStore()
 const { actorOptions, actorRole, actor, setActorRole } = useDemoActor()
+const connection = useTreasuryConnection()
+const connected = computed(() => connection.home.connected)
+const statementPanel = useTemplateRef<{ refresh: () => Promise<void> }>('statementPanel')
+const importPanel = useTemplateRef<{ refresh: () => Promise<void> }>('importPanel')
+const reconciliationPanel = useTemplateRef<{ refresh: () => Promise<void> }>('reconciliationPanel')
+const route = useRoute()
+const liveFlowKinds: Record<string, number> = {
+  'other-income': 4, 'expense': 3, 'transfer': 5, 'owner-contribution': 11, 'owner-withdrawal': 12, 'payment': 2
+}
+type FlowRow = Omit<TreasuryFlow, 'amount' | 'status'> & { amount: string | number, status: TreasuryFlow['status'] | 'cancelled', document?: TradeDocument }
 
 function money(value: number | string): string {
-  return formatMoney(Number(value))
+  return connected.value ? displayDecimal(String(value), connection.minorUnits) : formatMoney(Number(value))
 }
 
-function signedMoney(value: number): string {
-  const prefix = value > 0 ? '+' : value < 0 ? '-' : ''
-  return prefix + formatMoney(Math.abs(value))
+function signedMoney(value: number | string): string {
+  const sign = compareDecimal(String(value), '0')
+  return (sign > 0 ? '+' : sign < 0 ? '-' : '') + money(String(value).replace(/^-/, ''))
 }
 
 function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
-const accountOptions = computed(() => store.accounts.map(account => ({
+const accountOptions = computed(() => connected.value ? connection.bankOptions : store.accounts.map(account => ({
   label: account.name + ' · ' + account.accountNo,
   value: account.id
 })))
 
-const defaultAccountId = computed(() => store.accounts.find(account => account.isDefault)?.id ?? store.accounts[0]?.id ?? '')
+const defaultAccountId = computed(() => connected.value ? connection.bankId : store.accounts.find(account => account.isDefault)?.id ?? store.accounts[0]?.id ?? '')
+const shownAccounts = computed(() => connected.value ? connection.accounts.map(account => ({
+  ...account, accountNo: account.code, kind: account.kind === 'cash' ? 'cash' as const : 'bank' as const,
+  ledger: connection.chart.data?.accounts.find(row => row.id === account.accountId)?.code ?? account.accountId
+})) : store.accounts.map(account => ({ ...account, ledger: treasuryLedgerLabels[account.ledgerCode] })))
+const accountName = (id: string) => connected.value ? connection.accounts.find(row => row.id === id)?.name ?? (id || '—') : store.accountName(id)
 
 const accountKindOptions: Array<{ label: string, value: string }> = [
   { label: treasuryAccountKindLabels.bank, value: 'bank' },
   { label: treasuryAccountKindLabels.cash, value: 'cash' }
 ]
 
-const ledgerOptions: Array<{ label: string, value: string }> = [
+const demoLedgerOptions: Array<{ label: string, value: string }> = [
   { label: '1002 · 银行存款', value: '1002' },
   { label: '1001 · 库存现金', value: '1001' }
 ]
+const ledgerOptions = computed(() => connected.value
+  ? (connection.chart.data?.accounts ?? []).filter(account => account.category.toLowerCase() === 'asset'
+    && account.purpose.toLowerCase() === 'control' && !account.isArchived && !account.isUsed
+    && !connection.accounts.some(bank => bank.accountId === account.id))
+    .map(account => ({ label: account.code + ' · ' + account.name, value: account.id }))
+  : demoLedgerOptions)
 
 const flowTypeOptions: Array<{ label: string, value: string }> = [
   { label: treasuryFlowTypeLabels['other-income'], value: 'other-income' },
@@ -93,7 +121,7 @@ const accountForm = reactive({
 })
 
 watch(() => accountForm.kind, (kind) => {
-  accountForm.ledgerCode = kind === 'cash' ? '1001' : '1002'
+  if (!connected.value) accountForm.ledgerCode = kind === 'cash' ? '1001' : '1002'
 })
 
 function openAccountCreate() {
@@ -101,12 +129,25 @@ function openAccountCreate() {
   accountForm.kind = 'bank'
   accountForm.name = ''
   accountForm.accountNo = ''
-  accountForm.ledgerCode = '1002'
+  accountForm.ledgerCode = connected.value ? '' : '1002'
   accountForm.isDefault = false
   accountOpen.value = true
 }
 
-function saveAccount() {
+async function saveAccount() {
+  if (connected.value) {
+    if (!connection.canConfigure || connection.write.blocked) return
+    const { accountNo, name, kind, ledgerCode } = accountForm
+    if (!accountNo.trim() || !name.trim() || !ledgerOptions.value.some(item => item.value === ledgerCode)) {
+      accountError.value = '请填写账户编码、名称并选择可用的资产控制科目。'
+      return
+    }
+    if (await connection.send('bank.create', '/banks', { code: accountNo.trim(), name: name.trim(), kind, accountId: ledgerCode })) {
+      if (connection.write.submission.result) connection.bank = connection.write.submission.result.id
+      accountOpen.value = false
+    } else accountError.value = connection.write.submission.message
+    return
+  }
   const result = store.createAccount({
     kind: accountForm.kind as TreasuryAccountKind,
     name: accountForm.name,
@@ -121,7 +162,13 @@ function saveAccount() {
   accountOpen.value = false
 }
 
-function setDefaultAccount(id: string) {
+async function setDefaultAccount(id: string) {
+  if (connected.value) {
+    if (!connection.canConfigure || connection.write.blocked) return
+    const bank = connection.accounts.find(row => row.id === id)
+    if (bank) await connection.send('bank.default', `/banks/${id}/default`, { expectedVersion: bank.version }, id)
+    return
+  }
   store.setDefaultAccount(id)
 }
 
@@ -131,6 +178,7 @@ const flowOpen = ref(false)
 const flowError = ref('')
 const flowActionError = ref('')
 const editingFlowId = ref<string | null>(null)
+const statementSource = shallowRef<StatementLine | null>(null)
 const flowForm = reactive({
   type: 'other-income',
   date: '2026-11-30',
@@ -138,8 +186,22 @@ const flowForm = reactive({
   counterparty: '',
   summary: '',
   sourceAccountId: '',
-  targetAccountId: ''
+  targetAccountId: '',
+  number: '',
+  counterAccountId: '',
+  billId: ''
 })
+const visibleFlowTypes = computed(() => connected.value && statementSource.value
+  ? [...flowTypeOptions, { label: '供应商付款', value: 'payment' }].filter(row => row.value === flowForm.type)
+  : flowTypeOptions)
+const counterOptions = computed(() => {
+  const category = flowForm.type === 'other-income' ? 'income' : flowForm.type === 'expense' ? 'expense' : 'equity'
+  return (connection.chart.data?.accounts ?? []).filter(row => !row.isArchived && row.category.toLowerCase() === category
+    && row.purpose.toLowerCase() === 'posting').map(row => ({ label: row.code + ' · ' + row.name, value: row.id }))
+})
+const billOptions = computed(() => (connection.bills.data ?? []).filter(bill => compareDecimal(bill.outstanding, '0') > 0)
+  .map(bill => ({ label: bill.terms.number + ' · 未结 ' + money(bill.outstanding), value: bill.id })))
+watch(() => flowForm.type, () => { flowForm.counterAccountId = ''; flowForm.billId = '' })
 
 const flowFormDirection = computed<'in' | 'out'>(() => {
   return treasuryFlowTypeDirections[flowForm.type as TreasuryFlowType] ?? 'out'
@@ -150,21 +212,34 @@ function openFlowCreate() {
   flowError.value = ''
   flowActionError.value = ''
   flowForm.type = 'other-income'
-  flowForm.date = '2026-11-30'
+  statementSource.value = null
+  flowForm.date = connected.value ? localBusinessDate() : '2026-11-30'
   flowForm.amount = ''
   flowForm.counterparty = ''
   flowForm.summary = ''
   flowForm.sourceAccountId = defaultAccountId.value
-  flowForm.targetAccountId = store.accounts[1]?.id ?? defaultAccountId.value
+  flowForm.targetAccountId = connected.value ? defaultAccountId.value : store.accounts[1]?.id ?? defaultAccountId.value
+  flowForm.number = flowForm.counterAccountId = flowForm.billId = ''
   flowOpen.value = true
 }
 
-function openFlowEdit(flow: TreasuryFlow) {
+function openStatementFlow(row: StatementLine, type: 'other-income' | 'expense' | 'payment') {
+  if (!connection.canSubmit || connection.write.blocked) return
+  openFlowCreate()
+  statementSource.value = row
+  flowForm.type = type
+  flowForm.date = row.on
+  flowForm.amount = subtractDecimal(row.amount.replace(/^-/, ''), row.matched)
+  flowForm.summary = row.description
+  flowForm.sourceAccountId = flowForm.targetAccountId = row.bankId
+}
+
+function openFlowEdit(flow: FlowRow) {
   editingFlowId.value = flow.id
   flowError.value = ''
   flowForm.type = flow.type
   flowForm.date = flow.date
-  flowForm.amount = flow.amount.toFixed(2)
+  flowForm.amount = Number(flow.amount).toFixed(2)
   flowForm.counterparty = flow.counterparty
   flowForm.summary = flow.summary
   const partner = flow.transferGroupId
@@ -188,7 +263,30 @@ function openFlowEdit(flow: TreasuryFlow) {
   flowOpen.value = true
 }
 
-function saveFlow() {
+async function saveFlow() {
+  if (connected.value) {
+    if (!connection.canSubmit || connection.write.blocked) return
+    flowError.value = ''
+    try {
+      const kind = liveFlowKinds[flowForm.type]
+      const bankId = flowFormDirection.value === 'in' ? flowForm.targetAccountId : flowForm.sourceAccountId
+      const counterAccountId = flowForm.counterAccountId || null
+      const otherBankId = kind === 5 ? flowForm.targetAccountId : null
+      const sourceId = kind === 2 && flowForm.billId ? flowForm.billId : null
+      const number = flowForm.number.trim()
+      const memo = flowForm.summary.trim()
+      if (!kind || !z.iso.date().safeParse(flowForm.date).success || !number || number.length > 60 || !memo || memo.length > 300 || !bankId
+        || (kind === 5 ? !otherBankId || otherBankId === bankId : kind === 2 ? !sourceId : !counterAccountId))
+        throw new Error('请填写流水单号、业务日期、摘要，并选择所需账户或账单。资金划转需要两个不同账户。')
+      const terms = { kind, on: flowForm.date, number, memo, bankId, otherBankId, counterAccountId, sourceId,
+        statementLineId: statementSource.value?.id ?? null, quantity: '0', amount: treasuryAmount(String(flowForm.amount), connection.minorUnits) }
+      if (await connection.send('trade.submit', '/documents', { terms })) {
+        flowOpen.value = false
+        if (connection.write.submission.result) connection.documentPage = 1
+      } else flowError.value = connection.write.submission.message
+    } catch (failure) { flowError.value = failure instanceof Error ? failure.message : '无法提交资金流水。' }
+    return
+  }
   const input: TreasuryFlowInput = {
     type: flowForm.type as TreasuryFlowType,
     date: flowForm.date,
@@ -208,17 +306,21 @@ function saveFlow() {
   flowOpen.value = false
 }
 
-function submitFlow(flow: TreasuryFlow) {
+function submitFlow(flow: FlowRow) {
   const result = store.submitFlow(flow.id, actor.value.name)
   flowActionError.value = result.ok ? '' : result.message
 }
 
-function removeFlow(flow: TreasuryFlow) {
+function removeFlow(flow: FlowRow) {
   const result = store.removeFlow(flow.id)
   flowActionError.value = result.ok ? '' : result.message
 }
 
-function approveFlow(flow: TreasuryFlow) {
+async function approveFlow(flow: FlowRow) {
+  if (flow.document) {
+    if (await connection.decide(flow.document, 'approve')) await statementPanel.value?.refresh()
+    return
+  }
   const result = store.approveFlow(flow.id, actor.value.name)
   flowActionError.value = result.ok ? '' : result.message
 }
@@ -228,7 +330,7 @@ const rejectFlowId = ref('')
 const rejectReason = ref('')
 const rejectError = ref('')
 
-function openReject(flow: TreasuryFlow) {
+function openReject(flow: FlowRow) {
   rejectFlowId.value = flow.id
   rejectReason.value = ''
   rejectError.value = ''
@@ -248,15 +350,32 @@ const voidOpen = ref(false)
 const voidFlowId = ref('')
 const voidReason = ref('')
 const voidError = ref('')
+const voidNumber = ref('')
+const voidDate = ref('')
 
-function openVoid(flow: TreasuryFlow) {
+function openVoid(flow: FlowRow) {
   voidFlowId.value = flow.id
   voidReason.value = ''
   voidError.value = ''
+  voidNumber.value = ''
+  voidDate.value = localBusinessDate()
   voidOpen.value = true
 }
 
-function confirmVoid() {
+async function confirmVoid() {
+  if (connected.value) {
+    if (!connection.canSubmit || connection.write.blocked) return
+    const number = voidNumber.value.trim()
+    const memo = voidReason.value.trim()
+    if (!number || number.length > 60 || !memo || memo.length > 300 || !z.iso.date().safeParse(voidDate.value).success) {
+      voidError.value = '请填写作废单号、日期和原因。'
+      return
+    }
+    if (await connection.send('trade.void', '/documents', { terms: { kind: 7, on: voidDate.value, number, memo, amount: '0', quantity: '0', sourceId: voidFlowId.value } }, voidFlowId.value))
+      voidOpen.value = false
+    else voidError.value = connection.write.submission.message
+    return
+  }
   const result = store.voidFlow(voidFlowId.value, actor.value.name, voidReason.value)
   if (!result.ok) {
     voidError.value = result.message
@@ -268,7 +387,26 @@ function confirmVoid() {
 const detailOpen = ref(false)
 const detailFlowId = ref('')
 
-const detailFlow = computed(() => (detailFlowId.value ? store.flowMap.get(detailFlowId.value) ?? null : null))
+function liveFlow(document: TradeDocument): FlowRow {
+  const terms = document.terms
+  const out = [2, 3, 5, 12].includes(terms.kind)
+  const postedAmount = document.state === 'posted' ? document.total : terms.amount
+  return {
+    id: document.id, type: 'other-income', date: terms.on, amount: out ? '-' + postedAmount : postedAmount,
+    direction: out ? 'out' : 'in', accountId: terms.bankId ?? '', counterparty: terms.number, summary: terms.memo,
+    status: document.reversedById ? 'voided' : document.state === 'posted' ? 'posted' : document.state === 'cancelled' ? 'cancelled' : 'submitted',
+    maker: document.isMaker ? '当前用户' : '其他制单人', createdAt: terms.on, voucherNo: document.journalId ?? undefined, document
+  }
+}
+const flowRows = computed<FlowRow[]>(() => connected.value
+  ? (connection.documents.data ?? []).filter(value => ![1, 9].includes(value.terms.kind)).map(liveFlow) : store.flows)
+const typeLabel = (row: FlowRow) => row.document ? tradeKindLabels[row.document.terms.kind] ?? '资金交易' : treasuryFlowTypeLabels[row.type]
+const statusLabel = (row: FlowRow) => row.status === 'cancelled' ? '已取消' : treasuryFlowStatusLabels[row.status]
+const statusColor = (row: FlowRow) => row.status === 'cancelled' ? 'neutral' : treasuryFlowStatusColors[row.status]
+const displayFlow = (row: FlowRow) => row.document?.terms.kind === 7 ? money(row.amount) : signedMoney(row.amount)
+const detailFlow = computed<FlowRow | null>(() => connected.value
+  ? connection.selectedDocument.data ? liveFlow(connection.selectedDocument.data) : null
+  : store.flowMap.get(detailFlowId.value) ?? null)
 const detailTransferPartner = computed(() => {
   const flow = detailFlow.value
   if (!flow?.transferGroupId) return null
@@ -283,12 +421,28 @@ const detailReversal = computed(() => {
   return flow?.reversalFlowId ? store.flowMap.get(flow.reversalFlowId) ?? null : null
 })
 
-function openDetail(flow: TreasuryFlow) {
+function openDocument(id: string) {
+  connection.documentId = id
+  detailOpen.value = true
+}
+
+function openDetail(flow: FlowRow) {
+  if (flow.document) return openDocument(flow.id)
   detailFlowId.value = flow.id
   detailOpen.value = true
 }
 
-const flowColumns: TableColumn<TreasuryFlow>[] = [
+watch(() => [connection.home.enabled, route.query.bank, route.query.document] as const, ([enabled, bank, id]) => {
+  if (!enabled) return
+  if (typeof bank === 'string' && z.uuid().safeParse(bank).success) connection.bank = bank
+  if (typeof id === 'string' && z.uuid().safeParse(id).success) openDocument(id)
+}, { immediate: true })
+watch(() => connection.home.owner, () => {
+  accountOpen.value = flowOpen.value = detailOpen.value = voidOpen.value = false
+  statementSource.value = null
+}, { flush: 'sync' })
+
+const flowColumns: TableColumn<FlowRow>[] = [
   { id: 'id', header: '流水号', accessorKey: 'id' },
   { id: 'date', header: '日期', accessorKey: 'date' },
   { id: 'type', header: '类型' },
@@ -607,6 +761,11 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
   { id: 'maker', header: '制单人', accessorKey: 'maker' },
   { id: 'reviewer', header: '复核人' }
 ]
+defineExpose({
+  async refresh() {
+    await Promise.all([connection.refresh(), importPanel.value?.refresh(), statementPanel.value?.refresh(), reconciliationPanel.value?.refresh()])
+  }
+})
 </script>
 
 <template>
@@ -615,13 +774,13 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-sm font-semibold text-highlighted">
-            资金管理
+            {{ bankOnly ? '银行对账' : '资金管理' }}
           </h2>
           <p class="mt-0.5 text-xs text-muted">
-            银行与现金账户、资金流水、对账单导入匹配与银行对账。全部为本地演示数据，刷新后恢复种子。
+            {{ connected ? '银行与现金账户、资金流水、对账单导入与对账记录。' : '银行与现金账户、资金流水、对账单导入匹配与银行对账。全部为本地演示数据，刷新后恢复种子。' }}
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div v-if="!connected" class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-muted">演示身份</span>
           <UButton
             :label="(actorOptions[0]?.name ?? '张明远') + ' · 制单'"
@@ -657,6 +816,9 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
       </div>
     </UCard>
 
+    <FinanceTreasurySubmission v-if="connected" :write="connection.write" :check="connection.check" :retry="connection.retry"
+      :error="connection.home.problem || connection.banks.problem || connection.bankDetail.problem || connection.chart.problem || connection.documents.problem" />
+
     <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -665,14 +827,15 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
               资金账户
             </h3>
             <p class="mt-0.5 text-xs text-muted">
-              3 个银行账户与 2 个现金账户，关联 1002 银行存款 / 1001 库存现金科目。
+              {{ connected ? '选择账户查看当前余额和资金流水。' : '3 个银行账户与 2 个现金账户，关联 1002 银行存款 / 1001 库存现金科目。' }}
             </p>
           </div>
           <UButton
             label="新建账户"
             icon="i-carbon-add"
             size="xs"
-            :disabled="!canPost"
+            v-if="!bankOnly"
+            :disabled="connected ? !connection.canConfigure || connection.write.blocked : !canPost"
             data-testid="treasury-account-create"
             @click="openAccountCreate"
           />
@@ -680,9 +843,10 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
       </template>
       <div class="grid gap-3 p-3 md:grid-cols-2 xl:grid-cols-3">
         <div
-          v-for="account in store.accounts"
+          v-for="account in shownAccounts"
           :key="account.id"
-          class="rounded-sm border border-default p-3"
+          class="rounded-sm border p-3"
+          :class="connected && account.id === connection.bankId ? 'border-primary' : 'border-default'"
           :data-testid="'treasury-account-' + account.id"
         >
           <div class="flex items-start justify-between gap-2">
@@ -707,28 +871,62 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 {{ account.accountNo }}
               </p>
               <p class="mt-0.5 text-xs text-muted">
-                {{ account.id }} · 科目 {{ treasuryLedgerLabels[account.ledgerCode] }}
+                科目 {{ account.ledger }}
               </p>
             </div>
-            <UButton
-              v-if="!account.isDefault"
+            <div class="flex flex-wrap items-center gap-1">
+              <UButton v-if="connected" label="查看账户" variant="outline" size="xs"
+                :data-testid="'treasury-account-open-' + account.id" @click="connection.bank = account.id" />
+              <UButton
+              v-if="!account.isDefault && (!connected || connection.canConfigure)"
               label="设为默认"
               color="neutral"
               variant="ghost"
               size="xs"
-              :disabled="!canPost"
+              :disabled="connected ? connection.write.blocked : !canPost"
               :data-testid="'treasury-account-default-' + account.id"
               @click="setDefaultAccount(account.id)"
-            />
+              />
+            </div>
           </div>
           <p class="mt-3 text-xl font-semibold tabular-nums text-highlighted">
             {{ money(account.balance) }}
           </p>
         </div>
+        <p v-if="connected && !connection.banks.loading && !shownAccounts.length" class="text-sm text-muted">当前工作区还没有资金账户。</p>
       </div>
     </UCard>
 
-    <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
+    <UCard v-if="connected && !bankOnly && connection.bankDetail.data" class="nx-reveal rounded-sm" data-testid="treasury-account-detail">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm font-semibold">{{ connection.bankDetail.data.name }} · 账户流水</h3>
+          <UButton label="刷新账户流水" variant="outline" size="sm" :loading="connection.movements.loading" @click="connection.refresh()" />
+        </div>
+      </template>
+      <div class="space-y-2">
+        <p class="text-sm text-muted">账户编码 {{ connection.bankDetail.data.code }} · 余额 {{ money(connection.bankDetail.data.balance) }} · 版本 {{ connection.bankDetail.data.version }}</p>
+        <UAlert v-if="connection.movements.problem" color="error" variant="soft" :title="connection.movements.problem" />
+        <p v-if="!connection.movements.loading && !connection.movements.data?.length" class="text-sm text-muted">本页没有已过账资金流水。</p>
+        <div v-for="entry in connection.movements.data" :key="entry.id" class="flex flex-wrap items-center gap-2 border-t border-default py-2 text-sm"
+          :class="entry.documentId === connection.documentId ? 'bg-elevated' : ''" :data-testid="'treasury-movement-' + entry.id">
+          <span class="tabular-nums">{{ entry.on }}</span>
+          <span class="font-medium tabular-nums">{{ signedMoney(entry.amount) }}</span>
+          <span class="text-xs text-muted">已匹配 {{ money(entry.matched) }}</span>
+          <UBadge v-if="entry.voided" label="已作废" color="warning" variant="subtle" />
+          <span v-if="entry.reversesId" class="break-all text-xs text-muted">冲销原流水 {{ entry.reversesId }}</span>
+          <UButton label="来源单据" variant="link" size="xs" @click="openDocument(entry.documentId)" />
+          <UButton label="凭证" variant="link" size="xs" :to="{ path: '/finance', query: { tab: 'journals', journal: entry.journalId } }" />
+        </div>
+        <div v-if="connection.movementPage > 1 || (connection.movements.data?.length ?? 0) >= 50" class="flex items-center gap-2">
+          <UButton label="上一页" size="xs" variant="outline" :disabled="connection.movementPage === 1" @click="connection.movementPage--" />
+          <span class="text-xs text-muted">第 {{ connection.movementPage }} 页</span>
+          <UButton label="下一页" size="xs" variant="outline" :disabled="(connection.movements.data?.length ?? 0) < 50" @click="connection.movementPage++" />
+        </div>
+      </div>
+    </UCard>
+
+    <UCard v-if="!bankOnly" class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -736,14 +934,14 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
               资金流水
             </h3>
             <p class="mt-0.5 text-xs text-muted">
-              草稿提交、复核通过后自动生成凭证号并更新账户余额；已过账流水可作废并生成反向冲销。
+              {{ connected ? '制单提交后由另一位成员复核。过账生成凭证和账户流水。' : '草稿提交、复核通过后自动生成凭证号并更新账户余额；已过账流水可作废并生成反向冲销。' }}
             </p>
           </div>
           <UButton
             label="新建流水"
             icon="i-carbon-add"
             size="xs"
-            :disabled="!canPost"
+            :disabled="connected ? !connection.canSubmit || connection.write.blocked : !canPost"
             data-testid="treasury-flow-create"
             @click="openFlowCreate"
           />
@@ -759,15 +957,18 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
           data-testid="treasury-flow-action-error"
         />
         <ResizableTable
-          :data="store.flows"
+          :data="flowRows"
           :columns="flowColumns"
           :row-activate="openDetail"
           class="nx-table"
           data-testid="treasury-flow-table"
         >
+          <template #id-cell="{ row }">
+            {{ row.original.document?.terms.number ?? row.original.id }}
+          </template>
           <template #type-cell="{ row }">
             <UBadge
-              :label="treasuryFlowTypeLabels[row.original.type]"
+              :label="typeLabel(row.original)"
               color="neutral"
               variant="subtle"
               size="sm"
@@ -784,17 +985,17 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             </div>
           </template>
           <template #account-cell="{ row }">
-            <span class="text-xs text-muted">{{ store.accountName(row.original.accountId) }}</span>
+            <span class="text-xs text-muted">{{ accountName(row.original.accountId) }}</span>
           </template>
           <template #amount-cell="{ row }">
             <span class="tabular-nums" :class="row.original.direction === 'in' ? 'text-success' : 'text-error'">
-              {{ signedMoney(row.original.amount) }}
+              {{ displayFlow(row.original) }}
             </span>
           </template>
           <template #status-cell="{ row }">
             <UBadge
-              :label="treasuryFlowStatusLabels[row.original.status]"
-              :color="treasuryFlowStatusColors[row.original.status]"
+              :label="statusLabel(row.original)"
+              :color="statusColor(row.original)"
               variant="subtle"
               size="sm"
             />
@@ -803,7 +1004,9 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             <span class="text-xs text-muted">{{ row.original.maker }}</span>
           </template>
           <template #voucher-cell="{ row }">
-            <span class="font-mono text-xs text-muted">{{ row.original.voucherNo ?? '—' }}</span>
+            <UButton v-if="connected && row.original.voucherNo" label="查看凭证" variant="link" size="xs"
+              :to="{ path: '/finance', query: { tab: 'journals', journal: row.original.voucherNo } }" />
+            <span v-else class="font-mono text-xs text-muted">{{ row.original.voucherNo ?? '—' }}</span>
           </template>
           <template #actions-cell="{ row }">
             <div class="flex flex-wrap items-center justify-end gap-1">
@@ -815,7 +1018,18 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 :data-testid="'treasury-flow-detail-' + row.original.id"
                 @click.stop="openDetail(row.original)"
               />
-              <template v-if="row.original.status === 'draft'">
+              <template v-if="row.original.document">
+                <UButton v-if="row.original.status === 'submitted' && !row.original.document.isMaker && connection.canApprove"
+                  label="复核通过" size="xs" :disabled="connection.write.blocked"
+                  :data-testid="'treasury-flow-approve-' + row.original.id" @click.stop="approveFlow(row.original)" />
+                <UButton v-if="row.original.status === 'submitted' && row.original.document.isMaker && connection.canSubmit"
+                  label="取消本人申请" variant="outline" size="xs" :disabled="connection.write.blocked"
+                  @click.stop="connection.decide(row.original.document, 'cancel')" />
+                <UButton v-if="row.original.status === 'posted' && [2, 3, 4, 5, 6, 10, 11, 12].includes(row.original.document.terms.kind) && connection.canSubmit"
+                  label="申请作废" color="error" variant="ghost" size="xs" :disabled="connection.write.blocked"
+                  :data-testid="'treasury-flow-void-' + row.original.id" @click.stop="openVoid(row.original)" />
+              </template>
+              <template v-else-if="row.original.status === 'draft'">
                 <UButton
                   label="提交"
                   icon="i-carbon-send"
@@ -876,9 +1090,20 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             </div>
           </template>
         </ResizableTable>
+        <div v-if="connected && (connection.documentPage > 1 || (connection.documents.data?.length ?? 0) >= 50)" class="flex items-center gap-2">
+          <UButton label="上一页" variant="outline" size="xs" :disabled="connection.documentPage === 1" @click="connection.documentPage--" />
+          <span class="text-xs text-muted">第 {{ connection.documentPage }} 页</span>
+          <UButton label="下一页" variant="outline" size="xs" :disabled="(connection.documents.data?.length ?? 0) < 50" @click="connection.documentPage++" />
+        </div>
       </div>
     </UCard>
 
+    <template v-if="connected">
+      <FinanceTreasuryBankImport ref="importPanel" :connection="connection" @committed="statementPanel?.refresh()" />
+      <FinanceTreasuryStatement ref="statementPanel" :connection="connection" @create-flow="openStatementFlow" />
+      <FinanceTreasuryReconciliation ref="reconciliationPanel" :connection="connection" />
+    </template>
+    <template v-else>
     <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
         <div>
@@ -1420,9 +1645,12 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
       </div>
     </UCard>
 
-    <UModal v-model:open="accountOpen" title="新建资金账户" description="本地演示账户，保存后刷新页面即恢复种子数据">
+    </template>
+
+    <UModal v-model:open="accountOpen" title="新建资金账户" :description="connected ? '请选择当前工作区一个未使用的资产控制科目。' : '本地演示账户，保存后刷新页面即恢复种子数据'">
       <template #body>
         <div class="space-y-3" data-testid="treasury-account-form">
+          <FinanceTreasurySubmission v-if="connected && connection.write.submission.record" :write="connection.write" :check="connection.check" :retry="connection.retry" />
           <UAlert
             v-if="accountError"
             color="error"
@@ -1456,7 +1684,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 data-testid="treasury-account-name"
               />
             </UFormField>
-            <UFormField label="账号" required>
+            <UFormField :label="connected ? '账户编码' : '账号'" required>
               <UInput
                 v-model="accountForm.accountNo"
                 class="w-full"
@@ -1465,7 +1693,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
               />
             </UFormField>
           </div>
-          <UCheckbox v-model="accountForm.isDefault" label="设为默认资金账户" data-testid="treasury-account-default" />
+          <UCheckbox v-if="!connected" v-model="accountForm.isDefault" label="设为默认资金账户" data-testid="treasury-account-default" />
         </div>
       </template>
       <template #footer>
@@ -1479,7 +1707,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
           <UButton
             label="保存账户"
             icon="i-carbon-checkmark"
-            :disabled="!canPost"
+            :disabled="connected ? !connection.canConfigure || connection.write.blocked : !canPost"
             data-testid="treasury-account-save"
             @click="saveAccount"
           />
@@ -1494,6 +1722,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
     >
       <template #body>
         <div class="space-y-3" data-testid="treasury-flow-form">
+          <FinanceTreasurySubmission v-if="connected && connection.write.submission.record" :write="connection.write" :check="connection.check" :retry="connection.retry" />
           <UAlert
             v-if="flowError"
             color="error"
@@ -1506,7 +1735,8 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             <UFormField label="流水类型" required>
               <USelect
                 v-model="flowForm.type"
-                :items="flowTypeOptions"
+                :items="visibleFlowTypes"
+                :disabled="connected && !!statementSource"
                 class="w-full"
                 data-testid="treasury-flow-type"
               />
@@ -1515,6 +1745,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
               <UInput
                 v-model="flowForm.date"
                 type="date"
+                :disabled="connected && !!statementSource"
                 class="w-full"
                 data-testid="treasury-flow-date"
               />
@@ -1522,15 +1753,17 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             <UFormField label="金额" required>
               <UInput
                 v-model="flowForm.amount"
-                type="number"
-                step="0.01"
-                min="0"
+                :type="connected ? 'text' : 'number'"
+                inputmode="decimal"
                 class="w-full"
                 placeholder="0.00"
                 data-testid="treasury-flow-amount"
               />
             </UFormField>
-            <UFormField label="对方单位 / 个人" required>
+            <UFormField v-if="connected" label="资金单号" required>
+              <UInput v-model="flowForm.number" :maxlength="60" class="w-full" data-testid="treasury-flow-number" />
+            </UFormField>
+            <UFormField v-else label="对方单位 / 个人" required>
               <UInput
                 v-model="flowForm.counterparty"
                 class="w-full"
@@ -1546,24 +1779,40 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 data-testid="treasury-flow-summary"
               />
             </UFormField>
-            <UFormField label="源账户">
+            <UFormField v-if="!connected || flowFormDirection === 'out'" label="源账户" :required="connected">
               <USelect
                 v-model="flowForm.sourceAccountId"
                 :items="accountOptions"
+                :disabled="connected && !!statementSource"
                 class="w-full"
                 data-testid="treasury-flow-source"
               />
             </UFormField>
-            <UFormField label="目标账户">
+            <UFormField v-if="!connected || flowFormDirection === 'in' || flowForm.type === 'transfer'" label="目标账户" :required="connected">
               <USelect
                 v-model="flowForm.targetAccountId"
                 :items="accountOptions"
+                :disabled="connected && !!statementSource"
                 class="w-full"
                 data-testid="treasury-flow-target"
               />
             </UFormField>
+            <UFormField v-if="connected && flowForm.type === 'payment'" label="未结供应商账单" required>
+              <USelect v-model="flowForm.billId" :items="billOptions" class="w-full" data-testid="treasury-flow-bill" />
+              <p v-if="connection.bills.problem" class="mt-1 text-xs text-error">{{ connection.bills.problem }}</p>
+              <div v-if="connection.billPage > 1 || (connection.bills.data?.length ?? 0) >= 50" class="mt-2 flex items-center gap-2">
+                <UButton label="上一页" size="xs" variant="outline" :disabled="connection.billPage === 1" @click="connection.billPage--; flowForm.billId = ''" />
+                <UButton label="下一页" size="xs" variant="outline" :disabled="(connection.bills.data?.length ?? 0) < 50" @click="connection.billPage++; flowForm.billId = ''" />
+              </div>
+            </UFormField>
+            <UFormField v-else-if="connected && flowForm.type !== 'transfer'" label="对方科目" required>
+              <USelect v-model="flowForm.counterAccountId" :items="counterOptions" class="w-full" data-testid="treasury-flow-counter" />
+            </UFormField>
           </div>
-          <p class="text-xs text-muted">
+          <p v-if="statementSource" class="text-xs text-muted" data-testid="treasury-flow-statement-source">
+            对账单行 {{ statementSource.externalId }} · {{ statementSource.on }}。复核过账时同步匹配。
+          </p>
+          <p v-else class="text-xs text-muted">
             当前类型方向：{{ flowFormDirection === 'in' ? '资金流入' : '资金流出' }}。资金划转需选择不同的源账户与目标账户。
           </p>
         </div>
@@ -1577,9 +1826,9 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             @click="flowOpen = false"
           />
           <UButton
-            label="保存流水"
+            :label="connected ? '提交复核' : '保存流水'"
             icon="i-carbon-checkmark"
-            :disabled="!canPost"
+            :disabled="connected ? !connection.canSubmit || connection.write.blocked : !canPost"
             data-testid="treasury-flow-save"
             @click="saveFlow"
           />
@@ -1631,6 +1880,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
     <UModal v-model:open="voidOpen" title="作废已过账流水" description="作废将生成方向相反的反向流水与冲销凭证，原单保留可追溯">
       <template #body>
         <div class="space-y-3" data-testid="treasury-flow-void-form">
+          <FinanceTreasurySubmission v-if="connected && connection.write.submission.record" :write="connection.write" :check="connection.check" :retry="connection.retry" />
           <UAlert
             v-if="voidError"
             color="error"
@@ -1639,6 +1889,14 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             :title="voidError"
             data-testid="treasury-flow-void-error"
           />
+          <div v-if="connected" class="grid gap-2 sm:grid-cols-2">
+            <UFormField label="作废单号" required>
+              <UInput v-model="voidNumber" data-testid="treasury-flow-void-number" />
+            </UFormField>
+            <UFormField label="作废日期" required>
+              <UInput v-model="voidDate" type="date" data-testid="treasury-flow-void-date" />
+            </UFormField>
+          </div>
           <UFormField label="作废原因" required>
             <UTextarea
               v-model="voidReason"
@@ -1659,9 +1917,9 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
             @click="voidOpen = false"
           />
           <UButton
-            label="确认作废"
+            :label="connected ? '提交作废复核' : '确认作废'"
             color="error"
-            :disabled="!canPost"
+            :disabled="connected ? !connection.canSubmit || connection.write.blocked : !canPost"
             data-testid="treasury-flow-void-confirm"
             @click="confirmVoid"
           />
@@ -1681,19 +1939,20 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
         </div>
       </template>
       <template #body>
+        <UAlert v-if="connected && connection.selectedDocument.problem" color="error" variant="soft" :title="connection.selectedDocument.problem" />
         <div v-if="detailFlow" class="space-y-3" data-testid="treasury-flow-detail">
           <div class="flex items-center justify-between gap-2">
             <div>
               <p class="font-mono text-sm text-highlighted">
-                {{ detailFlow.id }}
+                {{ detailFlow.document?.terms.number ?? detailFlow.id }}
               </p>
               <p class="mt-0.5 text-xs text-muted">
-                {{ treasuryFlowTypeLabels[detailFlow.type] }} · {{ detailFlow.date }}
+                {{ typeLabel(detailFlow) }} · {{ detailFlow.date }}
               </p>
             </div>
             <UBadge
-              :label="treasuryFlowStatusLabels[detailFlow.status]"
-              :color="treasuryFlowStatusColors[detailFlow.status]"
+              :label="statusLabel(detailFlow)"
+              :color="statusColor(detailFlow)"
               variant="subtle"
               size="sm"
             />
@@ -1702,7 +1961,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
           <div class="flex items-center justify-between rounded-sm border border-default px-3 py-2">
             <span class="text-xs text-muted">金额</span>
             <span class="tabular-nums text-lg font-semibold" :class="detailFlow.direction === 'in' ? 'text-success' : 'text-error'">
-              {{ signedMoney(detailFlow.amount) }}
+              {{ displayFlow(detailFlow) }}
             </span>
           </div>
 
@@ -1712,7 +1971,7 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 资金账户
               </dt>
               <dd class="mt-0.5 text-highlighted">
-                {{ store.accountName(detailFlow.accountId) }}
+                {{ accountName(detailFlow.accountId) }}
               </dd>
             </div>
             <div>
@@ -1744,7 +2003,9 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 凭证号
               </dt>
               <dd class="mt-0.5 font-mono text-highlighted">
-                {{ detailFlow.voucherNo ?? '—' }}
+                <UButton v-if="connected && detailFlow.voucherNo" :label="detailFlow.voucherNo" variant="link" size="xs"
+                  :to="{ path: '/finance', query: { tab: 'journals', journal: detailFlow.voucherNo } }" />
+                <template v-else>{{ detailFlow.voucherNo ?? '—' }}</template>
               </dd>
             </div>
             <div>
@@ -1752,10 +2013,16 @@ const reconColumns: TableColumn<TreasuryReconciliationRecord>[] = [
                 划转组
               </dt>
               <dd class="mt-0.5 font-mono text-highlighted">
-                {{ detailFlow.transferGroupId ?? '—' }}
+                {{ detailFlow.document?.terms.otherBankId ? accountName(detailFlow.document.terms.otherBankId) : detailFlow.transferGroupId ?? '—' }}
               </dd>
             </div>
           </dl>
+          <div v-if="detailFlow.document" class="flex flex-wrap items-center gap-2">
+            <UButton v-if="detailFlow.document.terms.sourceId" label="查看关联原单" variant="outline" size="xs"
+              data-testid="treasury-flow-detail-original" @click="openDocument(detailFlow.document.terms.sourceId)" />
+            <UButton v-if="detailFlow.document.reversedById" label="查看作废单" variant="outline" size="xs"
+              data-testid="treasury-flow-detail-reversal" @click="openDocument(detailFlow.document.reversedById)" />
+          </div>
 
           <div v-if="detailFlow.rejectReason" class="rounded-sm border border-error/30 bg-error/5 px-3 py-2 text-xs text-error">
             拒绝原因：{{ detailFlow.rejectReason }}

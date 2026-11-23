@@ -1,119 +1,144 @@
 import { defineStore } from 'pinia'
-import type { WireAccess, WireAccount, WireEntitlements, WireSession, WireWorkspace } from '#shared/types/wire'
+import type { WireAccess, WireAccount, WireEntitlements, WireWorkspace } from '#shared/types/wire'
+import { canVisitWorkspacePage } from '~/utils/organization/navigation'
+import { useAuthSessionStore } from './authSession'
 import { useDashboardApi, useDashboardMode } from '~/composables/api/useDashboardApi'
 import { useOrganizationApi } from '~/composables/api/useOrganizationApi'
+import { useInventoryApi } from '~/composables/api/useInventoryApi'
 import { ApiFailure } from '~/utils/api/client'
 import { ScopeChangedError } from '~/utils/api/scope'
-import { useInventoryApi } from '~/composables/api/useInventoryApi'
-import type { WireWarehouses } from '#shared/types/prerequisites'
 
+/** Authorized workspace selection follows the canonical BFF identity. */
 export const useLiveSessionStore = defineStore('live-session', () => {
+  const auth = useAuthSessionStore()
   const api = useDashboardApi()
   const organization = useOrganizationApi()
-  const inventory = useInventoryApi()
+  const inventoryApi = useInventoryApi()
+  const inventoryVisible = ref(false)
   const mode = useDashboardMode()
-  const user = ref<WireSession | null>(null)
+  const nuxtApp = useNuxtApp()
+  const route = useRoute()
+  const user = computed(() => auth.user)
   const workspaces = ref<WireWorkspace[]>([])
   const activeWorkspaceId = ref('')
   const access = ref<WireAccess | null>(null)
   const account = ref<WireAccount | null>(null)
   const entitlements = ref<WireEntitlements | null>(null)
-  const denied = ref(false)
-  const inventoryDirectory = ref<WireWarehouses | null>(null)
+  const currentWorkspace = ref<WireWorkspace | null>(null)
   const ready = ref(false)
-  const loading = ref(false)
+  const listing = ref(false)
+  const selecting = ref(false)
   const error = ref('')
+  const denied = ref(false)
   const epoch = ref(0)
-  const workspace = computed(() => workspaces.value.find(item => item.id === activeWorkspaceId.value) ?? null)
+  const loading = computed(() => listing.value || selecting.value)
+  const workspace = computed(() => currentWorkspace.value)
+  let listGeneration = 0
+  let selectionGeneration = 0
 
   function invalidate() {
+    api.scope.change({ mode, subject: auth.user?.subject ?? '', workspaceId: activeWorkspaceId.value,
+      authorizationVersion: String(access.value?.authorizationVersion ?? '') })
     epoch.value++
-    api.scope.change({ mode, subject: user.value?.subject ?? '', workspaceId: activeWorkspaceId.value, authorizationVersion: String(access.value?.authorizationVersion ?? '') })
-    clearNuxtData()
+    nuxtApp.runWithContext(() => clearNuxtData(key => key.startsWith('dashboard:')))
   }
 
   function clearIdentity() {
-    user.value = null
-    account.value = null
+    listGeneration++
+    selectionGeneration++
     workspaces.value = []
     activeWorkspaceId.value = ''
     access.value = null
+    account.value = null
     entitlements.value = null
-    inventoryDirectory.value = null
+    currentWorkspace.value = null
+    inventoryVisible.value = false
     denied.value = false
+    listing.value = false
+    selecting.value = false
+    ready.value = false
+    error.value = ''
     invalidate()
   }
 
+  function failed(failure: unknown) {
+    if (failure instanceof ScopeChangedError) return
+    if (failure instanceof ApiFailure && failure.status === 401) auth.expire()
+    else error.value = failure instanceof ApiFailure ? failure.message : '工作区暂不可用，请重试。'
+  }
+
   async function selectWorkspace(id: string) {
+    const current = ++selectionGeneration
     activeWorkspaceId.value = id
     access.value = null
     entitlements.value = null
-    inventoryDirectory.value = null
+    currentWorkspace.value = null
+    inventoryVisible.value = false
     denied.value = !workspaces.value.some(item => item.id === id)
     error.value = ''
     invalidate()
-    if (denied.value) return
-    const selection = api.scope.capture()
+    if (denied.value || !auth.user) return
+    selecting.value = true
     try {
-      const [detail, permissions, billing] = await Promise.all([organization.workspace(id), organization.access(id), organization.entitlements(id)])
-      let directoryNotice = ''
-      const directory = billing.modules.includes('inventory')
-        ? await inventory.warehouses(id).catch((failure) => {
-            if (failure instanceof ScopeChangedError || (failure instanceof ApiFailure && failure.status === 401)) throw failure
-            if (!(failure instanceof ApiFailure && [403, 404].includes(failure.status))) directoryNotice = '仓库权限暂时无法核对，请刷新后重试。'
-            return null
-          })
-        : null
-      api.scope.demand(selection)
-      error.value = directoryNotice
-      workspaces.value = workspaces.value.map(item => item.id === id ? detail : item)
+      const [details, permissions, plan] = await Promise.all([organization.workspace(id), organization.access(id), organization.entitlements(id)])
+      if (current !== selectionGeneration) return
+      const warehouses = plan.modules.includes('inventory') ? await inventoryApi.warehouses(id).catch(() => null) : null
+      if (current !== selectionGeneration) return
+      inventoryVisible.value = warehouses?.warehouses.some(value => value.canReadStock || value.canReceive) === true
+      currentWorkspace.value = details
+      entitlements.value = plan
       access.value = permissions
-      entitlements.value = billing
-      inventoryDirectory.value = directory
       invalidate()
     } catch (failure) {
-      if (failure instanceof ScopeChangedError) return
-      if (failure instanceof ApiFailure && failure.status === 401) clearIdentity()
+      if (current !== selectionGeneration) return
       if (failure instanceof ApiFailure && [403, 404].includes(failure.status)) denied.value = true
-      error.value = failure instanceof Error ? failure.message : '工作区暂不可用。'
+      failed(failure)
+    } finally {
+      if (current === selectionGeneration) selecting.value = false
     }
   }
 
   async function load(requestedWorkspace?: string) {
-    loading.value = true
+    if (!auth.connected || !auth.user) return
+    const current = ++listGeneration
+    listing.value = true
     error.value = ''
     try {
-      const session = await organization.session()
-      if (user.value?.subject !== session.subject) clearIdentity()
-      user.value = session
-      invalidate()
-      workspaces.value = await organization.workspaces()
-      account.value = await organization.account()
-      const id = requestedWorkspace ?? (workspaces.value.some(item => item.id === activeWorkspaceId.value) ? activeWorkspaceId.value : workspaces.value[0]?.id)
+      const [identity, result] = await Promise.all([organization.account(), organization.workspaces()])
+      if (current !== listGeneration) return
+      account.value = identity
+      workspaces.value = result
+      const requested = requestedWorkspace ?? (typeof route.query.workspace === 'string' ? route.query.workspace : undefined)
+      const id = requested ?? (result.some(item => item.id === activeWorkspaceId.value) ? activeWorkspaceId.value : result[0]?.id)
       if (id) await selectWorkspace(id)
+      else {
+        activeWorkspaceId.value = ''
+        access.value = null
+        entitlements.value = null
+        currentWorkspace.value = null
+        inventoryVisible.value = false
+        invalidate()
+      }
     } catch (failure) {
-      if (failure instanceof ApiFailure && failure.status === 401) clearIdentity()
-      else if (!(failure instanceof ScopeChangedError)) error.value = failure instanceof Error ? failure.message : '登录状态暂不可用。'
+      if (current === listGeneration) failed(failure)
     } finally {
-      ready.value = true
-      loading.value = false
+      if (current === listGeneration) {
+        listing.value = false
+        ready.value = true
+      }
     }
   }
 
-  async function logout() {
-    const csrf = await $fetch<{ requestToken: string }>('/bff/antiforgery', { retry: 0 })
+  watch(() => auth.user?.subject ?? '', (subject) => {
     clearIdentity()
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = '/bff/logout'
-    const input = document.createElement('input')
-    input.type = 'hidden'
-    input.name = '__RequestVerificationToken'
-    input.value = csrf.requestToken
-    form.appendChild(input)
-    document.body.appendChild(form)
-    form.submit()
-  }
+    if (auth.connected && subject) void load()
+  }, { immediate: true, flush: 'sync' })
 
-  return { user, account, workspaces, workspace, activeWorkspaceId, access, entitlements, inventoryDirectory, denied, ready, loading, error, epoch, load, selectWorkspace, logout, clearIdentity }
+  watch(() => route.query.workspace, (id) => {
+    if (auth.connected && auth.user && !listing.value && typeof id === 'string' && id !== activeWorkspaceId.value) void selectWorkspace(id)
+  })
+
+  return { user, account, workspaces, workspace, activeWorkspaceId, access, entitlements, denied, ready, loading, error, epoch,
+    canVisit: (path: string) => canVisitWorkspacePage(path, access.value, entitlements.value, { warehouseVisible: inventoryVisible.value }),
+    load, selectWorkspace, clearIdentity, refreshAccess: () => selectWorkspace(activeWorkspaceId.value) }
 })

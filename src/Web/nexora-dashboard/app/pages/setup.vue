@@ -4,6 +4,9 @@ import { companyProfiles } from '~/mocks'
 import type { ChartTemplateId, SetupStepId, TaxRegimeId } from '~/stores/workspaceSetup'
 import { chartTemplateOptions, setupStepIds, taxRegimeOptions } from '~/stores/workspaceSetup'
 
+const auth = useAuthSessionStore()
+const live = useLiveSessionStore()
+
 const toast = useToast()
 const route = useRoute()
 const setup = useWorkspaceSetupStore()
@@ -167,34 +170,50 @@ onMounted(() => {
         <UDashboardNavbar title="工作区初始化" icon="i-carbon-rocket">
           <template #right>
             <div class="flex items-center gap-2">
-              <UBadge color="neutral" variant="subtle" size="sm">
-                {{ workspace.name }}
-              </UBadge>
-              <UButton
-                v-if="!setup.isComplete"
-                label="稍后继续"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                data-testid="setup-defer"
-                @click="deferSetup"
-              />
-              <UButton
-                v-else
-                to="/settings?tab=company"
-                label="返回设置"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                data-testid="setup-back-settings"
-              />
+              <UButton v-if="auth.connected && live.canVisit('/settings')"
+                       :to="{ path: '/settings', query: { tab: 'company', workspace: live.activeWorkspaceId } }"
+                       label="返回设置"
+                       color="neutral"
+                       variant="outline"
+                       size="sm" />
+              <template v-if="!auth.connected">
+                <UBadge color="neutral" variant="subtle" size="sm">
+                  {{ workspace.name }}
+                </UBadge>
+                <UButton
+                  v-if="!setup.isComplete"
+                  label="稍后继续"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  data-testid="setup-defer"
+                  @click="deferSetup"
+                />
+                <UButton
+                  v-else
+                  to="/settings?tab=company"
+                  label="返回设置"
+                  color="neutral"
+                  variant="ghost"
+                  size="sm"
+                  data-testid="setup-back-settings"
+                />
+              </template>
             </div>
           </template>
         </UDashboardNavbar>
       </template>
 
       <template #body>
-        <div class="mx-auto max-w-5xl space-y-4 p-4 sm:p-6" data-testid="setup-page">
+        <div v-if="auth.connected" class="mx-auto w-full max-w-5xl p-4 sm:p-6">
+          <USkeleton v-if="!auth.ready || live.loading" class="h-20" />
+          <SettingsLiveSetup v-else-if="live.canVisit('/setup')" />
+          <UAlert v-else
+                  color="warning"
+                  variant="subtle"
+                  :title="live.error || '请选择有权访问的企业工作区'" />
+        </div>
+        <div v-else class="mx-auto max-w-5xl space-y-4 p-4 sm:p-6" data-testid="setup-page">
           <div v-if="setup.isComplete" class="space-y-4" data-testid="setup-complete">
             <UCard :ui="{ body: 'p-5 sm:p-7' }">
               <div class="mx-auto max-w-2xl text-center">

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-const props = defineProps<{ executionId: string | null }>()
+import type { WarehouseReturnsConnection } from '~/composables/inventory/useWarehouseReturns'
+
+const props = defineProps<{ executionId: string | null, live?: WarehouseReturnsConnection }>()
+const emit = defineEmits<{ created: [id: string] }>()
 const open = defineModel<boolean>('open', { default: false })
 const stockFlow = useStockFlowStore()
 const toast = useToast()
@@ -7,6 +10,7 @@ const toast = useToast()
 const reason = ref('')
 const error = ref('')
 const quantities = ref<Record<number, number>>({})
+const liveForm = computed(() => props.live?.form)
 
 const execution = computed(() => props.executionId
   ? stockFlow.executions.find(row => row.id === props.executionId) ?? null
@@ -28,7 +32,15 @@ watch(() => [props.executionId, open.value] as const, () => {
   if (open.value) syncForm()
 })
 
-function submit() {
+async function submit() {
+  if (props.live) {
+    const result = await props.live.submit()
+    if (result) {
+      open.value = false
+      emit('created', result.id)
+    }
+    return
+  }
   if (!props.executionId) return
   const lines = views.value
     .map(line => ({ lineNo: line.lineNo, quantity: Number(quantities.value[line.lineNo] ?? 0) }))
@@ -46,11 +58,30 @@ function submit() {
 <template>
   <USlideover v-model:open="open" title="发起退货" :ui="{ content: 'w-full sm:max-w-2xl' }">
     <template #description>
-      <span class="text-sm text-muted">从原{{ execution?.sourceType === 'fulfillment' ? '发货' : '收货' }}记录发起，确认后生成关联贷项</span>
+      <span class="text-sm text-muted">从原{{ (live ? live.selected?.direction === 'sale' : execution?.sourceType === 'fulfillment') ? '发货' : '收货' }}记录发起，由仓库执行人确认。</span>
     </template>
 
     <template #body>
-      <div class="space-y-4" data-testid="stock-return-form">
+      <div v-if="live && liveForm" class="space-y-4" data-testid="stock-return-form">
+        <SalesOperationStatus :message="live.error" :submission="live.submission" @check="live.check()" @retry="live.retry()" />
+        <div v-if="live.selected" class="space-y-1 rounded-sm border border-default p-3 text-sm">
+          <p>原流水 {{ live.selected.id }}</p>
+          <p class="text-muted">原单 {{ live.selected.task.sourceNo }} · 原数量 {{ live.selected.row.quantity }}</p>
+          <p data-testid="stock-return-available-1">{{ live.selected.capped ? '按最近退货记录计算的上限 ' : '剩余可申请数量 ' }}{{ live.selected.remaining }}</p>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UFormField label="退货日期" required>
+            <UInput v-model="liveForm.on" type="date" :min="live.selected?.row.on" :disabled="live.frozen" class="w-full" data-testid="stock-return-date" />
+          </UFormField>
+          <UFormField label="退货数量" required>
+            <UInput v-model="liveForm.quantity" inputmode="decimal" :disabled="live.frozen" class="w-full" data-testid="stock-return-qty-1" />
+          </UFormField>
+        </div>
+        <UFormField label="退货原因" required>
+          <UTextarea v-model="liveForm.reason" :rows="3" maxlength="300" :disabled="live.frozen" class="w-full" data-testid="stock-return-reason" />
+        </UFormField>
+      </div>
+      <div v-else class="space-y-4" data-testid="stock-return-form">
         <UAlert
           v-if="execution"
           color="neutral"
@@ -137,7 +168,7 @@ function submit() {
           data-testid="stock-return-cancel"
           @click="open = false"
         />
-        <UButton label="创建退货单" data-testid="stock-return-submit" @click="submit" />
+        <UButton label="创建退货单" :disabled="live && (live.frozen || !live.selected)" data-testid="stock-return-submit" @click="submit" />
       </div>
     </template>
   </USlideover>

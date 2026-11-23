@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { bankSchema, bookSchema, chartSchema, ledgerSchema, receivableSchema, taxSchema, tradeSchema, type Probe, type TradeAccounts, type ReceivableAccounts } from '#shared/types/prerequisites'
+import { bankSchema, bookSchema, chartSchema, ledgerSchema, receivableSchema, tradeSchema, type Probe, type TradeAccounts, type ReceivableAccounts } from '#shared/types/prerequisites'
+import { taxSchema } from '#shared/types/tax'
 import { useDashboardApi } from './useDashboardApi'
 import { ApiFailure } from '~/utils/api/client'
 import { ScopeChangedError } from '~/utils/api/scope'

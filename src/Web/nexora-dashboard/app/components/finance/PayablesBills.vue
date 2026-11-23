@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import type { usePayablesConnection } from '~/composables/finance/usePayablesConnection'
+import { displayDecimal } from '~/utils/api/decimal-display'
+import { compareDecimal } from '#shared/utils/decimal'
 import type { SupplierBill } from '~/mocks'
 
-defineProps<{ canPost: boolean }>()
+const props = defineProps<{ canPost: boolean, live?: ReturnType<typeof usePayablesConnection> }>()
+type BillRow = SupplierBill | ReturnType<typeof usePayablesConnection>['bills'][number]
 
 const emit = defineEmits<{
   'open-bill': [billId: string]
@@ -12,8 +16,24 @@ const emit = defineEmits<{
 
 const store = useSupplierTradeStore()
 const { activeWorkspaceId } = useMockWorkspace()
-const workspaceBills = computed(() => store.bills.filter(bill => bill.workspaceId === activeWorkspaceId.value))
+const workspaceBills = computed(() =>
+  props.live ? props.live.bills : store.bills.filter(bill => bill.workspaceId === activeWorkspaceId.value)
+)
 
+function outstanding(id: string) {
+  if (props.live) return props.live.raw(id)?.outstanding ?? '0'
+  const value = store.bills.find(value => value.id === id)
+  return value ? store.outstandingOf(value) : 0
+}
+const positive = (value: string | number) => (typeof value === 'string' ? compareDecimal(value, '0') > 0 : value > 0.005)
+const paid = (id: string) => (props.live ? props.live.paid(id) : store.paidOf(id))
+function statusOf(id: string) {
+  if (props.live) return { label: props.live.state(id), color: 'neutral' as const }
+  const value = store.bills.find(value => value.id === id)
+  return value ? store.billStatus(value) : { label: '待查询', color: 'neutral' as const }
+}
+const money = (value: string | number) =>
+  typeof value === 'string' ? displayDecimal(value, props.live?.query.data?.home.minorUnits ?? 2) : formatMoney(value)
 const keyword = ref('')
 const billFilter = ref('all')
 const billFilterItems = [
@@ -28,14 +48,14 @@ const filteredBills = computed(() => {
   return workspaceBills.value.filter((bill) => {
     if (billFilter.value === 'pending' && bill.status !== 'pending') return false
     if (billFilter.value === 'cancelled' && bill.status !== 'cancelled') return false
-    if (billFilter.value === 'open' && (bill.status !== 'posted' || store.outstandingOf(bill) <= 0.005)) return false
-    if (billFilter.value === 'settled' && (bill.status !== 'posted' || store.outstandingOf(bill) > 0.005)) return false
+    if (billFilter.value === 'open' && (bill.status !== 'posted' || !positive(outstanding(bill.id)))) return false
+    if (billFilter.value === 'settled' && (bill.status !== 'posted' || positive(outstanding(bill.id)))) return false
     if (!term) return true
     return [bill.id, bill.supplier, bill.orderId].some(value => value.toLowerCase().includes(term))
   })
 })
 
-const billsColumns: TableColumn<SupplierBill>[] = [
+const billsColumns: TableColumn<BillRow>[] = [
   { accessorKey: 'id', header: '账单号', id: 'number' },
   { accessorKey: 'supplier', header: '供应商', id: 'supplier' },
   { accessorKey: 'date', header: '账单日期', id: 'date' },
@@ -57,14 +77,14 @@ const billsColumns: TableColumn<SupplierBill>[] = [
             供应商账单
           </h3>
           <p class="mt-0.5 text-xs text-muted">
-            收货暂估 → 账单匹配 → 复核过账 → 付款核销；所有写入仅作用于本地预览。
+            {{ live ? '本页按真实单据版本处理，制单人与复核人分离；其他页数据通过翻页读取。' : '收货暂估 → 账单匹配 → 复核过账 → 付款核销；所有写入仅作用于本地预览。' }}
           </p>
         </div>
         <UButton
           icon="i-carbon-add"
           label="新建供应商账单"
           data-testid="payables-new-bill"
-          :disabled="!canPost"
+          :disabled="live ? !live.canSubmit || live.locked : !canPost"
           @click="emit('create')"
         />
       </div>
@@ -83,17 +103,17 @@ const billsColumns: TableColumn<SupplierBill>[] = [
         class="w-36"
         data-testid="payables-status-filter"
       />
-      <span class="text-xs text-muted">共 {{ filteredBills.length }} 张账单</span>
+      <span class="text-xs text-muted">{{ live ? '本页' : '共' }} {{ filteredBills.length }} 张账单</span>
     </div>
     <ResizableTable
       :data="filteredBills"
       :columns="billsColumns"
-      :row-activate="(row: SupplierBill) => emit('open-bill', row.id)"
+      :row-activate="(row: BillRow) => emit('open-bill', row.id)"
       data-testid="payables-bills"
     >
       <template #number-cell="{ row }">
         <UButton
-          :label="row.original.id"
+          :label="live ? live.raw(row.original.id)?.terms.number ?? row.original.id : row.original.id"
           variant="link"
           color="primary"
           size="sm"
@@ -103,18 +123,18 @@ const billsColumns: TableColumn<SupplierBill>[] = [
         />
       </template>
       <template #total-cell="{ row }">
-        <span class="tabular-nums">{{ formatMoney(row.original.total) }}</span>
+        <span class="tabular-nums">{{ money(row.original.total) }}</span>
       </template>
       <template #paid-cell="{ row }">
-        <span class="tabular-nums">{{ formatMoney(store.paidOf(row.original.id)) }}</span>
+        <span class="tabular-nums">{{ money(paid(row.original.id)) }}</span>
       </template>
       <template #outstanding-cell="{ row }">
-        <span class="tabular-nums font-medium" :class="store.outstandingOf(row.original) > 0 ? 'text-warning' : 'text-muted'" :data-testid="'bill-outstanding-' + row.original.id">{{ formatMoney(store.outstandingOf(row.original)) }}</span>
+        <span class="tabular-nums font-medium" :class="positive(outstanding(row.original.id)) ? 'text-warning' : 'text-muted'" :data-testid="'bill-outstanding-' + row.original.id">{{ money(live ? live.outstanding(row.original.id) : outstanding(row.original.id)) }}</span>
       </template>
       <template #status-cell="{ row }">
         <UBadge
-          :label="store.billStatus(row.original).label"
-          :color="store.billStatus(row.original).color"
+          :label="statusOf(row.original.id).label"
+          :color="statusOf(row.original.id).color"
           variant="subtle"
           size="sm"
         />
@@ -130,7 +150,7 @@ const billsColumns: TableColumn<SupplierBill>[] = [
             @click.stop="emit('open-bill', row.original.id)"
           />
           <UButton
-            v-if="row.original.status === 'posted' && store.outstandingOf(row.original) > 0"
+            v-if="row.original.status === 'posted' && positive(outstanding(row.original.id))"
             label="付款"
             color="primary"
             variant="ghost"
@@ -141,6 +161,19 @@ const billsColumns: TableColumn<SupplierBill>[] = [
         </div>
       </template>
     </ResizableTable>
+    <div v-if="live" class="flex justify-end gap-2 p-3">
+      <UButton
+        label="上一页财务单据"
+        variant="outline"
+        :disabled="live.documentsPage <= 1"
+        @click="live.changePage('documents', -1)"
+      /><span class="self-center text-xs text-muted">第 {{ live.documentsPage }} 页</span><UButton
+        label="下一页财务单据"
+        variant="outline"
+        :disabled="(live.query.data?.documents.length ?? 0) < 50"
+        @click="live.changePage('documents', 1)"
+      />
+    </div>
     <UEmpty
       v-if="!filteredBills.length"
       variant="naked"

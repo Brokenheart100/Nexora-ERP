@@ -1,0 +1,117 @@
+import { expect, test, type Page } from '@playwright/test'
+import { mockWorkspaceId } from '../app/mocks/api/catalog'
+import { d9Ids } from '../app/mocks/api/invoicing'
+import { chooseOption, readBusiness, requestBusiness, uiChange } from './business-actions'
+import type { InvoiceDispatch, InvoiceOccurrence, InvoiceSchedule, InvoiceShare } from '../shared/types/invoicing'
+
+test.use({ trace: 'off', screenshot: 'off', video: 'off' })
+
+const ar = '/bff/api/finance/workspaces/' + mockWorkspaceId + '/receivables'
+const entry = (tab: string, actor: string, invoice?: string) =>
+  '/sales?workspace=' + mockWorkspaceId + '&tab=' + tab + '&mockCase=d9-' + actor + (invoice ? '&invoice=' + invoice : '')
+
+async function login(page: Page, url: string) {
+  await page.goto(url)
+  await expect(page.getByTestId('user-menu-trigger')).toContainText('未登录', { timeout: 45000 })
+  await page.getByTestId('user-menu-trigger').click()
+  await page.getByRole('menuitem', { name: '登录 Nexora', exact: true }).click()
+}
+
+test('D9 MSW 定期开票等待和未知结果可按原到期日回读', async ({ page }) => {
+  const field = (id: string) => page.getByTestId(id)
+  await login(page, entry('recurring', 'blocked'))
+  await field('recurring-new').click()
+  await chooseOption(page, 'recurring-form-customer', /MSW-D9-CUSTOMER/)
+  await chooseOption(page, 'recurring-form-service', /MSW-D9-SERVICE/)
+  await field('recurring-form-qty').fill('2')
+  await field('recurring-form-price').fill('75')
+  await field('recurring-form-first').fill('2026-11-01')
+  await field('recurring-form-end').fill('2026-11-01')
+  const plan = await uiChange(page, ar + '/schedules', () => field('recurring-form-save').click())
+  await expect(field('recurring-plan-next-utc')).toHaveText('2026-11-01T01:00:00Z')
+  const run = ar + '/schedules/' + plan.id + '/run'
+  await uiChange(page, run, () => field('recurring-plan-run').click())
+  await expect(field('recurring-plan-pending')).toContainText('模拟会计期间未开放')
+  await page.goto(entry('recurring', 'run-unknown'))
+  await field('recurring-open-' + plan.id).click()
+  await field('recurring-plan-run').click()
+  await expect(page.getByRole('button', { name: '核对原提交' })).toBeVisible()
+  await page.reload()
+  await field('recurring-open-' + plan.id).click()
+  await page.getByRole('button', { name: '核对原提交' }).click()
+  const occurrences = await readBusiness<InvoiceOccurrence[]>(page, ar + '/schedules/' + plan.id + '/occurrences')
+  expect(occurrences).toHaveLength(1)
+  expect(occurrences[0]?.on).toBe('2026-11-01')
+  await expect(field('recurring-history-invoice-' + occurrences[0]?.documentId)).toBeVisible()
+  await expect(page.getByRole('button', { name: '重试原提交' })).toHaveCount(0)
+  await field('recurring-history-invoice-' + occurrences[0]?.documentId).click()
+  await expect(field('sales-invoice-delivery-live')).toBeVisible()
+})
+
+test('D9 MSW 编号配置和服务端候选号', async ({ page }) => {
+  const field = (id: string) => page.getByTestId(id)
+  await login(page, entry('invoice-delivery', 'maker'))
+  await field('invoice-number-pattern-live').fill('MSW-{FY}-{###}')
+  await field('invoice-number-start-live').fill('19')
+  await uiChange(page, ar + '/invoice-numbering', () => field('invoice-number-save-live').click(), 200, 'PUT')
+  await field('invoice-number-date-live').fill('2026-11-21')
+  await field('invoice-number-preview-live').click()
+  await expect(field('invoice-number-value-live')).toContainText('MSW-2026-019')
+  await page.reload()
+  await expect(field('invoice-number-pattern-live')).toHaveValue('MSW-{FY}-{###}')
+})
+
+test('D9 MSW PDF、分享令牌的一次返回、撤销和过期', async ({ page }) => {
+  const field = (id: string) => page.getByTestId(id)
+  const path = ar + '/documents/' + d9Ids.posted
+  await login(page, entry('invoice-delivery', 'reviewer', d9Ids.posted))
+  await field('invoice-pdf-preview-live').click()
+  await expect(field('invoice-pdf-frame')).toBeVisible()
+  const attempted = page.waitForRequest(request => new URL(request.url()).pathname === path + '/shares' && request.method() === 'POST')
+  const share = await uiChange<InvoiceShare>(page, path + '/shares', () => field('invoice-share-create').click())
+  const input = (await attempted).postDataJSON()
+  const replay = await requestBusiness(page, path + '/shares', { lifetimeMinutes: input.lifetimeMinutes }, 'POST', input.operationId)
+  expect(replay.status).toBe(200)
+  expect(JSON.parse(replay.text).token ?? null).toBeNull()
+  expect((await readBusiness<InvoiceShare[]>(page, path + '/shares')).every(row => !row.token)).toBe(true)
+  const link = await field('invoice-share-link').inputValue()
+  expect(new URL(link).pathname).toBe('/invoice-share')
+  expect(new URL(link).search).toBe('')
+  await page.goto(link)
+  await expect(field('public-invoice-download')).toBeVisible()
+  expect(new URL(page.url()).hash).toBe('')
+  const download = page.waitForEvent('download')
+  await field('public-invoice-download').click()
+  expect((await download).suggestedFilename()).toMatch(/\.pdf$/)
+  await page.goto(entry('invoice-delivery', 'reviewer', d9Ids.posted))
+  await expect(field('invoice-share-link')).toHaveCount(0)
+  await uiChange(page, ar + '/shares/' + share.id + '/revoke', () => field('invoice-share-revoke-' + share.id).click())
+  await page.goto(link)
+  await field('public-invoice-download').click()
+  await expect(field('public-invoice-status')).toContainText('已失效')
+  await page.goto(entry('invoice-delivery', 'reviewer-expired', d9Ids.posted))
+  const expired = await uiChange<InvoiceShare>(page, path + '/shares', () => field('invoice-share-create').click())
+  await expect(field('invoice-share-status-' + expired.id)).toContainText('已到期')
+  await page.goto(await field('invoice-share-link').inputValue())
+  await field('public-invoice-download').click()
+  await expect(field('public-invoice-status')).toContainText('已失效')
+})
+
+test('D9 MSW 已知失败重试、未知结果重寄及放弃', async ({ page }) => {
+  const field = (id: string) => page.getByTestId(id)
+  await login(page, entry('invoice-delivery', 'reviewer-failed', d9Ids.posted))
+  await page.getByRole('tab', { name: '寄送记录' }).click()
+  await field('invoice-mail-open-' + d9Ids.failed).click()
+  const retry = await uiChange<InvoiceDispatch>(page, ar + '/dispatches/' + d9Ids.failed + '/decision', () => field('invoice-mail-retry-live').click())
+  expect(retry).toMatchObject({ id: d9Ids.failed, attempt: 2 })
+  await field('invoice-mail-open-' + d9Ids.unknown).click()
+  await expect(field('invoice-mail-detail-live')).toContainText('结果未知')
+  await expect(field('invoice-mail-retry-live')).toHaveCount(0)
+  const replacement = await uiChange<InvoiceDispatch>(page, ar + '/dispatches/' + d9Ids.unknown + '/decision', () => field('invoice-mail-resend-live').click())
+  expect(replacement.previousId).toBe(d9Ids.unknown)
+  await expect(field('invoice-mail-previous-live')).toBeVisible()
+  const queued = await uiChange<InvoiceDispatch>(page, ar + '/documents/' + d9Ids.posted + '/dispatches', () => field('invoice-mail-send-live').click(), 201)
+  await field('invoice-mail-open-' + queued.id).click()
+  const last = await uiChange<InvoiceDispatch>(page, ar + '/dispatches/' + queued.id + '/decision', () => field('invoice-mail-abandon-live').click())
+  expect(last.state).toBe('abandoned')
+})

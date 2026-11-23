@@ -4,6 +4,7 @@ import { changeEntityLabels, changeLogEntries } from '~/mocks'
 
 const toast = useToast()
 const route = useRoute()
+const auth = useAuthSessionStore()
 const { workspace, activeWorkspaceId } = useMockWorkspace()
 const { loading, run: runRefresh } = useMockRefresh()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
@@ -95,6 +96,7 @@ async function reloadPage() {
 
           <template #right>
             <UBadge
+              v-if="!auth.connected"
               label="本地原型 · 模拟数据"
               color="neutral"
               variant="subtle"
@@ -113,7 +115,7 @@ async function reloadPage() {
               size="sm"
               data-testid="change-log-views"
             />
-            <template v-if="view === 'changes'">
+            <template v-if="!auth.connected && view === 'changes'">
               <USelect
                 v-model="type"
                 :items="typeItems"
@@ -141,7 +143,7 @@ async function reloadPage() {
             </template>
           </template>
 
-          <template #right>
+          <template v-if="!auth.connected" #right>
             <p v-if="view === 'changes'" class="text-xs text-muted">
               共 {{ filteredEntries.length }} 条记录
             </p>
@@ -163,7 +165,8 @@ async function reloadPage() {
 
       <template #body>
         <AppBreadcrumb :current="view === 'audit' ? '审计中心' : '变更记录'" class="mb-3" />
-        <AuditCenter v-if="view === 'audit'" />
+        <SettingsLiveAudit v-if="auth.connected" :view="view === 'audit' ? 'audit' : 'changes'" />
+        <AuditCenter v-else-if="view === 'audit'" />
         <UCard v-else class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-3 p-4" data-testid="change-log-skeleton">
             <USkeleton v-for="n in 6" :key="n" class="h-12 w-full" />
@@ -230,7 +233,7 @@ async function reloadPage() {
             </div>
           </template>
         </UCard>
-        <p v-if="view === 'changes'" class="mt-2 text-[11px] text-dimmed">
+        <p v-if="!auth.connected && view === 'changes'" class="mt-2 text-[11px] text-dimmed">
           本地原型 · 模拟数据 · 变更记录来自 app/mocks/changeLog.ts
         </p>
       </template>

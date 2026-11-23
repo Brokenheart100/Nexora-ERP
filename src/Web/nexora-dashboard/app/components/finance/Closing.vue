@@ -2,6 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { FinanceAccount, FinancePeriod, JournalEntry, JournalLine } from '~/mocks'
 import { accountTypeLabels, financePeriodStatusColors, financePeriodStatusLabels } from '~/mocks'
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
 import type {
   ChartAccountMeta,
   ClosingJournal,
@@ -40,6 +41,7 @@ const props = defineProps<{
   periods: FinancePeriod[]
   journals: JournalEntry[]
   canPost: boolean
+  live?: AccountingBookConnection
 }>()
 
 const toast = useToast()
@@ -1241,7 +1243,8 @@ function accountNameOf(code: string) {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="finance-closing">
+  <FinanceClosingLedger v-if="live" :live="live" />
+  <div v-else class="space-y-4" data-testid="finance-closing">
     <UCard :ui="{ body: 'p-0' }">
       <template #header>
         <div class="flex flex-wrap items-start justify-between gap-3">

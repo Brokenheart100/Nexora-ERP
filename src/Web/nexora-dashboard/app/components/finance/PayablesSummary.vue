@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { displayDecimal } from '~/utils/api/decimal-display'
+
 defineProps<{
-  outstandingTotal: number
+  connected?: boolean
+  outstandingTotal: number | string
   pendingCount: number
   availableCount: number
   paymentCount: number
@@ -11,10 +14,10 @@ defineProps<{
   <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
       <p class="text-xs text-muted">
-        采购应付未结
+        {{ connected ? '应付未结（账龄服务）' : '采购应付未结' }}
       </p>
       <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-outstanding-total">
-        {{ formatMoney(outstandingTotal) }}
+        {{ typeof outstandingTotal === 'string' ? displayDecimal(outstandingTotal) : formatMoney(outstandingTotal) }}
       </p>
       <p class="mt-1 text-xs text-muted">
         已过账账单 · 未扣减待复核
@@ -22,7 +25,7 @@ defineProps<{
     </UCard>
     <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
       <p class="text-xs text-muted">
-        待复核账单
+        {{ connected ? '待复核账单（本页）' : '待复核账单' }}
       </p>
       <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-pending-count">
         {{ pendingCount }} 张
@@ -44,13 +47,13 @@ defineProps<{
     </UCard>
     <UCard class="rounded-sm" :ui="{ body: 'p-4' }">
       <p class="text-xs text-muted">
-        已登记付款
+        {{ connected ? '付款申请（本页）' : '已登记付款' }}
       </p>
       <p class="mt-1 text-2xl font-semibold tabular-nums text-highlighted" data-testid="payables-payment-count">
         {{ paymentCount }} 笔
       </p>
       <p class="mt-1 text-xs text-muted">
-        资金账户来自银行对账样例
+        {{ connected ? '复核后才生成真实付款与银行流水' : '资金账户来自银行对账样例' }}
       </p>
     </UCard>
   </div>

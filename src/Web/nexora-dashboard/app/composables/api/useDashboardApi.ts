@@ -1,6 +1,7 @@
 import { createApiClient } from '~/utils/api/client'
 import type { DashboardApi } from '~/utils/api/client'
 import { RequestScope } from '~/utils/api/scope'
+import { useAuthSessionStore } from '~/stores/authSession'
 
 const runtimes = new WeakMap<object, DashboardApi>()
 
@@ -10,11 +11,12 @@ export function useDashboardMode(): 'mock' | 'live' {
   return mode
 }
 
-export function useDashboardApi(): DashboardApi {
+export function useDashboardApi(owner: 'workspace' | 'account' = 'workspace'): DashboardApi {
   const app = useNuxtApp()
   const existing = runtimes.get(app)
-  if (existing) return existing
+  if (owner === 'workspace' && existing) return existing
   const mode = useDashboardMode()
+  const auth = useAuthSessionStore()
   const scope = new RequestScope({ mode, subject: '', workspaceId: '', authorizationVersion: '' })
   const client = createApiClient(scope, async (path, options) => {
     const response = await $fetch.raw<unknown>(path, {
@@ -22,7 +24,13 @@ export function useDashboardApi(): DashboardApi {
       responseType: options.responseType ?? 'json'
     })
     return { status: response.status, data: response._data, headers: response.headers }
-  })
-  runtimes.set(app, client)
+  }, { onFailure: (failure) => {
+    if (failure.status === 401) auth.expire(failure.code === 'session.idle_timeout' ? 'auth.idleTimeout' : '')
+  } })
+  if (owner === 'account') {
+    watch(() => auth.user?.subject ?? '', (subject) => {
+      scope.change({ mode, subject, workspaceId: '', authorizationVersion: '' })
+    }, { immediate: true, flush: 'sync' })
+  } else runtimes.set(app, client)
   return client
 }

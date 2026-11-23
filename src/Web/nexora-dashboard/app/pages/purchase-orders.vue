@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { usePurchaseConnection } from '~/composables/purchasing/usePurchaseConnection'
+import { purchaseRow } from '~/utils/purchasing/presentation'
+import { purchaseStateLabels } from '~/utils/purchasing/order-policy'
+import { sumDecimals } from '#shared/utils/decimal'
 import StockPermitPanel from '~/components/inventory/StockPermitPanel.vue'
-import type {
-  PurchaseApprovalStep,
-  PurchaseAuditEntry,
-  PurchaseOrder,
-  PurchaseOrderLine,
-  PurchaseReceipt
-} from '~/mocks'
+import type { PurchaseApprovalStep, PurchaseAuditEntry, PurchaseOrder, PurchaseOrderLine, PurchaseReceipt } from '~/mocks'
 import {
   approvalActionLabels,
   clonePurchaseOrder,
@@ -18,10 +16,29 @@ import {
   statusLabels
 } from '~/mocks'
 
+const connection = usePurchaseConnection()
+const connected = computed(() => connection.query.connected)
 const toast = useToast()
 const route = useRoute()
 const { workspace, activeWorkspaceId } = useMockWorkspace()
-const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
+const mockState = useMockState()
+const stateLoading = computed(() => (connected.value ? connection.query.loading : mockState.isLoading.value))
+const isEmpty = computed(() => (connected.value ? false : mockState.isEmpty.value))
+const isError = computed(() =>
+  connected.value ? !!connection.query.problem && ![403, 404].includes(connection.query.status) : mockState.isError.value
+)
+const isForbidden = computed(() =>
+  connected.value
+    ? (!connection.query.enabled && !connection.query.loading) || [403, 404].includes(connection.query.status)
+    : mockState.isForbidden.value
+)
+const forbiddenDescription = computed(() => {
+  const { auth, session } = connection.query
+  if (!auth.user) return '请从左下角登录后查看采购订单。'
+  if (session.denied || !session.activeWorkspaceId) return '请从左上角选择可访问的工作区。'
+  if (session.entitlements && !session.entitlements.modules.includes('purchasing')) return '当前工作区尚未开通采购功能。'
+  return '当前账号在此工作区没有采购订单读取权限。请切换到已有采购权限的工作区，或联系工作区管理员。'
+})
 const { can } = useMockPermissions()
 const { loading, run: runRefresh } = useMockRefresh()
 const session = useSessionStore()
@@ -32,14 +49,14 @@ const densityItems = [
   { label: '舒适', value: 'cozy' },
   { label: '紧凑', value: 'compact' }
 ]
-const tableUi = computed(() => ui.tableDensity === 'compact'
-  ? { th: 'py-1.5', td: 'py-2' }
-  : { th: 'py-2.5', td: 'py-3' })
+const tableUi = computed(() => (ui.tableDensity === 'compact' ? { th: 'py-1.5', td: 'py-2' } : { th: 'py-2.5', td: 'py-3' }))
 
 const { actor: demoActor, isMaker, isApprover, setActorRole } = useDemoActor()
-const canCreate = computed(() => can('purchase.create') && isMaker.value)
-const canApprove = computed(() => can('purchase.approve') && isApprover.value)
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const canCreate = computed(() => (connected.value ? connection.canCreate : can('purchase.create') && isMaker.value))
+const canApprove = computed(() =>
+  connected.value ? connection.query.data?.canApprove === true : can('purchase.approve') && isApprover.value
+)
+const showSkeleton = computed(() => (connected.value ? false : loading.value) || stateLoading.value)
 
 /**
  * 本地可写副本：审批、驳回、收货与编辑都只改这里。
@@ -67,7 +84,11 @@ const statusItems = [
   ...Object.entries(statusLabels).map(([value, label]) => ({ label, value }))
 ]
 
-const workspaceOrders = computed(() => rows.value.filter(order => order.workspaceId === workspace.value.id))
+const workspaceOrders = computed(() =>
+  connected.value
+    ? (connection.query.data?.orders.map(order => purchaseRow(order, connection.query.session.activeWorkspaceId)) ?? [])
+    : rows.value.filter(order => order.workspaceId === workspace.value.id)
+)
 
 const supplierItems = computed(() => [
   { label: '全部供应商', value: 'all' },
@@ -83,33 +104,37 @@ const filteredOrders = computed(() => {
     if (dateFrom.value && order.orderedAt < dateFrom.value) return false
     if (dateTo.value && order.orderedAt > dateTo.value) return false
     if (!keyword) return true
-    const text = [
-      order.id,
-      order.supplier,
-      order.contact,
-      order.note,
-      ...order.lines.map(line => line.sku + ' ' + line.name)
-    ].join(' ').toLowerCase()
+    const number = connection.query.data?.orders.find(value => value.id === order.id)?.number
+    const text = [order.id, number, order.supplier, order.contact, order.note, ...order.lines.map(line => line.sku + ' ' + line.name)]
+      .join(' ')
+      .toLowerCase()
     return text.includes(keyword)
   })
 })
 
-const hasFilters = computed(() => Boolean(
-  search.value
-  || status.value !== 'all'
-  || supplier.value !== 'all'
-  || dateFrom.value
-  || dateTo.value
-))
+const hasFilters = computed(() =>
+  Boolean(search.value || status.value !== 'all' || supplier.value !== 'all' || dateFrom.value || dateTo.value)
+)
 
 const {
-  page,
-  pageRows,
+  page: mockPage,
+  pageRows: mockPageRows,
   pageStart,
   pageEnd,
-  resetPage
+  resetPage: resetMockPage
 } = useClientPagination(filteredOrders, pageSize)
 
+const page = computed({
+  get: () => (connected.value ? connection.page : mockPage.value),
+  set: (value) => {
+    if (connected.value) connection.page = value
+    else mockPage.value = value
+  }
+})
+const pageRows = computed(() => (connected.value ? filteredOrders.value : mockPageRows.value))
+const resetPage = () => {
+  if (!connected.value) resetMockPage()
+}
 watch([search, status, supplier, dateFrom, dateTo], resetPage)
 
 watch(workspace, () => {
@@ -130,47 +155,69 @@ function resetFilters() {
 }
 
 function orderLines(order: PurchaseOrder) {
+  if (connected.value)
+    return connection.detail?.order.id === order.id ? sumDecimals(connection.detail.lines.map(line => line.quantity)) : '见详情'
   return order.lines.reduce((sum, line) => sum + line.quantity, 0)
 }
 
-const columns: TableColumn<PurchaseOrder>[] = [{
-  accessorKey: 'id',
-  header: '采购单号',
-  meta: { class: { td: 'whitespace-nowrap font-mono text-[12px] text-muted' } }
-}, {
-  accessorKey: 'supplier',
-  header: '供应商',
-  meta: { class: { td: 'min-w-[200px] whitespace-normal' } }
-}, {
-  accessorKey: 'status',
-  header: '状态'
-}, {
-  accessorKey: 'orderedAt',
-  header: '下单日期',
-  meta: { class: { td: 'whitespace-nowrap' } }
-}, {
-  accessorKey: 'expectedAt',
-  header: '预计到货',
-  meta: { class: { td: 'whitespace-nowrap text-muted' } }
-}, {
-  id: 'lines',
-  header: '明细',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
-}, {
-  id: 'amount',
-  header: '金额',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'actions',
-  header: '操作',
-  meta: { class: { th: 'w-20', td: 'w-20 text-right' } }
-}]
+const columns: TableColumn<PurchaseOrder>[] = [
+  {
+    accessorKey: 'id',
+    header: '采购单号',
+    meta: { class: { td: 'whitespace-nowrap font-mono text-[12px] text-muted' } }
+  },
+  {
+    accessorKey: 'supplier',
+    header: '供应商',
+    meta: { class: { td: 'min-w-[200px] whitespace-normal' } }
+  },
+  {
+    accessorKey: 'status',
+    header: '状态'
+  },
+  {
+    accessorKey: 'orderedAt',
+    header: '下单日期',
+    meta: { class: { td: 'whitespace-nowrap' } }
+  },
+  {
+    accessorKey: 'expectedAt',
+    header: '预计到货',
+    meta: { class: { td: 'whitespace-nowrap text-muted' } }
+  },
+  {
+    id: 'lines',
+    header: '明细',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
+  },
+  {
+    id: 'amount',
+    header: '金额',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
+  },
+  {
+    id: 'actions',
+    header: '操作',
+    meta: { class: { th: 'w-20', td: 'w-20 text-right' } }
+  }
+]
 
 const detailOpen = ref(false)
 const selectedId = ref<string | null>(null)
-const selected = computed(() => rows.value.find(order => order.id === selectedId.value) ?? null)
+const selected = computed(() =>
+  connected.value
+    ? connection.detail
+      ? purchaseRow(connection.detail.order, connection.query.session.activeWorkspaceId, connection.detail)
+      : null
+    : (rows.value.find(order => order.id === selectedId.value) ?? null)
+)
 
 function openDetail(order: PurchaseOrder) {
+  if (connected.value) {
+    detailOpen.value = true
+    connection.select(order.id)
+    return
+  }
   selectedId.value = order.id
   detailOpen.value = true
 }
@@ -181,6 +228,7 @@ function closeDetail() {
 
 // 支持从库存流水等页面按单号直达详情：/purchase-orders?order=PO-2026-0511
 onMounted(() => {
+  if (connected.value) return
   const orderId = String(route.query.order ?? '')
   if (!orderId) return
   const order = rows.value.find(item => item.id === orderId)
@@ -189,61 +237,74 @@ onMounted(() => {
   openDetail(order)
 })
 
-const lineColumns: TableColumn<PurchaseOrderLine>[] = [{
-  accessorKey: 'lineNo',
-  header: '序号',
-  meta: { class: { td: 'tabular-nums text-muted' } }
-}, {
-  accessorKey: 'name',
-  header: '商品',
-  meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
-}, {
-  accessorKey: 'spec',
-  header: '规格',
-  meta: { class: { td: 'whitespace-normal text-muted' } }
-}, {
-  accessorKey: 'quantity',
-  header: '数量',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
-}, {
-  accessorKey: 'received',
-  header: '已入库',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
-}, {
-  accessorKey: 'unitPrice',
-  header: '单价',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}, {
-  id: 'amount',
-  header: '金额',
-  meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
-}]
+const lineColumns: TableColumn<PurchaseOrderLine>[] = [
+  {
+    accessorKey: 'lineNo',
+    header: '序号',
+    meta: { class: { td: 'tabular-nums text-muted' } }
+  },
+  {
+    accessorKey: 'name',
+    header: '商品',
+    meta: { class: { td: 'min-w-[180px] whitespace-normal' } }
+  },
+  {
+    accessorKey: 'spec',
+    header: '规格',
+    meta: { class: { td: 'whitespace-normal text-muted' } }
+  },
+  {
+    accessorKey: 'quantity',
+    header: '数量',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
+  },
+  {
+    accessorKey: 'received',
+    header: '已入库',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums' } }
+  },
+  {
+    accessorKey: 'unitPrice',
+    header: '单价',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
+  },
+  {
+    id: 'amount',
+    header: '金额',
+    meta: { class: { th: 'text-right', td: 'text-right tabular-nums whitespace-nowrap' } }
+  }
+]
 
-const statusSteps = [{
-  slot: 'created',
-  value: 0,
-  title: '已下单',
-  description: '提交采购申请',
-  icon: 'i-carbon-document'
-}, {
-  slot: 'approved',
-  value: 1,
-  title: '已审批',
-  description: '审批通过',
-  icon: 'i-carbon-checkmark'
-}, {
-  slot: 'received',
-  value: 2,
-  title: '已入库',
-  description: '收货并入库',
-  icon: 'i-carbon-inventory-management'
-}, {
-  slot: 'closed',
-  value: 3,
-  title: '已完成',
-  description: '对账与结算',
-  icon: 'i-carbon-checkmark-filled'
-}]
+const statusSteps = [
+  {
+    slot: 'created',
+    value: 0,
+    title: '已下单',
+    description: '提交采购申请',
+    icon: 'i-carbon-document'
+  },
+  {
+    slot: 'approved',
+    value: 1,
+    title: '已审批',
+    description: '审批通过',
+    icon: 'i-carbon-checkmark'
+  },
+  {
+    slot: 'received',
+    value: 2,
+    title: '已入库',
+    description: '收货并入库',
+    icon: 'i-carbon-inventory-management'
+  },
+  {
+    slot: 'closed',
+    value: 3,
+    title: '已完成',
+    description: '对账与结算',
+    icon: 'i-carbon-checkmark-filled'
+  }
+]
 
 // UStepper 的数字 modelValue 是「步骤索引」，草稿与待审批都停在已下单
 function stepForStatus(order: PurchaseOrder) {
@@ -266,6 +327,7 @@ const tax = computed(() => subtotal.value * 0.13)
 const total = computed(() => subtotal.value + tax.value)
 
 function lineAmount(line: PurchaseOrderLine) {
+  if (connected.value) return connection.detail?.lines[line.lineNo - 1]?.amount ?? '—'
   return formatMoney(line.quantity * line.unitPrice)
 }
 
@@ -274,35 +336,54 @@ const receivedRate = computed(() => {
   const quantity = lines.reduce((sum, line) => sum + line.quantity, 0)
   if (!quantity) return 0
   const received = lines.reduce((sum, line) => sum + line.received, 0)
-  return Math.round(received / quantity * 100)
+  return Math.round((received / quantity) * 100)
 })
 
 function orderMaker(order: PurchaseOrder) {
+  if (connected.value) return connection.detail?.isMaker ? '当前用户' : '其他制单人'
   return order.maker ?? order.approvals?.find(step => step.action === 'submitted')?.actor ?? '张明远'
 }
 
-const selectedMaker = computed(() => selected.value ? orderMaker(selected.value) : '')
-const selfApprovalBlocked = computed(() => Boolean(
-  selected.value && isApprover.value && selectedMaker.value === demoActor.value.name
-))
-const canEditSelected = computed(() => Boolean(
-  selected.value && canCreate.value && selected.value.status === 'draft'
-))
-const canWithdrawSelected = computed(() => Boolean(
-  selected.value && canCreate.value && selected.value.status === 'pending' && selectedMaker.value === demoActor.value.name
-))
-const canCancelSelected = computed(() => Boolean(
-  selected.value && canCreate.value && selected.value.status === 'draft'
-))
-const canResubmitSelected = computed(() => Boolean(
-  selected.value && canCreate.value && selected.value.status === 'draft' && selectedMaker.value === demoActor.value.name
-))
-const canApproveSelected = computed(() => Boolean(
-  selected.value && canApprove.value && selected.value.status === 'pending' && !selfApprovalBlocked.value
-))
-const canReceiveSelected = computed(() => Boolean(
-  selected.value && canCreate.value && ['approved', 'partial'].includes(selected.value.status)
-))
+const selectedMaker = computed(() => (selected.value ? orderMaker(selected.value) : ''))
+const selfApprovalBlocked = computed(() =>
+  connected.value
+    ? connection.detail?.isMaker === true && connection.detail.order.state === 'submitted'
+    : Boolean(selected.value && isApprover.value && selectedMaker.value === demoActor.value.name)
+)
+const canEditSelected = computed(() =>
+  connected.value
+    ? connection.actions.includes('edit') && !connection.frozen
+    : Boolean(selected.value && canCreate.value && selected.value.status === 'draft')
+)
+const canWithdrawSelected = computed(() =>
+  connected.value
+    ? connection.actions.includes('withdraw') && !connection.frozen
+    : Boolean(
+        selected.value && canCreate.value && selected.value.status === 'pending' && selectedMaker.value === demoActor.value.name
+      )
+)
+const canCancelSelected = computed(() =>
+  connected.value
+    ? connection.actions.includes('cancel') && !connection.frozen
+    : Boolean(selected.value && canCreate.value && selected.value.status === 'draft')
+)
+const canResubmitSelected = computed(() =>
+  connected.value
+    ? connection.actions.includes('submit') && !connection.frozen
+    : Boolean(
+        selected.value && canCreate.value && selected.value.status === 'draft' && selectedMaker.value === demoActor.value.name
+      )
+)
+const canApproveSelected = computed(() =>
+  connected.value
+    ? connection.actions.includes('approve') && !connection.frozen
+    : Boolean(selected.value && canApprove.value && selected.value.status === 'pending' && !selfApprovalBlocked.value)
+)
+const canReceiveSelected = computed(() =>
+  connected.value
+    ? connection.permits?.canManage === true && ['approved', 'receiving'].includes(connection.detail?.order.state ?? '')
+    : Boolean(selected.value && canCreate.value && ['approved', 'partial'].includes(selected.value.status))
+)
 
 let localSequence = 0
 
@@ -314,8 +395,17 @@ function makeLocalId(prefix: string, orderId: string) {
 function nowStamp() {
   const now = new Date()
   const pad = (value: number) => String(value).padStart(2, '0')
-  return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
-    + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes())
+  return (
+    now.getFullYear()
+    + '-'
+    + pad(now.getMonth() + 1)
+    + '-'
+    + pad(now.getDate())
+    + ' '
+    + pad(now.getHours())
+    + ':'
+    + pad(now.getMinutes())
+  )
 }
 
 function today() {
@@ -347,10 +437,19 @@ function pushApproval(order: PurchaseOrder, action: PurchaseApprovalStep['action
 }
 
 function approveOrder() {
+  if (connected.value) {
+    connection.decide('approve')
+    return
+  }
   const order = selected.value
   if (!order) return
   if (isApprover.value && orderMaker(order) === demoActor.value.name) {
-    toast.add({ title: '不能审批自己提交的单据', description: '请由其他业务主管审批，或切换演示身份。', color: 'error', icon: 'i-carbon-warning' })
+    toast.add({
+      title: '不能审批自己提交的单据',
+      description: '请由其他业务主管审批，或切换演示身份。',
+      color: 'error',
+      icon: 'i-carbon-warning'
+    })
     return
   }
   if (!canApproveSelected.value) return
@@ -366,6 +465,10 @@ function approveOrder() {
 }
 
 function rejectOrder() {
+  if (connected.value) {
+    connection.decide('return')
+    return
+  }
   const order = selected.value
   if (!order || !canApproveSelected.value) return
   const note = '预算科目缺失，请补充成本中心后重新提交。'
@@ -382,6 +485,10 @@ function rejectOrder() {
 }
 
 function withdrawOrder() {
+  if (connected.value) {
+    connection.decide('withdraw')
+    return
+  }
   const order = selected.value
   if (!order || !canWithdrawSelected.value) return
   order.status = 'draft'
@@ -397,6 +504,10 @@ function withdrawOrder() {
 }
 
 function cancelDraft() {
+  if (connected.value) {
+    connection.decide('cancel')
+    return
+  }
   const order = selected.value
   if (!order || !canCancelSelected.value) return
   order.status = 'cancelled'
@@ -412,6 +523,10 @@ function cancelDraft() {
 }
 
 function resubmitOrder() {
+  if (connected.value) {
+    connection.decide('submit')
+    return
+  }
   const order = selected.value
   if (!order || !canResubmitSelected.value) return
   order.status = 'pending'
@@ -429,6 +544,11 @@ function resubmitOrder() {
 const receiptOpen = ref(false)
 
 function openReceipt() {
+  if (connected.value) {
+    connection.startReceipt()
+    receiptOpen.value = true
+    return
+  }
   if (!selected.value) return
   if (!canCreate.value) {
     toast.add({ title: '没有收货权限', description: '当前演示身份缺少 purchase.create 权限。', color: 'error' })
@@ -474,8 +594,7 @@ function handleReceipt(payload: { receiver: string, receivedAt: string, lines: {
   pushAudit(
     order,
     '收货',
-    '登记收货单 ' + receipt.id + '，共 ' + quantity + ' 件，'
-    + (allReceived ? '全部明细已到货。' : '订单状态更新为部分入库。'),
+    '登记收货单 ' + receipt.id + '，共 ' + quantity + ' 件，' + (allReceived ? '全部明细已到货。' : '订单状态更新为部分入库。'),
     payload.receiver
   )
   receiptOpen.value = false
@@ -499,6 +618,14 @@ interface OrderFormData {
 }
 
 function createOrder() {
+  if (connected.value) {
+    if (canCreate.value) {
+      connection.startEditor()
+      editingOrder.value = null
+      formOpen.value = true
+    }
+    return
+  }
   if (!canCreate.value) {
     toast.add({ title: '没有新建权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -508,6 +635,14 @@ function createOrder() {
 }
 
 function editOrder() {
+  if (connected.value) {
+    if (canEditSelected.value) {
+      connection.startEditor(true)
+      editingOrder.value = selected.value
+      formOpen.value = true
+    }
+    return
+  }
   if (!selected.value) return
   if (!canCreate.value) {
     toast.add({ title: '没有编辑权限', description: '当前演示身份缺少 purchase.create 权限。', color: 'error' })
@@ -602,17 +737,37 @@ function printOrder() {
   printOpen.value = true
 }
 
-const overflowItems = [[{
-  label: '导出当前筛选（CSV）',
-  icon: 'i-carbon-document-export',
-  onSelect: exportOrders
-}, {
-  label: '打开采购审计',
-  icon: 'i-carbon-list-checked',
-  onSelect: openAudit
-}]]
+const overflowItems = [
+  [
+    {
+      label: '导出当前筛选（CSV）',
+      icon: 'i-carbon-document-export',
+      onSelect: exportOrders
+    },
+    {
+      label: '打开采购审计',
+      icon: 'i-carbon-list-checked',
+      onSelect: openAudit
+    }
+  ]
+]
 
 function exportOrders() {
+  if (connected.value) {
+    const visible = new Set(filteredOrders.value.map(order => order.id))
+    downloadCsv(
+      '采购订单当前筛选.csv',
+      ['采购单号', '供应商', '状态', '下单日期', '版本'],
+      (connection.query.data?.orders ?? []).filter(order => visible.has(order.id)).map(order => [
+        order.number,
+        order.supplierName,
+        purchaseStateLabels[order.state] ?? order.state,
+        order.on,
+        order.version
+      ])
+    )
+    return
+  }
   downloadCsv(
     '采购订单-' + new Date().toISOString().slice(0, 10) + '.csv',
     ['采购单号', '供应商', '状态', '下单日期', '预计到货', '明细行数', '金额'],
@@ -639,6 +794,10 @@ function openAudit() {
 }
 
 function refreshOrders() {
+  if (connected.value) {
+    connection.refresh()
+    return
+  }
   runRefresh(() => {
     rows.value = purchaseOrders.map(clonePurchaseOrder)
     toast.add({
@@ -654,6 +813,11 @@ async function reloadPage() {
   await navigateTo({ path: route.path, query: {} })
 }
 
+async function refreshPurchaseAccess() {
+  await connection.query.session.refreshAccess()
+  await connection.refresh()
+}
+
 async function copyOrderId() {
   if (!selected.value || !isSupported.value) return
   await copy(selected.value.id)
@@ -664,6 +828,39 @@ async function copyOrderId() {
     icon: 'i-carbon-copy'
   })
 }
+watch(
+  () => connection.query.owner,
+  () => {
+    detailOpen.value = false
+    formOpen.value = false
+    receiptOpen.value = false
+    editingOrder.value = null
+    resetFilters()
+  },
+  { flush: 'sync' }
+)
+watch(
+  () => [connection.query.enabled, route.query.order],
+  ([enabled]) => {
+    if (connected.value && enabled && typeof route.query.order === 'string') {
+      detailOpen.value = true
+      connection.select(route.query.order)
+    }
+  },
+  { immediate: true }
+)
+async function recover(kind: 'order' | 'permit', action: 'resume' | 'check' | 'retry') {
+  const saved = (kind === 'order' ? connection.submission : connection.permitSubmission).record
+  await connection.recover(kind, action)
+  if (action === 'resume' && saved) {
+    if (['purchase.created', 'purchase.edited'].includes(saved.action)) formOpen.value = true
+    else detailOpen.value = true
+  }
+}
+const recoveries = computed(() => [
+  { kind: 'order' as const, label: '采购操作', value: connection.submission },
+  { kind: 'permit' as const, label: '许可操作', value: connection.permitSubmission }
+])
 </script>
 
 <template>
@@ -678,6 +875,7 @@ async function copyOrderId() {
           <template #right>
             <NotificationButton />
             <div
+              v-if="!connected"
               class="flex items-center gap-1 rounded-lg border border-default p-0.5"
               data-testid="orders-actor-switch"
             >
@@ -787,7 +985,7 @@ async function copyOrderId() {
               当前筛选 {{ filteredOrders.length }} 张
             </UBadge>
             <p class="text-xs text-muted">
-              共 {{ filteredOrders.length }} 张采购单
+              {{ connected ? '当前页' : '共' }} {{ filteredOrders.length }} 张采购单
             </p>
             <USelect
               :model-value="ui.tableDensity"
@@ -799,6 +997,7 @@ async function copyOrderId() {
               @update:model-value="value => ui.setTableDensity(value === 'compact' ? 'compact' : 'cozy')"
             />
             <UButton
+              v-if="!connected"
               label="采购审计"
               icon="i-carbon-list-checked"
               color="neutral"
@@ -825,6 +1024,45 @@ async function copyOrderId() {
 
       <template #body>
         <AppBreadcrumb current="采购订单" class="mb-3" />
+        <UAlert
+          v-if="connected"
+          class="mb-3"
+          color="neutral"
+          title="当前工作区采购订单"
+          description="筛选仅作用于当前服务器页；金额、审批版本及许可状态以服务回读为准。"
+        />
+        <template v-if="connected">
+          <UAlert
+            v-for="entry in recoveries.filter(value => value.value.record || value.value.message)"
+            :key="entry.kind"
+            class="mb-3"
+            color="warning"
+            :title="entry.label + ' · ' + (entry.value.message || '存在上次待恢复提交')"
+            :data-testid="'purchase-recovery-' + entry.kind"
+          >
+            <template #actions>
+              <UButton v-if="entry.value.record" label="恢复上次提交" @click="recover(entry.kind, 'resume')" />
+              <UButton
+                v-if="entry.value.record?.state === 'unknown'"
+                label="读取当前状态"
+                :disabled="!entry.value.mutation.unknown || entry.value.mutation.busy"
+                @click="recover(entry.kind, 'check')"
+              />
+              <UButton
+                v-if="entry.value.record?.state === 'unknown'"
+                label="重试原提交"
+                :disabled="!entry.value.mutation.operation?.retryAvailable || entry.value.mutation.busy"
+                @click="recover(entry.kind, 'retry')"
+              />
+              <UButton
+                v-if="entry.value.failure?.kind === 'mfa' || entry.value.record?.state === 'mfa'"
+                to="/bff/login?returnTo=/purchase-orders"
+                external
+                label="重新验证"
+              />
+            </template>
+          </UAlert>
+        </template>
         <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="orders-skeleton">
             <USkeleton v-for="n in 8" :key="n" class="h-9 w-full" />
@@ -834,8 +1072,8 @@ async function copyOrderId() {
               color="error"
               variant="soft"
               icon="i-carbon-warning-alt"
-              title="采购订单加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
+              :title="connected ? '采购订单加载失败' : '采购订单加载失败（演示）'"
+              :description="connected ? connection.query.problem : '?state=error 会模拟一次加载失败。本原型不会访问后端。'"
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
           </div>
@@ -843,9 +1081,9 @@ async function copyOrderId() {
             <UEmpty
               variant="naked"
               icon="i-carbon-view-off"
-              title="没有采购订单读取权限（演示）"
-              description="?state=forbidden 模拟演示身份缺少 purchase.view 权限。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              :title="connected ? '无法读取采购订单' : '没有采购订单读取权限（演示）'"
+              :description="connected ? forbiddenDescription : '?state=forbidden 模拟演示身份缺少 purchase.view 权限。'"
+              :actions="connected && (!connection.query.auth.user || !connection.query.session.activeWorkspaceId) ? [] : [{ label: connected ? '刷新权限' : '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: connected ? refreshPurchaseAccess : reloadPage }]"
             />
           </div>
           <div v-else-if="isEmpty" class="py-6" data-testid="orders-state-empty">
@@ -866,6 +1104,9 @@ async function copyOrderId() {
               :row-activate="openDetail"
               data-testid="orders-table"
             >
+              <template #id-cell="{ row }">
+                {{ connected ? connection.query.data?.orders.find(value => value.id === row.original.id)?.number : row.original.id }}
+              </template>
               <template #status-cell="{ row }">
                 <div class="flex flex-wrap items-center gap-1">
                   <UBadge
@@ -888,7 +1129,7 @@ async function copyOrderId() {
                 {{ orderLines(row.original) }}
               </template>
               <template #amount-cell="{ row }">
-                {{ formatMoney(orderTotal(row.original)) }}
+                {{ connected ? '见详情' : formatMoney(orderTotal(row.original)) }}
               </template>
               <template #actions-cell="{ row }">
                 <UButton
@@ -917,7 +1158,10 @@ async function copyOrderId() {
               v-if="!showSkeleton && !isError && !isForbidden && !isEmpty"
               class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
-              <p class="text-xs text-muted">
+              <p v-if="connected" class="text-xs text-muted">
+                当前第 {{ page }} 页，本页 {{ filteredOrders.length }} 条{{ connection.query.data?.hasMore ? '，还有下一页' : '' }}
+              </p>
+              <p v-else class="text-xs text-muted">
                 第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredOrders.length }} 条
                 <span v-if="hasFilters" class="text-primary">
                   · 当前筛选 {{ filteredOrders.length }} 张
@@ -925,7 +1169,8 @@ async function copyOrderId() {
               </p>
               <UPagination
                 v-model:page="page"
-                :total="filteredOrders.length"
+                :total="connected ? (page - 1) * pageSize + (connection.query.data?.orders.length ?? 0) + (connection.query.data?.hasMore ? 1 : 0) : filteredOrders.length"
+                :ui="connected ? { first: 'hidden', last: 'hidden' } : undefined"
                 :items-per-page="pageSize"
                 size="sm"
                 data-testid="orders-pagination"
@@ -942,7 +1187,7 @@ async function copyOrderId() {
           <div>
             <div class="flex items-center gap-1">
               <p class="font-mono text-xs text-muted">
-                {{ selected?.id }}
+                {{ connected ? connection.detail?.order.number : selected?.id }}
               </p>
               <UButton
                 v-if="selected && isSupported"
@@ -972,7 +1217,34 @@ async function copyOrderId() {
       </template>
 
       <template #body>
+        <USkeleton v-if="connected && connection.detailLoading" class="h-32" />
+        <UAlert
+          v-if="connected && connection.detailError"
+          color="error"
+          :title="connection.detailError"
+          data-testid="order-live-error"
+        />
         <div v-if="selected" class="space-y-5">
+          <UAlert
+            v-if="connected"
+            color="neutral"
+            :title="'版本 ' + connection.detail?.order.version"
+            :description="'状态：' + (purchaseStateLabels[connection.detail?.order.state ?? ''] ?? connection.detail?.order.state)"
+            data-testid="order-live-version"
+          />
+          <UAlert
+            v-if="connected && connection.submission.message"
+            color="warning"
+            :title="connection.submission.message"
+            data-testid="order-action-feedback"
+          >
+            <template #actions>
+              <UButton label="读取当前状态" variant="outline" @click="connection.refresh()" /><UButton v-if="connection.submission.record" label="恢复原操作" @click="connection.recover('order', 'resume')" /><UButton v-if="connection.submission.mutation.unknown" label="核对原操作" @click="connection.recover('order', 'check')" /><UButton v-if="connection.submission.mutation.operation?.retryAvailable" label="重试原提交" @click="connection.recover('order', 'retry')" />
+            </template>
+          </UAlert>
+          <UFormField v-if="connected" label="退回、取消或关闭原因">
+            <UInput v-model="connection.reason" class="w-full" data-testid="order-action-reason" />
+          </UFormField>
           <AppBreadcrumb current="采购订单" :detail="selected.id" />
           <UStepper
             :model-value="stepValue"
@@ -1052,7 +1324,7 @@ async function copyOrderId() {
             </div>
           </dl>
 
-          <div class="space-y-1.5">
+          <div v-if="!connected" class="space-y-1.5">
             <div class="flex items-center justify-between text-xs text-muted">
               <span>入库进度</span>
               <span class="tabular-nums">{{ receivedRate }}%</span>
@@ -1070,7 +1342,7 @@ async function copyOrderId() {
             data-testid="order-note"
           />
 
-          <UCard class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
+          <UCard v-if="!connected" class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
             <template #header>
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <p class="text-sm font-medium text-highlighted">
@@ -1110,6 +1382,15 @@ async function copyOrderId() {
                 :ui="{ th: 'sticky top-0 z-10 bg-elevated py-2', td: 'py-2', root: 'text-[12.5px]' }"
                 data-testid="order-lines"
               >
+                <template #quantity-cell="{ row }">
+                  {{ connected ? connection.detail?.lines[row.original.lineNo - 1]?.quantity : row.original.quantity }}
+                </template>
+                <template #unitPrice-cell="{ row }">
+                  {{ connected ? connection.detail?.lines[row.original.lineNo - 1]?.unitPrice : formatMoney(row.original.unitPrice) }}
+                </template>
+                <template #received-cell="{ row }">
+                  {{ connected ? sumDecimals((connection.permits?.permits ?? []).filter(permit => permit.lineId === connection.detail?.lines[row.original.lineNo - 1]?.id).map(permit => permit.executed)) : row.original.received }}
+                </template>
                 <template #amount-cell="{ row }">
                   {{ lineAmount(row.original) }}
                 </template>
@@ -1117,7 +1398,7 @@ async function copyOrderId() {
             </div>
           </UCard>
 
-          <UCard class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
+          <UCard v-if="!connected" class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
             <template #header>
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <p class="text-sm font-medium text-highlighted">
@@ -1132,14 +1413,15 @@ async function copyOrderId() {
           </UCard>
 
           <StockPermitPanel
+            :live="connected ? connection : undefined"
             source-type="purchase"
             :source-id="selected.id"
             :can-manage="canReceiveSelected || canApprove"
           />
 
-          <PurchasePayablesCard :order-id="selected.id" />
+          <PurchasePayablesCard :order-id="selected.id" :connected="connected" :connected-workspace-id="connection.query.session.activeWorkspaceId" />
 
-          <UCard class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
+          <UCard v-if="!connected" class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
             <template #header>
               <div class="flex flex-wrap items-center justify-between gap-2">
                 <p class="text-sm font-medium text-highlighted">
@@ -1160,10 +1442,10 @@ async function copyOrderId() {
                   未税合计
                 </dt>
                 <dd class="tabular-nums text-default">
-                  {{ formatMoney(subtotal) }}
+                  {{ connected ? connection.detail?.total : formatMoney(subtotal) }}
                 </dd>
               </div>
-              <div class="flex justify-between gap-3">
+              <div v-if="!connected" class="flex justify-between gap-3">
                 <dt class="text-muted">
                   税额（13%）
                 </dt>
@@ -1171,7 +1453,7 @@ async function copyOrderId() {
                   {{ formatMoney(tax) }}
                 </dd>
               </div>
-              <div class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
+              <div v-if="!connected" class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
                 <dt class="text-highlighted">
                   价税合计
                 </dt>
@@ -1260,6 +1542,7 @@ async function copyOrderId() {
               label="发起收货"
               icon="i-carbon-inventory-management"
               data-testid="order-receive"
+              :disabled="connected && (connection.syncingPermit || !!connection.permitSubmission.record)"
               @click="openReceipt"
             />
             <UButton
@@ -1275,10 +1558,26 @@ async function copyOrderId() {
       </template>
     </USlideover>
 
-    <PurchaseOrderFormSlideover v-model:open="formOpen" :order="editingOrder" @save="handleSave" />
+    <PurchaseOrderFormSlideover
+      v-model:open="formOpen"
+      :live="connected ? connection : undefined"
+      :order="editingOrder"
+      @save="handleSave"
+    />
 
-    <PurchaseReceiptSlideover v-model:open="receiptOpen" :order="selected" @confirm="handleReceipt" />
+    <PurchaseReceiptSlideover
+      v-model:open="receiptOpen"
+      :live="connected ? connection : undefined"
+      :order="selected"
+      @confirm="handleReceipt"
+    />
 
-    <PurchasePrintPreview v-model:open="printOpen" :order="selected" :company-name="workspace.name" />
+    <PurchasePrintPreview
+      v-model:open="printOpen"
+      :order="selected"
+      :company-name="connected ? (connection.query.session.workspace?.name ?? 'Nexora') : workspace.name"
+      :detail="connected ? connection.detail : undefined"
+      :permits="connected ? connection.permits?.permits : undefined"
+    />
   </div>
 </template>

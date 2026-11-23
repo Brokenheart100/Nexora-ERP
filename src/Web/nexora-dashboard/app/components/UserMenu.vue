@@ -2,17 +2,32 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useSessionStore } from '~/stores/session'
 import { useUiStore } from '~/stores/ui'
+import { useAuthSessionStore } from '~/stores/authSession'
+import { loginDestination } from '#shared/utils/auth-navigation'
+import { usesConnectedBusinessData } from '~/utils/organization/navigation'
 
 const props = defineProps<{
   collapsed?: boolean
 }>()
 
 const session = useSessionStore()
+const auth = useAuthSessionStore()
+const route = useRoute()
 const ui = useUiStore()
 const colorMode = useColorMode()
 const { t } = useI18n()
 const { locale, localeOptions, changeLocale } = useLocaleSwitch()
-const user = computed(() => session.user)
+const user = computed(() => auth.connected
+  ? {
+      name: auth.user ? auth.user.name || auth.user.subject : t(auth.error ? 'auth.unavailable' : auth.loading ? 'auth.loading' : 'auth.guest'),
+      title: t(usesConnectedBusinessData(route.path, route.query.tab) ? auth.simulated ? 'auth.catalogMock' : 'auth.catalogLive' : auth.simulated ? 'auth.simulated' : 'auth.connected'),
+      avatarIcon: 'i-carbon-user-avatar'
+    }
+  : session.user)
+
+function loginPath(entry: 'login' | 'email-login' | 'register', reauth = false) {
+  return `/bff/${entry}?${reauth ? 'prompt=login&' : ''}returnTo=${encodeURIComponent(loginDestination(route.fullPath))}`
+}
 
 const items = computed<DropdownMenuItem[][]>(() => {
   const sections: DropdownMenuItem[][] = [
@@ -20,7 +35,9 @@ const items = computed<DropdownMenuItem[][]>(() => {
       label: user.value.name + ' · ' + user.value.title,
       avatar: { alt: user.value.name, icon: user.value.avatarIcon },
       type: 'label'
-    }],
+    }]
+  ]
+  if (!auth.connected) sections.push(
     [{
       label: t('shell.mfa', { count: session.activeSessions.length }),
       icon: 'i-carbon-locked',
@@ -39,7 +56,38 @@ const items = computed<DropdownMenuItem[][]>(() => {
       type: 'checkbox' as const,
       checked: session.profileKey === option.value,
       onSelect: () => session.switchIdentity(option.value)
-    }))],
+    }))]
+  )
+  else {
+    if (auth.user) sections.push([...(auth.security?.available
+      ? [{
+          label: t(auth.security?.enrolled ? 'auth.mfaVerified' : 'auth.mfaPending'),
+          icon: 'i-carbon-locked',
+          type: 'label' as const
+        }, {
+          label: t('auth.reauthenticate'),
+          icon: 'i-carbon-fingerprint-recognition',
+          to: loginPath('login', true),
+          external: true
+        }]
+      : []), {
+      label: t('auth.signOut'),
+      icon: 'i-carbon-logout',
+      disabled: auth.loggingOut,
+      onSelect: () => auth.logout()
+    }])
+    else sections.push([
+      { label: t('auth.signIn'), icon: 'i-carbon-login', to: loginPath('login'), external: true },
+      { label: t('auth.emailLogin'), icon: 'i-carbon-email', to: loginPath('email-login'), external: true },
+      { label: t('auth.register'), icon: 'i-carbon-user-follow', to: loginPath('register'), external: true }
+    ])
+    if (auth.error) sections.push([{
+      label: t(auth.error), icon: 'i-carbon-warning', type: 'label'
+    }, {
+      label: t('auth.retry'), icon: 'i-carbon-renew', onSelect: () => auth.refresh()
+    }])
+  }
+  sections.push(
     [{
       label: t('shell.accountSettings'),
       icon: 'i-carbon-settings',
@@ -47,9 +95,8 @@ const items = computed<DropdownMenuItem[][]>(() => {
     }, {
       label: t('shell.securitySettings'),
       icon: 'i-carbon-locked',
-      onSelect: () => {
-        ui.accountSecurityOpen = true
-      }
+      disabled: auth.connected && !auth.user,
+      onSelect() { ui.accountSecurityOpen = true }
     }],
     [{
       label: t('shell.theme'),
@@ -79,7 +126,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
         colorMode.preference = 'system'
       }
     }]
-  ]
+  )
 
   if (props.collapsed) {
     sections.push([{
@@ -112,6 +159,8 @@ const items = computed<DropdownMenuItem[][]>(() => {
       variant="ghost"
       :class="collapsed ? 'justify-center' : 'w-full justify-start'"
       :square="collapsed"
+      :loading="auth.connected && auth.loading"
+      :aria-label="user.name"
       data-testid="user-menu-trigger"
     >
       <UAvatar

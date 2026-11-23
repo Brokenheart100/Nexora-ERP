@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { z } from 'zod'
+import type { SalesReceivablesConnection } from '~/composables/sales/useSalesReceivables'
+import { useReceivablesApi } from '~/composables/api/useReceivablesApi'
+import { useWorkspaceQuery } from '~/composables/api/useWorkspaceQuery'
 import type {
   DeliveryInvoice,
   InvoiceBadgeColor,
@@ -58,6 +62,7 @@ import {
   invoiceTotals
 } from '~/mocks/invoiceDelivery'
 
+const props = defineProps<{ live?: SalesReceivablesConnection }>()
 const toast = useToast()
 const { copy, isSupported: clipboardSupported } = useClipboard()
 const { actorOptions, actorRole, actor, isApprover, setActorRole } = useDemoActor()
@@ -65,7 +70,36 @@ const { actorOptions, actorRole, actor, isApprover, setActorRole } = useDemoActo
 const today = INVOICE_DELIVERY_TODAY
 const demoNow = INVOICE_DELIVERY_NOW
 
-const activeTab = ref('number')
+const route = useRoute()
+const api = useReceivablesApi()
+const requestedInvoice = () => typeof route.query.invoice === 'string' && z.uuid().safeParse(route.query.invoice).success ? route.query.invoice : ''
+const liveInvoiceId = ref(requestedInvoice())
+const activeTab = ref(props.live && liveInvoiceId.value ? 'share' : 'number')
+const panel = useTemplateRef<{ refresh: () => Promise<unknown> }>('livePanel')
+const invoiceDetail = useWorkspaceQuery('invoice-delivery-selection', '/sales', async (id, signal) => {
+  if (!props.live || !liveInvoiceId.value || activeTab.value === 'number') return null
+  const row = await api.detail(id, liveInvoiceId.value, signal)
+  return row.terms.kind === 1 && !row.terms.openingSource && row.state !== 'cancelled' ? row : null
+}, () => [liveInvoiceId.value, activeTab.value])
+const liveOptions = computed(() => {
+  const rows = (props.live?.documents ?? []).filter(row => row.terms.kind === 1 && !row.terms.openingSource && row.state !== 'cancelled')
+  if (invoiceDetail.data && !rows.some(row => row.id === invoiceDetail.data?.id)) rows.unshift(invoiceDetail.data)
+  return rows.map(row => ({ label: (row.awaitsFiscalNumber ? '待分配编号' : row.terms.number) + ' · ' + row.terms.customerName + ' · ' + row.terms.on, value: row.id }))
+})
+watch(liveOptions, (rows) => { if (!liveInvoiceId.value && rows.length) liveInvoiceId.value = rows[0]!.value }, { immediate: true })
+watch(() => route.query.invoice, () => {
+  if (props.live && requestedInvoice()) {
+    liveInvoiceId.value = requestedInvoice()
+    activeTab.value = 'share'
+  }
+})
+watch(() => invoiceDetail.owner, () => { liveInvoiceId.value = ''; activeTab.value = 'number' }, { flush: 'sync' })
+defineExpose({
+  async refresh() {
+    await props.live?.refresh()
+    await Promise.all([invoiceDetail.refresh(), panel.value?.refresh()])
+  }
+})
 const tabItems = [
   { label: '编号规则', value: 'number', icon: 'i-lucide-hash' },
   { label: '样张与分享', value: 'share', icon: 'i-lucide-file-text' },
@@ -1040,12 +1074,12 @@ function resetDemo() {
         <h1 class="text-lg font-semibold text-highlighted">
           发票编号、样张与交付
         </h1>
-        <p class="mt-1 max-w-3xl text-sm text-muted">
+        <p v-if="!live" class="mt-1 max-w-3xl text-sm text-muted">
           演示编号规则、复核确认与过账锁定，查看本地发票样张与分享链接状态，并跟踪寄送失败后的重试、重寄与放弃。
           全部数据来自固定种子，刷新页面恢复初始状态。
         </p>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
+      <div v-if="!live" class="flex flex-wrap items-center gap-2">
         <USelect
           :model-value="actorRole"
           :items="actorRoleOptions"
@@ -1067,6 +1101,7 @@ function resetDemo() {
     </div>
 
     <UAlert
+      v-if="!live"
       color="info"
       variant="soft"
       icon="i-lucide-info"
@@ -1084,6 +1119,7 @@ function resetDemo() {
         data-testid="invoice-delivery-tabs"
       />
       <UBadge
+        v-if="!live"
         :label="'演示身份：' + actor.name + ' · ' + actor.title"
         color="neutral"
         variant="subtle"
@@ -1092,6 +1128,26 @@ function resetDemo() {
       />
     </div>
 
+    <template v-if="live">
+      <SalesInvoiceNumbering v-if="activeTab === 'number'" ref="livePanel" :can-configure="live.query.data?.home.canConfigure === true" />
+      <template v-else>
+        <div class="flex flex-wrap items-end gap-2">
+          <UFormField label="发票" class="min-w-72 flex-1">
+            <USelect v-model="liveInvoiceId" :items="liveOptions" placeholder="选择发票" class="w-full"
+              data-testid="invoice-delivery-invoice-live" />
+          </UFormField>
+          <UButton label="上一页发票" size="sm" variant="outline" :disabled="live.pages.documents <= 1" @click="live.changePage('documents', -1)" />
+          <UButton label="下一页发票" size="sm" variant="outline" :disabled="live.documents.length < live.pageSize" @click="live.changePage('documents', 1)" />
+        </div>
+        <UAlert v-if="invoiceDetail.problem" color="warning" variant="soft" :title="invoiceDetail.problem" />
+        <SalesInvoiceSharing v-if="activeTab === 'share' && invoiceDetail.data" :key="invoiceDetail.data.id" ref="livePanel"
+          :invoice="invoiceDetail.data" :can-manage="live.query.data?.home.canPost === true" />
+        <SalesInvoiceMail v-if="activeTab === 'mail' && invoiceDetail.data" :key="invoiceDetail.data.id" ref="livePanel"
+          :invoice="invoiceDetail.data" :can-manage="live.query.data?.home.canPost === true" />
+        <p v-if="!invoiceDetail.loading && !invoiceDetail.problem && !invoiceDetail.data" class="text-sm text-muted">请选择可交付的发票。</p>
+      </template>
+    </template>
+    <template v-else>
     <div v-if="activeTab === 'number'" class="space-y-4">
       <div class="grid gap-4 lg:grid-cols-5">
         <UCard class="rounded-sm nx-reveal lg:col-span-3" data-testid="invoice-number-settings">
@@ -2581,5 +2637,6 @@ function resetDemo() {
         </div>
       </template>
     </UModal>
+    </template>
   </section>
 </template>

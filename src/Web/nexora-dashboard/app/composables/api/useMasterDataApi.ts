@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { catalogSchema, itemSchema, revision } from '#shared/types/wire'
+import { catalogSchema, changeReceiptSchema, itemSchema, revision } from '#shared/types/wire'
 import type { ChangeReceipt, WireItem } from '#shared/types/wire'
 import { definitionSchema, itemReferenceSchema, type DefinitionInput, type ItemInput, type WireDefinition } from '#shared/types/masterdata'
 import { useDashboardApi } from './useDashboardApi'
@@ -40,8 +40,8 @@ export function useMasterDataApi() {
       { code: input.code, name: input.name, kind: input.kind, categoryId: input.categoryId, unitId: input.unitId, tracksInventory: input.tracksInventory }, { idempotent: true }),
     reference: async (workspaceId: string, id: string, inventory = false) => itemReferenceSchema.parse((await api.get(
       `/bff/api/masterdata/workspaces/${workspaceId}/items/${id}/reference${inventory ? '?inventory=true' : ''}`)).data),
-    catalog: async (workspaceId: string, page = 1, signal?: AbortSignal) => {
-      const response = await api.get(`/bff/api/masterdata/workspaces/${workspaceId}/catalog?page=${page}&pageSize=20`, { signal })
+    catalog: async (workspaceId: string, page = 1, signal?: AbortSignal, pageSize = 20) => {
+      const response = await api.get(`/bff/api/masterdata/workspaces/${workspaceId}/catalog?page=${page}&pageSize=${pageSize}`, { signal })
       return { ...response, data: catalogSchema.parse(response.data) }
     },
     item: async (workspaceId: string, id: string) => {
@@ -52,7 +52,7 @@ export function useMasterDataApi() {
     applied: (workspaceId: string, itemId: string, operationId: string, _subject: string) => receipt(workspaceId, operationId, 'catalog.item.revised', itemId),
     revise: (workspaceId: string, item: WireItem, name: string, etag: string, changes?: { categoryId: string, isActive: boolean }) => api.createWrite<ChangeReceipt>(
       `/bff/api/masterdata/workspaces/${workspaceId}/items/${item.id}`,
-      { name, categoryId: changes?.categoryId ?? item.categoryId, isActive: changes?.isActive ?? item.isActive }, { method: 'PUT', etag, idempotent: true }
+      { name, categoryId: changes?.categoryId ?? item.categoryId, isActive: changes?.isActive ?? item.isActive }, { method: 'PUT', etag, idempotent: true, parse: data => changeReceiptSchema.parse(data) }
     )
   }
 }

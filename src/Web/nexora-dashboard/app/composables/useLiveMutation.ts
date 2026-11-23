@@ -7,6 +7,7 @@ export function useLiveMutation<T>() {
   const message = ref('')
   const failure = shallowRef<Error | null>(null)
   const unknown = computed(() => operation.value?.state === 'unknown')
+  let generation = 0
 
   function rejected(error: unknown) {
     failure.value = error instanceof Error ? error : new Error('操作未完成。')
@@ -21,14 +22,18 @@ export function useLiveMutation<T>() {
     busy.value = true
     message.value = ''
     failure.value = null
+    const current = generation
     try {
-      return await send()
+      const result = await send()
+      return current === generation ? result : null
     } catch (error) {
-      rejected(error)
+      if (current === generation) rejected(error)
       return null
     } finally {
-      busy.value = false
-      triggerRef(operation)
+      if (current === generation) {
+        busy.value = false
+        triggerRef(operation)
+      }
     }
   }
 
@@ -47,30 +52,41 @@ export function useLiveMutation<T>() {
   async function check(read: () => Promise<ApiResponse<T> | null>) {
     if (!unknown.value || !operation.value || busy.value) return null
     busy.value = true
+    const current = generation
+    const submission = operation.value
     try {
-      const applied = await operation.value.readBack(async () => {
+      const applied = await submission.readBack(async () => {
         const result = await read()
         return result ? { applied: true, result } : { applied: false }
       })
+      if (current !== generation) return null
       message.value = applied ? '已确认本次操作。' : '已读取当前记录，尚无法确认本次提交，可明确重试原操作。'
-      return applied ? operation.value.result! : null
+      return applied ? submission.result! : null
     } catch (error) {
-      rejected(error)
+      if (current === generation) rejected(error)
       return null
     } finally {
-      busy.value = false
-      triggerRef(operation)
+      if (current === generation) {
+        busy.value = false
+        triggerRef(operation)
+      }
     }
   }
 
   function reset() {
     if (busy.value || unknown.value) return
+    resetScope()
+  }
+
+  function resetScope() {
+    generation++
+    busy.value = false
     operation.value = null
     message.value = ''
     failure.value = null
   }
 
-  return { operation, busy, message, failure, unknown, run, check, reset,
+  return { operation, busy, message, failure, unknown, run, check, reset, resetScope,
     retry: () => perform(async () => {
       if (!operation.value) throw new ResultUnknownError()
       return operation.value.retryExplicitly()

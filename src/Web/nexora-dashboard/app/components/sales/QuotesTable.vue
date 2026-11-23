@@ -2,11 +2,12 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { Quote } from '~/mocks'
 import { quoteStatusColors, quoteStatusLabels } from '~/mocks'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
-defineProps<{ rows: Quote[] }>()
+const props = defineProps<{ rows: Quote[], live?: boolean }>()
 const emit = defineEmits<{ open: [id: string], reset: [] }>()
 
-const columns: TableColumn<Quote>[] = [{
+const columns = computed<TableColumn<Quote>[]>(() => [{
   accessorKey: 'id',
   header: '报价单号',
   meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
@@ -19,7 +20,7 @@ const columns: TableColumn<Quote>[] = [{
   header: '状态'
 }, {
   accessorKey: 'validUntil',
-  header: '有效期至',
+  header: props.live ? '报价日期' : '有效期至',
   meta: { class: { td: 'tabular-nums whitespace-nowrap' } }
 }, {
   accessorKey: 'owner',
@@ -32,7 +33,7 @@ const columns: TableColumn<Quote>[] = [{
   id: 'actions',
   header: '操作',
   meta: { class: { th: 'text-right', td: 'text-right' } }
-}]
+}])
 </script>
 
 <template>
@@ -44,6 +45,9 @@ const columns: TableColumn<Quote>[] = [{
     :row-activate="row => emit('open', row.id)"
     data-testid="quote-table"
   >
+    <template #id-cell="{ row }">
+      {{ row.original.documentNumber ?? row.original.id }}
+    </template>
     <template #status-cell="{ row }">
       <UBadge
         :color="quoteStatusColors[row.original.status]"
@@ -53,7 +57,7 @@ const columns: TableColumn<Quote>[] = [{
       />
     </template>
     <template #amount-cell="{ row }">
-      {{ formatMoney(Number(row.original.totalAmount)) }}
+      {{ row.original.documentNumber ? (row.original.totalAmount ? displayDecimal(row.original.totalAmount) : '—') : formatMoney(Number(row.original.totalAmount)) }}
     </template>
     <template #actions-cell="{ row }">
       <UButton

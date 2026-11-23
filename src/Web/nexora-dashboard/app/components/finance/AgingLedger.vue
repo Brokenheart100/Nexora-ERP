@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import type { AgingBucket, PartnerLedgerEntry } from '~/mocks'
 import { invoices, invoiceStatusColors, invoiceStatusLabels, purchaseOrders } from '~/mocks'
+import type { OpenItemAging } from '#shared/types/trade'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
 const props = defineProps<{
   aging: AgingBucket[]
   partnerLedgers: PartnerLedgerEntry[]
   receivableBuckets?: AgingBucket[]
   receivableOpenInvoices?: { id: string, customerName: string, dueAt: string, bucket: string, outstanding: string }[]
+  connected?: boolean
+  liveAging?: { receivable: OpenItemAging, payable: OpenItemAging }
+  workspaceId?: string
+  loading?: boolean
+  problem?: string
 }>()
 
 const agingTab = ref<'receivable' | 'payable'>('receivable')
@@ -14,6 +21,8 @@ const agingTabItems = [
   { label: '应收账龄', value: 'receivable' },
   { label: '应付账龄', value: 'payable' }
 ]
+const liveReport = computed(() => props.liveAging?.[agingTab.value])
+const bucketLabels: Record<string, string> = { 'current': '未到期', '1-30': '逾期 1–30 天', '31-60': '逾期 31–60 天', '61-90': '逾期 61–90 天', 'over-90': '逾期超过 90 天' }
 
 const search = ref('')
 const direction = ref<'all' | 'ar' | 'ap'>('all')
@@ -84,7 +93,70 @@ function purchaseAmount() {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="ledger-panel">
+  <div v-if="connected" class="space-y-4" data-testid="ledger-panel">
+    <UCard class="rounded-sm" data-testid="ledger-aging-table">
+      <template #header>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-sm font-semibold">
+            账龄分析
+          </h2>
+          <UTabs
+            v-model="agingTab"
+            :items="agingTabItems"
+            :content="false"
+            size="sm"
+            data-testid="ledger-tabs"
+          />
+        </div>
+      </template>
+      <USkeleton v-if="loading" class="h-16 w-full" />
+      <UAlert
+        v-else-if="problem"
+        color="warning"
+        variant="soft"
+        title="账龄暂无法读取"
+        :description="problem"
+      />
+      <div v-else-if="liveReport" class="space-y-2">
+        <div
+          v-for="bucket in liveReport.buckets"
+          :key="bucket.key"
+          class="flex justify-between border-b border-default py-2 text-sm"
+          data-testid="ledger-aging-row"
+        >
+          <span>{{ bucketLabels[bucket.key] ?? bucket.key }}</span>
+          <span>{{ displayDecimal(bucket.amount, liveReport.minorUnits) }}</span>
+        </div>
+        <p class="flex justify-between text-sm font-semibold">
+          <span>合计</span><span>{{ displayDecimal(liveReport.total, liveReport.minorUnits) }}</span>
+        </p>
+      </div>
+    </UCard>
+    <UCard v-if="liveReport" class="rounded-sm" data-testid="ledger-open-invoices">
+      <template #header>
+        <h2 class="text-sm font-semibold">
+          {{ agingTab === 'receivable' ? '未结发票明细' : '未结供应商账单' }}
+        </h2>
+      </template>
+      <p v-if="!liveReport.items.length" class="text-sm text-muted">
+        当前没有未结单据。
+      </p>
+      <div
+        v-for="row in liveReport.items"
+        :key="row.id"
+        class="flex flex-wrap items-center justify-between gap-2 border-b border-default py-2 text-sm"
+        data-testid="ledger-open-invoice-row"
+      >
+        <UButton :label="row.number" variant="link" :to="{ path: agingTab === 'receivable' ? '/sales' : '/finance', query: { workspace: workspaceId, ...(agingTab === 'receivable' ? { tab: 'receivables', invoice: row.id } : { tab: 'payables', bill: row.id }) } }" />
+        <span>{{ row.partnerName }} · 到期 {{ row.dueOn }}</span>
+        <span>{{ displayDecimal(row.outstanding, liveReport.minorUnits) }}</span>
+      </div>
+      <p class="mt-2 text-xs text-muted">
+        截至 {{ liveReport.through }} · 按当前工作区展示前 20 条。
+      </p>
+    </UCard>
+  </div>
+  <div v-else class="space-y-4" data-testid="ledger-panel">
     <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }" data-testid="ledger-aging-table">
       <template #header>
         <div class="flex flex-wrap items-center justify-between gap-3">

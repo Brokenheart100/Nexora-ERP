@@ -14,7 +14,9 @@ import {
   openingSubledgerStatusLabels
 } from '~/mocks'
 
-const props = defineProps<{ canPost: boolean }>()
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
+
+const props = defineProps<{ canPost: boolean, live?: AccountingBookConnection }>()
 
 const toast = useToast()
 const { activeWorkspaceId } = useMockWorkspace()
@@ -240,7 +242,8 @@ function stateColor(batch: OpeningSubledgerBatch) {
 </script>
 
 <template>
-  <div class="space-y-4" data-testid="finance-opening">
+  <FinanceOpeningLedger v-if="live" :live="live" />
+  <div v-else class="space-y-4" data-testid="finance-opening">
     <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
         <div class="flex flex-wrap items-start justify-between gap-3">

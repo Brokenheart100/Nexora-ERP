@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import type { SalesReceivablesConnection } from '~/composables/sales/useSalesReceivables'
+import { displayDecimal } from '~/utils/api/decimal-display'
+
 const props = defineProps<{
   invoiceId?: string | null
   receiptId?: string | null
+  live?: SalesReceivablesConnection
 }>()
 
 const emit = defineEmits<{
+  saveLive: []
+  retryLive: []
   save: [payload: {
     invoiceId: string
     sourceType: 'receipt' | 'credit'
@@ -14,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
+const liveForm = computed(() => props.live?.form)
 const { workspace } = useMockWorkspace()
 const receivables = useReceivablesStore()
 
@@ -74,7 +81,7 @@ function reset() {
 }
 
 watch(open, (value) => {
-  if (value) reset()
+  if (value && !props.live) reset()
 }, { immediate: true })
 
 watch(() => form.invoiceId, () => {
@@ -91,6 +98,10 @@ watch(() => form.sourceType, () => {
 })
 
 function submit() {
+  if (props.live) {
+    emit('saveLive')
+    return
+  }
   formError.value = ''
   const invoice = selectedInvoice.value
   if (!invoice) {
@@ -131,7 +142,7 @@ function submit() {
           应收核销
         </p>
         <h2 class="mt-1 text-base font-semibold text-highlighted">
-          {{ customerName || '选择客户与发票' }}
+          {{ (live ? live.selectedInvoice?.terms.customerName : customerName) || '选择客户与发票' }}
         </h2>
         <p class="mt-0.5 text-xs text-muted">
           同一客户的收款单或销售贷项，可用于核销一张未结发票。
@@ -140,7 +151,98 @@ function submit() {
     </template>
 
     <template #body>
-      <div class="space-y-4">
+      <div v-if="live && liveForm" class="space-y-4">
+        <SalesOperationStatus
+          :message="live.error"
+          :submission="live.submission"
+          @check="live.check()"
+          @retry="emit('retryLive')"
+        />
+        <UFormField label="未结发票" required>
+          <USelectMenu
+            :model-value="liveForm.invoiceId"
+            :items="live.allocationInvoices.map(row => ({ label: row.terms.number + ' · ' + row.terms.customerName + ' · 未结 ' + displayDecimal(row.openBalance), value: row.id }))"
+            value-key="value"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="allocate-invoice"
+            @update:model-value="live.selectAllocationInvoice($event)"
+          />
+          <div v-if="live.pages.invoices > 1 || live.invoices.length >= live.pageSize" class="mt-1 flex gap-2">
+            <UButton
+              label="上一页发票"
+              variant="outline"
+              size="xs"
+              :disabled="live.pages.invoices <= 1 || live.frozen"
+              @click="live.changePage('invoices', -1)"
+            />
+            <UButton
+              label="下一页发票"
+              variant="outline"
+              size="xs"
+              :disabled="live.invoices.length < live.pageSize || live.frozen"
+              @click="live.changePage('invoices', 1)"
+            />
+          </div>
+        </UFormField>
+        <UFormField label="可核销款项" required>
+          <USelectMenu
+            :model-value="liveForm.fundsId"
+            :items="live.compatibleFunds.map(row => ({ label: row.terms.number + ' · 可用 ' + displayDecimal(row.openBalance), value: row.id }))"
+            value-key="value"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="allocate-source"
+            @update:model-value="live.selectAllocationFunds($event)"
+          />
+          <div v-if="live.pages.documents > 1 || live.documents.length >= live.pageSize" class="mt-1 flex gap-2">
+            <UButton
+              label="上一页款项"
+              variant="outline"
+              size="xs"
+              :disabled="live.pages.documents <= 1 || live.frozen"
+              @click="live.changePage('documents', -1)"
+            />
+            <UButton
+              label="下一页款项"
+              variant="outline"
+              size="xs"
+              :disabled="live.documents.length < live.pageSize || live.frozen"
+              @click="live.changePage('documents', 1)"
+            />
+          </div>
+        </UFormField>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UFormField label="核销金额" required>
+            <UInput
+              v-model="liveForm.amount"
+              inputmode="decimal"
+              :disabled="live.frozen"
+              class="w-full"
+              data-testid="allocate-amount"
+            />
+          </UFormField>
+          <UFormField label="核销日期" required>
+            <UInput
+              v-model="liveForm.on"
+              type="date"
+              :disabled="live.frozen"
+              class="w-full"
+              data-testid="sales-allocate-date"
+            />
+          </UFormField>
+        </div>
+        <UFormField label="核销单号" required>
+          <UInput
+            v-model="liveForm.number"
+            maxlength="60"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="sales-allocate-number"
+          />
+        </UFormField>
+      </div>
+      <div v-else class="space-y-4">
         <UFormField label="未结发票" required>
           <USelect
             v-model="form.invoiceId"
@@ -235,8 +337,9 @@ function submit() {
           @click="open = false"
         />
         <UButton
-          label="确认核销"
+          :label="live ? '提交核销复核' : '确认核销'"
           icon="i-carbon-connect"
+          :disabled="live ? !live.canDraft : false"
           data-testid="allocate-submit"
           @click="submit"
         />

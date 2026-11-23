@@ -3,7 +3,7 @@ import { purchaseInputSchema, type PurchaseDetail } from '#shared/types/purchasi
 import { multiplyDecimals, sumDecimals } from '#shared/utils/decimal'
 
 export const mockSupplierId = '44444444-4444-4444-8444-444444444444'
-export function createPurchaseHandlers(context: { workspaceId: string, scenario: () => string, item: { id: string, code: string, name: string, version: number } }) {
+export function createPurchaseHandlers(context: { workspaceId: string, scenario: () => string, item: { id: string, code: string, name: string, version: number | string } }) {
   const root = `*/bff/api/purchasing/workspaces/${context.workspaceId}/orders`
   const supplier = { id: mockSupplierId, code: 'MSW-SUP', name: 'MSW 演示供应商', roles: ['supplier'], isActive: true, version: 1 }
   const orders = new Map<string, PurchaseDetail>()

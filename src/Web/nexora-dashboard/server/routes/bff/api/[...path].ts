@@ -4,7 +4,8 @@ import { bffConfig } from '../../../utils/runtime/bff-config'
 import { requireCsrf } from '../../../utils/auth/bff-csrf'
 import { requireFreshBffSession } from '../../../utils/auth/bff-oidc'
 import { evaluateMfaGate } from '../../../utils/auth/bff-mfa'
-import { businessRouteAllowed } from '../../../utils/proxy/business-routes'
+import { businessRouteAllowed, matchAssistantRoute } from '../../../utils/proxy/business-routes'
+import { proxyAssistant } from '../../../utils/proxy/assistant-proxy'
 
 const safeMethods = new Set(['GET', 'HEAD', 'OPTIONS'])
 const documentOrderPath = /^\/api\/(?:sales|purchasing)\/workspaces\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/orders$/i
@@ -42,6 +43,9 @@ export default defineEventHandler(async (event) => {
   const target = new URL(gateway.origin + path)
   if (!target.pathname.startsWith('/api/') || target.origin !== gateway.origin || /%(?:2f|5c)/i.test(target.pathname))
     throw createError({ statusCode: 400, statusMessage: 'Invalid API route' })
+
+  const assistant = matchAssistantRoute(target.pathname)
+  if (assistant) return proxyAssistant(event, target, session.accessToken, assistant)
 
   const documentOrder = event.method === 'POST' ? documentOrderPath.exec(target.pathname) : null
   if (documentOrder) return reserveAndProxyDocumentOrder(event, target, session.accessToken, documentOrder[1]!, getHeader(event, 'idempotency-key'))

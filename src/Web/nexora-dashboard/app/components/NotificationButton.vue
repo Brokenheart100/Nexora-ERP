@@ -1,10 +1,12 @@
 <script setup lang="ts">
 const { open, unread } = useNotifications()
 const { t } = useI18n()
+const auth = useAuthSessionStore()
 </script>
 
 <template>
   <UChip
+    v-if="!auth.connected || auth.user"
     :show="unread.length > 0"
     :text="unread.length > 9 ? '9+' : unread.length"
     color="primary"

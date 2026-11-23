@@ -17,4 +17,17 @@ describe('BFF business route boundary', () => {
     expect(businessRouteAllowed('DELETE', '/api/workspaces')).toBe(false)
     expect(businessRouteAllowed('TRACE', '/api/workspaces')).toBe(false)
   })
+
+  it('exposes only the workspace-scoped Assistant contract', () => {
+    const root = `/api/assistant/workspaces/${id}`
+    expect(businessRouteAllowed('GET', root + '/capabilities')).toBe(true)
+    expect(businessRouteAllowed('GET', root + '/sessions/' + id)).toBe(true)
+    expect(businessRouteAllowed('POST', root + '/runs')).toBe(true)
+    for (const action of ['approve', 'reject', 'resume', 'cancel']) {
+      expect(businessRouteAllowed('POST', root + '/executions/' + id + '/' + action)).toBe(true)
+      expect(businessRouteAllowed('GET', root + '/executions/' + id + '/' + action)).toBe(false)
+    }
+    expect(businessRouteAllowed('POST', root + '/executions/' + id + '/execute')).toBe(false)
+    expect(businessRouteAllowed('GET', root + '/sessions/all')).toBe(false)
+  })
 })

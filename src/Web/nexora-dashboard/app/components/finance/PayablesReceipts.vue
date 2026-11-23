@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import type { usePayablesConnection } from '~/composables/finance/usePayablesConnection'
+import { displayDecimal } from '~/utils/api/decimal-display'
 import type { SupplierReceiptLineMatch } from '~/stores/supplierTrade'
 
+const props = defineProps<{ live?: ReturnType<typeof usePayablesConnection> }>()
+type ReceiptRow = SupplierReceiptLineMatch | ReturnType<typeof usePayablesConnection>['receiptRows'][number]
+const money = (value: string | number) =>
+  typeof value === 'string' ? displayDecimal(value, props.live?.query.data?.home.minorUnits ?? 2) : formatMoney(value)
 const store = useSupplierTradeStore()
 const { activeWorkspaceId } = useMockWorkspace()
-const workspaceReceiptLines = computed(() => store.receiptLines.filter(line => line.workspaceId === activeWorkspaceId.value))
+const workspaceReceiptLines = computed(() =>
+  props.live ? props.live.receiptRows : store.receiptLines.filter(line => line.workspaceId === activeWorkspaceId.value)
+)
 
-const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
+const mockColumns: TableColumn<ReceiptRow>[] = [
   { accessorKey: 'receiptId', header: '收货单 / 采购单', id: 'receipt' },
   { accessorKey: 'orderSupplier', header: '供应商', id: 'supplier' },
   { accessorKey: 'name', header: '商品', id: 'product' },
@@ -16,6 +24,9 @@ const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
   { id: 'matched', header: '已匹配 / 可匹配' },
   { id: 'variance', header: '价差' }
 ]
+const receiptColumns = computed<TableColumn<ReceiptRow>[]>(() =>
+  props.live ? [...mockColumns.filter(value => value.id !== 'variance'), { id: 'accrualState', header: '暂估状态' }] : mockColumns
+)
 </script>
 
 <template>
@@ -31,7 +42,7 @@ const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
           </p>
         </div>
         <UBadge
-          label="暂估应付 · 已计价"
+          :label="live ? '实收与暂估分别确认' : '暂估应付 · 已计价'"
           color="neutral"
           variant="subtle"
           size="sm"
@@ -58,10 +69,10 @@ const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
         </div>
       </template>
       <template #unitPrice-cell="{ row }">
-        <span class="tabular-nums">{{ formatMoney(row.original.unitPrice) }}</span>
+        <span class="tabular-nums">{{ money(row.original.unitPrice) }}</span>
       </template>
       <template #accrual-cell="{ row }">
-        <span class="tabular-nums">{{ formatMoney(row.original.accrualAmount) }}</span>
+        <span class="tabular-nums">{{ money(row.original.accrualAmount) }}</span>
       </template>
       <template #matched-cell="{ row }">
         <div class="flex items-center gap-2 text-xs">
@@ -74,9 +85,23 @@ const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
           />
         </div>
       </template>
+      <template #accrualState-cell="{ row }">
+        <div v-if="live" class="space-y-1">
+          <UBadge :label="live.receiptRows.find(value => value.id === row.original.id)?.posted ? '已暂估' : '等待暂估'" :color="live.receiptRows.find(value => value.id === row.original.id)?.posted ? 'success' : 'warning'" /><p class="text-xs text-muted">
+            {{ live.receiptRows.find(value => value.id === row.original.id)?.pendingReason }}
+          </p><UButton
+            v-if="!live.receiptRows.find(value => value.id === row.original.id)?.posted"
+            label="重试暂估"
+            variant="outline"
+            :disabled="!live.canApprove || live.locked"
+            :data-testid="'accrue-' + row.original.id"
+            @click="live.accrue(row.original.id)"
+          />
+        </div>
+      </template>
       <template #variance-cell="{ row }">
-        <div v-if="Math.abs(row.original.variance) > 0.005" class="flex items-center gap-2">
-          <span class="tabular-nums text-warning">+{{ formatMoney(row.original.variance) }}</span>
+        <div v-if="!live && Math.abs(Number(row.original.variance)) > 0.005" class="flex items-center gap-2">
+          <span class="tabular-nums text-warning">+{{ money(row.original.variance) }}</span>
           <UBadge
             v-if="row.original.variancePending"
             label="待审核"
@@ -88,5 +113,18 @@ const receiptColumns: TableColumn<SupplierReceiptLineMatch>[] = [
         <span v-else class="text-xs text-muted">无价差</span>
       </template>
     </ResizableTable>
+    <div v-if="live" class="flex justify-end gap-2 p-3">
+      <UButton
+        label="上一页实收"
+        variant="outline"
+        :disabled="live.receiptsPage <= 1"
+        @click="live.changePage('receipts', -1)"
+      /><span class="self-center text-xs text-muted">第 {{ live.receiptsPage }} 页</span><UButton
+        label="下一页实收"
+        variant="outline"
+        :disabled="(live.query.data?.receipts.length ?? 0) < 50"
+        @click="live.changePage('receipts', 1)"
+      />
+    </div>
   </UCard>
 </template>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SalesReceivablesConnection } from '~/composables/sales/useSalesReceivables'
+import { displayDecimal } from '~/utils/api/decimal-display'
 import type { TableColumn } from '@nuxt/ui'
 import type { Invoice, InvoiceLine, SalesOrder } from '~/mocks'
 import {
@@ -10,6 +12,8 @@ import {
 } from '~/mocks'
 
 const props = defineProps<{
+  live?: SalesReceivablesConnection
+  editing?: boolean
   invoice: Invoice | null
   order: SalesOrder | null
   canCreate: boolean
@@ -17,6 +21,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  editLive: []
+  saveLive: []
+  retryLive: []
+  openDocument: [id: string]
   back: []
   send: []
   retry: [deliveryId: string]
@@ -27,6 +35,9 @@ const emit = defineEmits<{
   issue: []
   correct: [invoiceId: string]
 }>()
+const liveDocument = computed(() => props.live?.current)
+const liveKind = computed(() => ({ 1: '销售发票', 2: '客户收款单', 3: '应收核销单', 4: '销售贷项', 5: '客户退款单' }[liveDocument.value?.terms.kind ?? 1]))
+const liveState = computed(() => liveDocument.value?.state === 'posted' ? '已过账' : liveDocument.value?.state === 'cancelled' ? '已取消' : '待独立复核')
 
 const open = defineModel<boolean>('open', { default: false })
 
@@ -211,7 +222,24 @@ const draftColumns: TableColumn<DraftLine>[] = [{
 <template>
   <USlideover v-model:open="open" :ui="{ content: 'w-full sm:max-w-3xl' }" data-testid="invoice-detail">
     <template #header>
-      <div class="flex flex-wrap items-start justify-between gap-2">
+      <div v-if="live" class="flex w-full flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ editing && !live.form.id ? '新建销售发票' : liveKind }}
+          </h2>
+          <p v-if="liveDocument && (!editing || live.form.id)" class="text-xs text-muted">
+            {{ liveDocument.terms.number || '待分配编号' }} · {{ liveDocument.terms.customerName }}
+          </p>
+        </div>
+        <UBadge
+          v-if="liveDocument && !editing"
+          :color="liveDocument.state === 'posted' ? 'success' : 'neutral'"
+          variant="subtle"
+          :label="liveState"
+          data-testid="invoice-detail-status"
+        />
+      </div>
+      <div v-else class="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p class="font-mono text-xs text-muted">
             {{ invoice?.id }}
@@ -235,7 +263,121 @@ const draftColumns: TableColumn<DraftLine>[] = [{
     </template>
 
     <template #body>
-      <div v-if="invoice" class="space-y-5">
+      <div v-if="live" class="space-y-4">
+        <SalesOperationStatus
+          :message="live.error"
+          :submission="live.submission"
+          @check="live.check()"
+          @retry="emit('retryLive')"
+        />
+        <UAlert
+          v-if="live.detailError"
+          color="error"
+          variant="soft"
+          :title="live.detailError"
+        />
+        <USkeleton v-if="live.loading" class="h-20 w-full" />
+        <template v-if="editing">
+          <SalesReceivableInvoiceFields :live="live" />
+          <UButton
+            v-if="live.form.id && live.submission.failure?.kind === 'conflict'"
+            label="读取当前版本"
+            variant="outline"
+            @click="live.reloadEditor()"
+          />
+        </template>
+        <template v-else-if="liveDocument">
+          <dl class="grid gap-3 rounded-sm border border-default p-3 sm:grid-cols-3">
+            <div>
+              <dt class="text-xs text-muted">
+                业务日期
+              </dt><dd>{{ liveDocument.terms.on }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-muted">
+                {{ liveDocument.terms.kind === 1 ? '价税合计' : '金额' }}
+              </dt><dd>{{ displayDecimal(liveDocument.terms.total) }}</dd>
+            </div>
+            <div v-if="[1, 2, 4].includes(liveDocument.terms.kind)">
+              <dt class="text-xs text-muted">
+                {{ liveDocument.terms.kind === 1 ? '未结金额' : '可核销余额' }}
+              </dt>
+              <dd data-testid="invoice-outstanding">
+                {{ liveDocument.state === 'posted' ? displayDecimal(liveDocument.openBalance) : '待过账' }}
+              </dd>
+            </div>
+            <div v-if="liveDocument.terms.dueOn">
+              <dt class="text-xs text-muted">
+                到期日
+              </dt><dd>{{ liveDocument.terms.dueOn }}</dd>
+            </div>
+          </dl>
+          <UCard v-if="liveDocument.terms.lines?.length" class="rounded-sm">
+            <template #header>
+              <h3 class="text-sm font-medium">
+                开票明细
+              </h3>
+            </template>
+            <div v-for="(line, index) in liveDocument.terms.lines" :key="index" class="space-y-2 border-b border-default py-2 text-sm">
+              <div class="flex flex-wrap justify-between gap-2">
+                <span>{{ line.name }} · {{ line.shipmentId ? '库存出库' : '服务项目' }}</span>
+                <span>{{ line.quantity }} × {{ displayDecimal(line.unitPrice) }} · 未税 {{ displayDecimal(line.net) }} · 税额 {{ displayDecimal(line.tax) }}</span>
+              </div>
+              <UAccordion v-if="line.components?.length" :items="[{ label: '税项快照' }]" data-testid="sales-line-tax-snapshot">
+                <template #body><FinanceTaxComponents :components="line.components" /></template>
+              </UAccordion>
+            </div>
+          </UCard>
+          <div v-if="liveDocument.awaitsFiscalNumber && live.canPost" class="flex flex-wrap items-center gap-2">
+            <UButton
+              label="预览发票编号"
+              variant="outline"
+              data-testid="sales-invoice-preview-number"
+              @click="live.preview()"
+            />
+            <span v-if="live.candidate" class="text-sm" data-testid="sales-invoice-candidate">{{ live.candidate }}</span>
+          </div>
+          <UButton v-if="liveDocument.terms.kind === 1 && !liveDocument.terms.openingSource
+            && (liveDocument.state === 'posted' || (liveDocument.state === 'submitted' && (liveDocument.isMaker || live.query.data?.home.canPost)))"
+            label="查看发票 PDF 与交付" icon="i-carbon-document" variant="outline" data-testid="sales-invoice-delivery-live"
+            :to="{ path: '/sales', query: { tab: 'invoice-delivery', workspace: live.query.session.activeWorkspaceId, invoice: liveDocument.id } }" />
+          <UAlert
+            v-if="live.proofError"
+            color="warning"
+            variant="soft"
+            :title="live.proofError"
+          />
+          <UCard v-if="liveDocument.journalId" class="rounded-sm" data-testid="sales-receivable-journal">
+            <template #header>
+              <h3 class="text-sm font-medium">
+                过账凭证 {{ live.journal?.journal.postingNumber ?? liveDocument.journalId }}
+              </h3>
+            </template>
+            <div v-for="(line, index) in live.journal?.lines" :key="index" class="flex flex-wrap justify-between gap-2 border-b border-default py-2 text-sm">
+              <span>{{ line.code }} {{ line.name }}</span>
+              <span>借 {{ displayDecimal(line.debit) }} · 贷 {{ displayDecimal(line.credit) }}</span>
+            </div>
+            <p v-if="live.movement" class="pt-2 text-sm" data-testid="sales-receivable-movement">
+              资金流水 {{ live.movement.on }} · {{ displayDecimal(live.movement.amount) }}
+            </p>
+          </UCard>
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              v-if="liveDocument.terms.invoiceId"
+              label="查看关联发票"
+              variant="outline"
+              @click="emit('openDocument', liveDocument.terms.invoiceId)"
+            />
+            <UButton
+              v-if="liveDocument.terms.fundsId"
+              label="查看核销来源"
+              variant="outline"
+              @click="emit('openDocument', liveDocument.terms.fundsId)"
+            />
+          </div>
+        </template>
+      </div>
+      <div v-else-if="invoice" class="space-y-5">
         <AppBreadcrumb current="发票" :detail="invoice.id" />
 
         <UAlert
@@ -628,7 +770,61 @@ const draftColumns: TableColumn<DraftLine>[] = [{
           data-testid="invoice-back"
           @click="emit('back')"
         />
-        <div class="flex flex-wrap items-center justify-end gap-2">
+        <div v-if="live" class="flex flex-wrap items-center justify-end gap-2">
+          <template v-if="editing">
+            <UButton
+              :label="live.form.id ? '保存修改' : '提交发票复核'"
+              :disabled="!live.canDraft"
+              data-testid="sales-invoice-submit"
+              @click="emit('saveLive')"
+            />
+          </template>
+          <template v-else-if="liveDocument">
+            <UButton
+              v-if="live.canEdit"
+              label="编辑发票"
+              variant="outline"
+              data-testid="sales-invoice-edit"
+              @click="emit('editLive')"
+            />
+            <UButton
+              v-if="live.canDraft && liveDocument.isMaker && liveDocument.state === 'submitted'"
+              label="取消本人申请"
+              color="error"
+              variant="outline"
+              @click="live.decide(false)"
+            />
+            <UButton
+              v-if="live.canPost"
+              :disabled="liveDocument.awaitsFiscalNumber && !live.candidate"
+              label="复核通过并过账"
+              data-testid="sales-receivable-approve"
+              @click="live.decide(true)"
+            />
+            <UButton
+              v-if="liveDocument.terms.kind === 1 && liveDocument.state === 'posted' && live.canDraft"
+              label="登记收款"
+              variant="outline"
+              data-testid="invoice-register-receipt"
+              @click="emit('registerReceipt', liveDocument.terms.customerName, liveDocument.id)"
+            />
+            <UButton
+              v-if="liveDocument.terms.kind === 1 && liveDocument.state === 'posted' && live.canDraft && Number(liveDocument.openBalance) > 0"
+              label="核销"
+              variant="outline"
+              data-testid="invoice-allocate"
+              @click="emit('allocate', liveDocument.id)"
+            />
+            <UButton
+              v-if="invoice?.sourceOrderId"
+              label="查看关联订单"
+              variant="outline"
+              @click="emit('openOrder', invoice.sourceOrderId)"
+            />
+            <UButton label="刷新单据" variant="ghost" @click="live.readDetail(liveDocument.id)" />
+          </template>
+        </div>
+        <div v-else class="flex flex-wrap items-center justify-end gap-2">
           <p v-if="invoice && !canCreate" class="text-xs text-muted">
             当前身份无开票操作权限
           </p>

@@ -31,6 +31,20 @@ export function multiplyDecimals(left: string, right: string) {
   const b = parts(right)
   return text(a.units * b.units, a.scale + b.scale)
 }
+export function divideDecimal(left: string, right: string, minorUnits: number) {
+  if (!Number.isSafeInteger(minorUnits) || minorUnits < 0 || minorUnits > 28) throw new Error('精度无效。')
+  const a = parts(left), b = parts(right)
+  const zero = BigInt(0), ten = BigInt(10)
+  if (b.units === zero) throw new Error('除数不能为零。')
+  const exponent = minorUnits + b.scale - a.scale
+  const numerator = a.units * ten ** BigInt(Math.max(0, exponent))
+  const denominator = b.units * ten ** BigInt(Math.max(0, -exponent))
+  const negative = (numerator < zero) !== (denominator < zero)
+  const absolute = numerator < zero ? -numerator : numerator
+  const divisor = denominator < zero ? -denominator : denominator
+  const rounded = absolute / divisor + (absolute % divisor * BigInt(2) >= divisor ? BigInt(1) : zero)
+  return text(negative ? -rounded : rounded, minorUnits)
+}
 export function roundDecimal(value: string, minorUnits: number) {
   if (!Number.isSafeInteger(minorUnits) || minorUnits < 0 || minorUnits > 28) throw new Error('币种精度无效。')
   const amount = parts(value)

@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import StockPermitPanel from '~/components/inventory/StockPermitPanel.vue'
+import type { SalesFulfillmentConnection } from '~/composables/sales/useSalesFulfillment'
 import type { TableColumn } from '@nuxt/ui'
+import { displayDecimal } from '~/utils/api/decimal-display'
 import type { SalesOrder, SalesOrderLine } from '~/mocks'
 import { salesStatusColors, salesStatusLabels } from '~/mocks'
 
 const props = defineProps<{
   order: SalesOrder | null
   canCreate: boolean
+  live?: boolean
+  fulfillment?: SalesFulfillmentConnection
+  minorUnits?: number
+  approvedVersion?: number | string | null
+  approvedAt?: string | null
   canApprove: boolean
   canWithdraw?: boolean
   canCancel?: boolean
@@ -51,7 +58,8 @@ const canApproveSelected = computed(() => Boolean(
   props.order && props.canApprove && props.order.status === 'pending'
 ))
 const canFulfillSelected = computed(() => Boolean(
-  props.order && props.canCreate && ['approved', 'partial'].includes(props.order.status)
+  props.order && (props.live ? props.fulfillment?.canManage && !props.fulfillment.busy : props.canCreate)
+  && ['approved', 'partial'].includes(props.order.status)
 ))
 
 const printOpen = ref(false)
@@ -112,13 +120,13 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p class="font-mono text-xs text-muted">
-            {{ order?.id }}
+            {{ order?.documentNumber ?? order?.id }}
           </p>
           <h2 class="mt-1 text-base font-semibold text-highlighted">
             {{ order?.customerName }}
           </h2>
           <p class="mt-0.5 text-xs text-muted">
-            负责人 {{ order?.owner }} · 承诺交付 {{ order?.promisedAt }}
+            {{ live ? '业务日期 ' + (order?.orderedAt ?? '—') : '负责人 ' + order?.owner + ' · 承诺交付 ' + order?.promisedAt }}
           </p>
         </div>
         <UBadge
@@ -133,8 +141,9 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
     </template>
 
     <template #body>
+      <slot name="feedback" />
       <div v-if="order" class="space-y-5">
-        <AppBreadcrumb current="销售订单" :detail="order.id" />
+        <AppBreadcrumb current="销售订单" :detail="order.documentNumber ?? order.id" />
         <SalesStatusSteps kind="order" :status="order.status" />
 
         <UAlert
@@ -152,7 +161,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           variant="soft"
           icon="i-carbon-checkmark-outline"
           title="订单已关闭"
-          description="履约与对账已完成，订单转为只读。"
+          :description="live ? '销售履约已关闭，订单转为只读。' : '履约与对账已完成，订单转为只读。'"
           data-testid="sales-order-closed-alert"
         />
         <UAlert
@@ -176,7 +185,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
               {{ order.orderedAt }}
             </dd>
           </div>
-          <div>
+          <div v-if="!live">
             <dt class="text-xs text-muted">
               承诺交付
             </dt>
@@ -202,7 +211,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           </div>
         </dl>
 
-        <div class="space-y-1.5">
+        <div v-if="!live" class="space-y-1.5">
           <div class="flex items-center justify-between text-xs text-muted">
             <span>履约进度（已发货 {{ shippedQuantity }} / {{ totalQuantity }}）</span>
             <span class="tabular-nums">{{ shippedRate }}%</span>
@@ -252,19 +261,26 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           <div class="max-h-72 overflow-auto">
             <ResizableTable
               :data="detailLines"
-              :columns="lineColumns"
+              :columns="live ? lineColumns.filter(column => !('accessorKey' in column) || column.accessorKey !== 'shipped') : lineColumns"
               class="nx-table"
               :ui="{ th: 'sticky top-0 z-10 bg-elevated py-2', td: 'py-2', root: 'text-[12.5px]' }"
               data-testid="sales-order-lines"
             >
               <template #amount-cell="{ row }">
-                {{ formatMoney(Number(row.original.amount)) }}
+                {{ live ? displayDecimal(row.original.amount, minorUnits) : formatMoney(Number(row.original.amount)) }}
               </template>
             </ResizableTable>
           </div>
         </UCard>
 
-        <UCard class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
+        <UAlert
+          v-if="live && approvedVersion != null"
+          color="success"
+          variant="soft"
+          :title="'批准版本 ' + approvedVersion"
+          :description="approvedAt ?? undefined"
+        />
+        <UCard v-if="!live" class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
           <template #header>
             <div class="flex flex-wrap items-center justify-between gap-2">
               <p class="text-sm font-medium text-highlighted">
@@ -276,7 +292,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           <SalesApprovalTimeline :steps="approvalSteps" />
         </UCard>
 
-        <UCard class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
+        <UCard v-if="!live" class="rounded-sm" :ui="{ body: 'p-3 sm:p-3', header: 'p-3 sm:p-3' }">
           <template #header>
             <div class="flex flex-wrap items-center justify-between gap-2">
               <p class="text-sm font-medium text-highlighted">
@@ -312,7 +328,13 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           </div>
         </UCard>
 
-        <StockPermitPanel source-type="sales" :source-id="order.id" :can-manage="canCreate" />
+        <StockPermitPanel
+          v-if="!live || fulfillment"
+          source-type="sales"
+          :source-id="order.id"
+          :can-manage="canCreate"
+          :sales="fulfillment"
+        />
 
         <div class="flex justify-end">
           <dl class="w-full max-w-xs space-y-1.5 text-[13px]">
@@ -321,10 +343,10 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
                 未税合计
               </dt>
               <dd class="tabular-nums text-default">
-                {{ formatMoney(subtotal) }}
+                {{ live ? displayDecimal(order.totalAmount, minorUnits) : formatMoney(subtotal) }}
               </dd>
             </div>
-            <div class="flex justify-between gap-3">
+            <div v-if="!live" class="flex justify-between gap-3">
               <dt class="text-muted">
                 税额（13%）
               </dt>
@@ -332,7 +354,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
                 {{ formatMoney(tax) }}
               </dd>
             </div>
-            <div class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
+            <div v-if="!live" class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
               <dt class="text-highlighted">
                 价税合计
               </dt>
@@ -357,7 +379,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
         />
         <div class="flex flex-wrap items-center justify-end gap-2">
           <p
-            v-if="order?.status === 'pending' && !canApprove"
+            v-if="order?.status === 'pending' && !canApprove && !selfApprovalBlocked"
             class="text-xs text-muted"
             data-testid="sales-order-no-approve-permission"
           >
@@ -371,6 +393,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
             不能审批自己提交的单据
           </p>
           <UButton
+            v-if="!live"
             label="打印"
             icon="i-carbon-printer"
             color="neutral"
@@ -419,7 +442,7 @@ const lineColumns: TableColumn<SalesOrderLine>[] = [{
           />
           <UButton
             label="发起履约"
-            icon="i-carbon-truck"
+            icon="i-carbon-delivery-truck"
             color="neutral"
             variant="outline"
             size="sm"

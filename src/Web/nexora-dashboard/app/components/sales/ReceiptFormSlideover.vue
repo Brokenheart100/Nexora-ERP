@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { bankAccounts } from '~/mocks'
+import type { SalesReceivablesConnection } from '~/composables/sales/useSalesReceivables'
 
 const props = defineProps<{
   customerName?: string
   invoiceId?: string | null
+  live?: SalesReceivablesConnection
 }>()
 
 const emit = defineEmits<{
+  saveLive: []
+  retryLive: []
   save: [payload: {
     customerName: string
     amount: number
@@ -19,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
+const liveForm = computed(() => props.live?.form)
 const { workspace } = useMockWorkspace()
 const receivables = useReceivablesStore()
 
@@ -57,10 +62,14 @@ function reset() {
 }
 
 watch(open, (value) => {
-  if (value) reset()
+  if (value && !props.live) reset()
 }, { immediate: true })
 
 function submit() {
+  if (props.live) {
+    emit('saveLive')
+    return
+  }
   formError.value = ''
   if (!form.customerName) {
     formError.value = '请选择客户。'
@@ -104,7 +113,7 @@ function submit() {
           登记客户收款
         </p>
         <h2 class="mt-1 text-base font-semibold text-highlighted">
-          {{ form.customerName || '选择客户' }}
+          {{ (live ? live.customers.find(row => row.value === liveForm?.customerId)?.label : form.customerName) || '选择客户' }}
         </h2>
         <p class="mt-0.5 text-xs text-muted">
           保存为独立收款单，核销前可在应收工作台看到可核销余额。
@@ -113,7 +122,82 @@ function submit() {
     </template>
 
     <template #body>
-      <div class="space-y-4">
+      <div v-if="live && liveForm" class="space-y-4">
+        <SalesOperationStatus
+          :message="live.error"
+          :submission="live.submission"
+          @check="live.check()"
+          @retry="emit('retryLive')"
+        />
+        <UFormField label="客户" required>
+          <USelectMenu
+            v-model="liveForm.customerId"
+            :items="live.customers"
+            value-key="value"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="receipt-customer"
+          />
+          <div v-if="live.pages.customers > 1 || live.query.data?.customers?.hasMore" class="mt-1 flex gap-2">
+            <UButton
+              label="上一页客户"
+              variant="outline"
+              size="xs"
+              :disabled="live.pages.customers <= 1"
+              @click="live.changePage('customers', -1)"
+            />
+            <UButton
+              label="下一页客户"
+              variant="outline"
+              size="xs"
+              :disabled="!live.query.data?.customers?.hasMore"
+              @click="live.changePage('customers', 1)"
+            />
+          </div>
+        </UFormField>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <UFormField label="收款金额" required>
+            <UInput
+              v-model="liveForm.amount"
+              inputmode="decimal"
+              :disabled="live.frozen"
+              class="w-full"
+              data-testid="receipt-amount"
+            />
+          </UFormField>
+          <UFormField label="收款日期" required>
+            <UInput
+              v-model="liveForm.on"
+              type="date"
+              :disabled="live.frozen"
+              class="w-full"
+              data-testid="receipt-date"
+            />
+          </UFormField>
+        </div>
+        <UFormField label="资金账户" required>
+          <USelect
+            v-model="liveForm.bankId"
+            :items="live.query.data?.banks?.map(row => ({ label: row.code + ' ' + row.name, value: row.id })) ?? []"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="receipt-bank"
+          />
+          <p v-if="!live.query.data?.banks?.length" class="text-xs text-muted">
+            当前工作区没有可读取的资金账户。
+          </p>
+        </UFormField>
+        <UFormField label="收款单号" required>
+          <UInput
+            v-model="liveForm.number"
+            maxlength="60"
+            :disabled="live.frozen"
+            class="w-full"
+            data-testid="receipt-reference"
+          />
+        </UFormField>
+      </div>
+      <div v-else class="space-y-4">
         <UAlert
           v-if="selectedInvoice"
           color="info"
@@ -210,8 +294,9 @@ function submit() {
           @click="open = false"
         />
         <UButton
-          label="保存收款单"
+          :label="live ? '提交收款复核' : '保存收款单'"
           icon="i-carbon-save"
+          :disabled="live ? !live.canDraft : false"
           data-testid="receipt-submit"
           @click="submit"
         />

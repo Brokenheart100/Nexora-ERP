@@ -16,9 +16,16 @@ function tokenFor(event: H3Event, seed: string, secret: string) {
 
 export function issueCsrf(event: H3Event) {
   const current = getCookie(event, csrfCookie)
-  const seed = isHandle(current) ? current : randomHandle()
+  const { sessionKey } = bffConfig(event)
+  const handle = sessionHandle(event)
+  // The first token requests from a write and a genuine activity event can arrive together.
+  const seed = isHandle(current)
+    ? current
+    : handle
+      ? createHmac('sha256', sessionKey).update('nexora:dashboard:csrf-cookie:v1\0').update(handle).digest('base64url')
+      : randomHandle()
   if (seed !== current) setCookie(event, csrfCookie, seed, csrfOptions)
-  return tokenFor(event, seed, bffConfig(event).sessionKey)
+  return tokenFor(event, seed, sessionKey)
 }
 
 export function clearCsrf(event: H3Event) {

@@ -1,0 +1,100 @@
+import { expect, test, type Page } from '@playwright/test'
+import { mockWorkspaceId } from '../app/mocks/api/catalog'
+import { salesWarehouseId } from '../app/mocks/api/sales-fulfillment'
+
+const on = '2026-11-21'
+const sale = (tab: string, actor: string, lookup = '') => `/sales?tab=${tab}&mockCase=d5-${actor}${lookup}`
+const field = (page: Page, id: string) => page.getByTestId(id)
+async function choose(page: Page, id: string, name: RegExp) {
+  await field(page, id).click()
+  await page.getByRole('option', { name }).click()
+}
+async function response<T>(page: Page, ending: string, status: number, action: () => Promise<void>) {
+  const pending = page.waitForResponse(value => value.url().endsWith(ending) && ['POST', 'PUT'].includes(value.request().method()))
+  await action()
+  const result = await pending
+  expect(result.status(), await result.text()).toBe(status)
+  return await result.json() as T
+}
+const closeDocument = (page: Page) => field(page, 'invoice-back').click()
+async function approve(page: Page, id: string, fiscal = false) {
+  await page.goto(sale('receivables', 'reviewer', '&document=' + id))
+  if (fiscal) await field(page, 'sales-invoice-preview-number').click()
+  await field(page, 'sales-receivable-approve').click()
+  await expect(field(page, 'invoice-detail-status')).toHaveText('已过账')
+}
+
+test('D5 履约与应收原页面分发 40 和 60 件并核销 500 后剩 630', async ({ page }) => {
+  test.setTimeout(180_000)
+  await page.goto(sale('orders', 'maker'))
+  await expect(field(page, 'user-menu-trigger')).toContainText('未登录', { timeout: 45_000 })
+  await field(page, 'user-menu-trigger').click()
+  await page.getByRole('menuitem', { name: '登录 Nexora', exact: true }).click()
+  await field(page, 'sales-new-order').click()
+  await field(page, 'sales-form-number').fill('D5-END-TO-END')
+  await choose(page, 'sales-form-customer', /MSW 销售测试客户/)
+  await choose(page, 'sales-form-line-item', /MSW-SKU-001/)
+  await field(page, 'sales-form-date').fill(on)
+  await field(page, 'sales-form-line-qty').fill('100')
+  await field(page, 'sales-form-line-price').fill('10')
+  const order = await response<{ id: string }>(page, '/orders', 201, () => field(page, 'sales-form-submit').click())
+  await expect(field(page, 'sales-order-detail-status')).toHaveText('待审批')
+  await page.goto(sale('orders', 'reviewer', '&order=' + order.id))
+  await field(page, 'sales-order-approve').click()
+  await expect(field(page, 'sales-order-detail-status')).toHaveText('已批准')
+  await field(page, 'sales-order-fulfill').click()
+  await field(page, 'sales-fulfillment-qty').fill('100')
+  const batch = await response<{ permitIds: string[] }>(page, '/fulfillments', 202, () => field(page, 'sales-fulfillment-confirm').click())
+  const permit = batch.permitIds[0]!
+  await expect(field(page, 'stock-permit-status-' + permit)).toHaveText('已预留')
+  await page.goto(`/inventory?tab=operations&workspace=${mockWorkspaceId}&warehouse=${salesWarehouseId}&mockCase=d5-receiver`)
+  for (const quantity of ['40', '60']) {
+    await field(page, 'permit-execute-' + permit).click()
+    await field(page, 'permit-execution-date').fill(on)
+    await field(page, 'permit-execution-qty-1').fill(quantity)
+    await response(page, '/shipments/' + permit + '/ship', 200, () => field(page, 'permit-execution-submit').click())
+    await expect(field(page, 'permit-execution-submit')).not.toBeVisible()
+  }
+  await page.goto(sale('receivables', 'delayed'))
+  await expect(page.getByText('等待发货成本回执').first()).toBeVisible()
+  await expect(field(page, 'receivable-generate-invoice')).toHaveCount(0)
+  await page.goto(sale('receivables', 'maker'))
+  await expect(field(page, 'receivable-generate-invoice').first()).toBeVisible()
+  await field(page, 'receivable-generate-invoice').first().click()
+  await field(page, 'sales-invoice-date').fill(on)
+  await expect(field(page, 'sales-invoice-quantity')).toHaveCount(2)
+  const row40 = page.locator('[data-testid^="invoice-source-"]').filter({ hasText: '可开 40' })
+  const row60 = page.locator('[data-testid^="invoice-source-"]').filter({ hasText: '可开 60' })
+  await row40.getByTestId('sales-invoice-quantity').fill('40')
+  await row60.getByTestId('sales-invoice-quantity').fill('61')
+  await field(page, 'sales-invoice-submit').click()
+  await expect(field(page, 'sales-operation-status')).toContainText('核对数量')
+  await row60.getByTestId('sales-invoice-quantity').fill('59')
+  const invoice = await response<{ id: string }>(page, '/receivables/documents', 201, () => field(page, 'sales-invoice-submit').click())
+  await expect(field(page, 'invoice-detail-status')).toHaveText('待独立复核')
+  await field(page, 'sales-invoice-edit').click()
+  await row60.getByTestId('sales-invoice-quantity').fill('60')
+  await response(page, '/receivables/documents/' + invoice.id, 200, () => field(page, 'sales-invoice-submit').click())
+  await approve(page, invoice.id, true)
+  await expect(field(page, 'invoice-outstanding')).toHaveText('1,130.00')
+  await page.goto(sale('receivables', 'maker', '&invoice=' + invoice.id))
+  await field(page, 'invoice-register-receipt').click()
+  await field(page, 'receipt-reference').fill('D5-R-001')
+  await field(page, 'receipt-amount').fill('500')
+  await field(page, 'receipt-date').fill(on)
+  const receipt = await response<{ id: string }>(page, '/receivables/documents', 201, () => field(page, 'receipt-submit').click())
+  await approve(page, receipt.id)
+  await expect(field(page, 'invoice-outstanding')).toHaveText('500.00')
+  await expect(field(page, 'sales-receivable-movement')).toContainText('500.00')
+  await page.goto(sale('receivables', 'maker', '&invoice=' + invoice.id))
+  await field(page, 'invoice-allocate').click()
+  await choose(page, 'allocate-source', /D5-R-001/)
+  await field(page, 'allocate-amount').fill('500')
+  await field(page, 'sales-allocate-date').fill(on)
+  await field(page, 'sales-allocate-number').fill('D5-A-001')
+  const allocation = await response<{ id: string }>(page, '/receivables/documents', 201, () => field(page, 'allocate-submit').click())
+  await approve(page, allocation.id)
+  await page.getByRole('button', { name: '查看关联发票' }).click()
+  await expect(field(page, 'invoice-outstanding')).toHaveText('630.00')
+  await closeDocument(page)
+})

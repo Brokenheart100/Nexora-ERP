@@ -6,9 +6,9 @@ export const liveRoutes = [
   { to: '/catalog', label: '商品目录', icon: 'i-carbon-catalog', module: 'catalog', permissions: ['masterdata.catalog.read'] },
   { to: '/partners', label: '往来单位', icon: 'i-carbon-customer', module: 'partners', permissions: ['masterdata.partner.read'] },
   { to: '/purchase-orders', label: '采购', icon: 'i-carbon-purchase', module: 'purchasing', permissions: ['purchasing.order.read', 'purchasing.order.read-own', 'purchasing.order.create', 'purchasing.order.approve'] },
-  { to: '/sales', label: '销售', icon: 'i-carbon-shopping-cart', module: 'sales', permissions: ['sales.order.read', 'sales.order.read-own', 'sales.order.create', 'sales.order.approve'] },
+  { to: '/sales', label: '销售', icon: 'i-carbon-shopping-cart', module: 'sales', permissions: ['sales.order.read', 'sales.order.read-own', 'sales.order.create', 'sales.order.approve', 'finance.ledger.read'] },
   { to: '/inventory', label: '库存', icon: 'i-carbon-inventory-management', module: 'inventory', permissions: ['inventory.stock.read', 'inventory.warehouse.manage'] },
-  { to: '/finance', label: '财务', icon: 'i-carbon-finance', module: 'book', permissions: ['finance.ledger.read', 'finance.accounts.manage'] },
+  { to: '/finance', label: '财务', icon: 'i-carbon-finance', module: 'book', permissions: ['finance.ledger.read', 'finance.accounts.manage', 'finance.tax.manage'] },
   { to: '/setup', label: '交易前置配置', icon: 'i-carbon-settings', module: 'book', permissions: ['organization.workspace.read'] }
 ]
 

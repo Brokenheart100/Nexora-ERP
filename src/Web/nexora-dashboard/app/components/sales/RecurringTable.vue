@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { RecurringInvoicePlan } from '~/mocks'
-import {
-  recurringIntervalLabels,
-  recurringPlanStatusLabels
-} from '~/mocks'
+import { recurringPlanStatusLabels } from '~/mocks'
+import { recurringNet, type RecurringRow } from '~/utils/sales/recurring'
 
-defineProps<{ rows: RecurringInvoicePlan[], canCreate: boolean }>()
+defineProps<{ rows: RecurringRow[], canCreate: boolean }>()
 const emit = defineEmits<{
-  open: [plan: RecurringInvoicePlan]
-  toggle: [plan: RecurringInvoicePlan]
+  open: [plan: RecurringRow]
+  toggle: [plan: RecurringRow]
 }>()
 
-const columns: TableColumn<RecurringInvoicePlan>[] = [{
+const columns: TableColumn<RecurringRow>[] = [{
   accessorKey: 'id',
   header: '计划编号',
   meta: { class: { td: 'font-mono text-[12px] whitespace-nowrap' } }
@@ -62,10 +59,10 @@ const columns: TableColumn<RecurringInvoicePlan>[] = [{
       {{ row.original.quantity }}
     </template>
     <template #interval-cell="{ row }">
-      {{ recurringIntervalLabels[row.original.intervalMonths] }}
+      每 {{ row.original.intervalMonths }} 个月
     </template>
     <template #amount-cell="{ row }">
-      {{ formatMoney(row.original.quantity * row.original.unitPrice) }}
+      {{ recurringNet(row.original) }}
     </template>
     <template #nextRunAt-cell="{ row }">
       <span v-if="row.original.nextRunAt">{{ row.original.nextRunAt }}</span>
@@ -76,7 +73,7 @@ const columns: TableColumn<RecurringInvoicePlan>[] = [{
         :color="row.original.status === 'active' ? 'success' : 'neutral'"
         variant="subtle"
         size="sm"
-        :label="recurringPlanStatusLabels[row.original.status]"
+        :label="row.original.timeZone && !row.original.nextRunAt ? '已结束' : recurringPlanStatusLabels[row.original.status]"
       />
     </template>
     <template #actions-cell="{ row }">
@@ -90,6 +87,7 @@ const columns: TableColumn<RecurringInvoicePlan>[] = [{
           @click="emit('open', row.original)"
         />
         <UButton
+          v-if="!row.original.timeZone || row.original.nextRunAt"
           :label="row.original.status === 'active' ? '暂停' : '恢复'"
           :icon="row.original.status === 'active' ? 'i-carbon-pause' : 'i-carbon-play'"
           color="neutral"

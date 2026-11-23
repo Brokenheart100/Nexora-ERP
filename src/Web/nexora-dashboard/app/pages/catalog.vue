@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { useCatalogConnection } from '~/composables/catalog/useCatalogConnection'
+import { useCatalogEditor } from '~/composables/catalog/useCatalogEditor'
+import { useScopedSubmission } from '~/composables/api/useScopedSubmission'
+import { useMasterDataApi } from '~/composables/api/useMasterDataApi'
+import { itemInputSchema } from '#shared/types/masterdata'
+import { z } from 'zod'
+import { catalogProduct, connectedItemEditSchema } from '~/utils/catalog/adapter'
 import type { ChangeEntry, Product, ProductKind, ProductStatus, ProductTracking } from '~/mocks'
 import {
   changeLogEntries,
@@ -18,7 +25,16 @@ const toast = useToast()
 const route = useRoute()
 const { activeWorkspaceId } = useMockWorkspace()
 const { loading, run: runRefresh } = useMockRefresh()
-const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
+const { isLoading: stateLoading, isEmpty: mockEmpty, isError: mockError, isForbidden: mockForbidden } = useMockState()
+const remote = useCatalogConnection()
+const editor = useCatalogEditor(remote)
+const masterDataApi = useMasterDataApi()
+const creation = useScopedSubmission('catalog-create', () => remote.canEdit)
+const createSchema = z.object({ name: itemInputSchema.shape.name, sku: itemInputSchema.shape.code, category: z.uuid('请选择分类。'), unit: z.uuid('请选择单位。'), kind: z.enum(['goods', 'service']) })
+const connected = computed(() => remote.connected)
+const isError = computed(() => connected.value ? !!remote.session.error || (!!remote.problem && ![401, 403, 404].includes(remote.problem.status)) : mockError.value)
+const isForbidden = computed(() => connected.value ? !remote.auth.user || remote.session.denied || [401, 403, 404].includes(remote.problem?.status ?? 0) : mockForbidden.value)
+const isEmpty = computed(() => connected.value ? !remote.loading && !isError.value && !isForbidden.value && remote.page === 1 && remote.rows.length === 0 : mockEmpty.value)
 const { can } = useMockPermissions()
 const ui = useUiStore()
 
@@ -30,7 +46,10 @@ const tableUi = computed(() => ui.tableDensity === 'compact'
   ? { th: 'py-1.5', td: 'py-2' }
   : { th: 'py-2.5', td: 'py-3' })
 
-const rows = ref<Product[]>(products.map(product => ({ ...product })))
+const prototypeRows = ref<Product[]>(products.map(product => ({ ...product })))
+const rows = computed<Product[]>({ get: () => connected.value ? remote.rows : prototypeRows.value, set: (value) => {
+  prototypeRows.value = value
+} })
 const localEntries = ref<ChangeEntry[]>([])
 const searchInput = ref('')
 const search = ref('')
@@ -38,33 +57,40 @@ const status = ref<'all' | ProductStatus>('all')
 const category = ref('all')
 const pageSize = 8
 
-const canEdit = computed(() => can('catalog.edit'))
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const canEdit = computed(() => connected.value ? remote.canEdit : can('catalog.edit'))
+const showSkeleton = computed(() => connected.value ? remote.loading : loading.value || stateLoading.value)
 
-const applySearch = useDebounceFn((value: string) => {
+const applySearch = useDebounceFn((value: string, owner: string) => {
+  if (connected.value && owner !== remote.owner) return
   search.value = value
 }, 220)
 
-watch(searchInput, value => applySearch(value))
+watch(searchInput, value => applySearch(value, remote.owner))
 
-const statusItems = [
-  { label: '全部状态', value: 'all' },
-  { label: '在售', value: 'active' },
-  { label: '草稿', value: 'draft' },
-  { label: '已归档', value: 'archived' }
-]
+const statusItems = computed(() => connected.value
+  ? [{ label: '全部状态', value: 'all' }, { label: '启用', value: 'active' }, { label: '停用', value: 'archived' }]
+  : [
+      { label: '全部状态', value: 'all' },
+      { label: '在售', value: 'active' },
+      { label: '草稿', value: 'draft' },
+      { label: '已归档', value: 'archived' }
+    ])
 
 const categoryItems = computed(() => {
   const categories = [...new Set(rows.value.map(product => product.category))]
   return [{ label: '全部分类', value: 'all' }, ...categories.map(value => ({ label: value, value }))]
 })
 
-const productCategoryOptions = computed(() => productCategories
-  .filter(categoryItem => categoryItem.status === 'active')
-  .map(categoryItem => ({ label: categoryItem.name, value: categoryItem.name })))
-const productUnitOptions = computed(() => unitDefinitions
-  .filter(unitItem => unitItem.status === 'active')
-  .map(unitItem => ({ label: unitItem.name + '（' + unitItem.code + '）', value: unitItem.name })))
+const productCategoryOptions = computed(() => connected.value
+  ? remote.categoryOptions
+  : productCategories
+      .filter(categoryItem => categoryItem.status === 'active')
+      .map(categoryItem => ({ label: categoryItem.name, value: categoryItem.name })))
+const productUnitOptions = computed(() => connected.value
+  ? remote.unitOptions
+  : unitDefinitions
+      .filter(unitItem => unitItem.status === 'active')
+      .map(unitItem => ({ label: unitItem.name + '（' + unitItem.code + '）', value: unitItem.name })))
 const productTaxOptions = computed(() => taxCodes
   .filter(taxItem => taxItem.status === 'active' && taxItem.kind === 'output')
   .map(taxItem => ({ label: taxItem.name, value: taxItem.rate })))
@@ -99,14 +125,24 @@ const filteredRows = computed(() => {
 })
 
 const {
-  page,
-  pageRows,
-  pageStart,
-  pageEnd,
+  page: prototypePage,
+  pageRows: prototypePageRows,
+  pageStart: prototypeStart,
+  pageEnd: prototypeEnd,
   resetPage
 } = useClientPagination(filteredRows, pageSize)
+const page = computed({ get: () => connected.value ? remote.page : prototypePage.value, set: (value) => {
+  if (connected.value) remote.page = value
+  else prototypePage.value = value
+} })
+const pageRows = computed(() => connected.value ? filteredRows.value : prototypePageRows.value)
+const pageStart = computed(() => connected.value ? filteredRows.value.length ? (remote.page - 1) * pageSize + 1 : 0 : prototypeStart.value)
+const pageEnd = computed(() => connected.value ? (remote.page - 1) * pageSize + filteredRows.value.length : prototypeEnd.value)
+const paginationTotal = computed(() => connected.value ? (remote.page - 1) * pageSize + remote.rows.length + (remote.hasMore ? 1 : 0) : filteredRows.value.length)
 
-watch([search, status, category], resetPage)
+watch([search, status, category], () => {
+  if (!connected.value) resetPage()
+})
 
 const activeFilters = computed(() => status.value !== 'all' || category.value !== 'all' || searchInput.value.trim() !== '')
 
@@ -137,7 +173,7 @@ const emptyTitle = computed(() => {
 const emptyDescription = computed(() => {
   if (emptyKind.value === 'search') return '没有商品名称或 SKU 命中关键词，试试更换关键词或清空搜索。'
   if (emptyKind.value === 'filter') return '当前状态与分类组合没有结果，清空筛选后可查看全部 ' + rows.value.length + ' 个商品。'
-  return '目录中还没有商品，新建第一个商品开始维护。'
+  return connected.value ? '当前工作区暂无商品，创建功能将在后续接入。' : '目录中还没有商品，新建第一个商品开始维护。'
 })
 
 const selectedIds = ref<string[]>([])
@@ -165,7 +201,7 @@ function clearSelection() {
   selectedIds.value = []
 }
 
-const columns: TableColumn<Product>[] = [{
+const columns = computed<TableColumn<Product>[]>(() => [{
   id: 'select',
   header: '选择',
   meta: { class: { th: 'w-10', td: 'w-10' } }
@@ -189,13 +225,13 @@ const columns: TableColumn<Product>[] = [{
   header: '状态'
 }, {
   accessorKey: 'updatedAt',
-  header: '更新时间',
+  header: connected.value ? '版本' : '更新时间',
   meta: { class: { td: 'whitespace-nowrap text-muted' } }
 }, {
   id: 'actions',
   header: '操作',
   meta: { class: { th: 'w-28', td: 'w-28 text-right' } }
-}]
+}])
 
 function pad(value: number) {
   return String(value).padStart(2, '0')
@@ -241,7 +277,23 @@ const editForm = reactive({
   taxRate: '13%'
 })
 
-function openEditor(product: Product) {
+async function openEditor(product: Product) {
+  if (connected.value) {
+    if (!canEdit.value) {
+      openDetail(product)
+      return
+    }
+    const item = await editor.open(product.id)
+    if (!item) return
+    populateEditor(catalogProduct(item, remote.definitions))
+    editForm.category = item.categoryId
+    editForm.unit = item.unitId
+    return
+  }
+  populateEditor(product)
+}
+
+function populateEditor(product: Product) {
   returnToDetailId.value = null
   current.value = product
   editForm.name = product.name
@@ -278,6 +330,10 @@ const createForm = reactive({
 })
 
 function openCreate() {
+  if (connected.value) {
+    if (creation.record) return
+    creation.reset()
+  }
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -289,7 +345,7 @@ function openCreate() {
   createForm.kind = 'goods'
   createForm.price = 0
   createForm.stock = 0
-  createForm.status = 'draft'
+  createForm.status = connected.value ? 'active' : 'draft'
   createForm.brand = ''
   createForm.barcode = ''
   createForm.spec = ''
@@ -298,7 +354,19 @@ function openCreate() {
   createOpen.value = true
 }
 
-function saveCreate() {
+async function saveCreate() {
+  if (connected.value) {
+    const parsed = createSchema.safeParse(createForm)
+    if (!parsed.success) return
+    const payload = { code: parsed.data.sku, name: parsed.data.name, categoryId: parsed.data.category, unitId: parsed.data.unit,
+      kind: parsed.data.kind === 'goods' ? 'product' : 'service', tracksInventory: parsed.data.kind === 'goods' && createForm.tracking !== 'none' }
+    if (await creation.send('catalog.item.created', '/bff/api/masterdata/workspaces/' + remote.session.activeWorkspaceId + '/items', payload)) {
+      createOpen.value = false
+      await remote.refresh()
+      toast.add({ title: '商品已创建', description: parsed.data.sku, color: 'success' })
+    }
+    return
+  }
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -325,7 +393,15 @@ function saveCreate() {
   toast.add({ title: '已新建商品', description: '仅本次预览生效，刷新后恢复初始样例。', color: 'success' })
 }
 
-function saveEditor() {
+async function saveEditor() {
+  if (connected.value) {
+    const parsed = connectedItemEditSchema.safeParse(editForm)
+    if (parsed.success && await editor.save(parsed.data)) {
+      drawerOpen.value = false
+      toast.add({ title: '商品已保存', color: 'success' })
+    }
+    return
+  }
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -375,13 +451,24 @@ function saveEditor() {
 }
 
 const detailId = ref<string | null>(null)
+const linkedId = computed(() => z.uuid().safeParse(route.query.item).data)
+const linkedItem = useWorkspaceQuery('command-catalog-item', '/catalog', (id) =>
+  linkedId.value ? masterDataApi.item(id, linkedId.value).then(result => result.data) : Promise.resolve(null), () => linkedId.value)
+watch(() => linkedItem.data, (item) => {
+  if (item) detailId.value = item.id
+}, { immediate: true })
 const detailOpen = computed({
   get: () => detailId.value !== null,
   set: (value: boolean) => {
     if (!value) detailId.value = null
   }
 })
-const detailProduct = computed(() => (detailId.value ? rows.value.find(item => item.id === detailId.value) ?? null : null))
+const detailWireItem = computed(() => detailId.value && connected.value
+  ? remote.item(detailId.value) ?? (linkedItem.data?.id === detailId.value ? linkedItem.data : null)
+  : null)
+const detailProduct = computed(() => (detailId.value
+  ? rows.value.find(item => item.id === detailId.value) ?? (detailWireItem.value ? catalogProduct(detailWireItem.value, remote.definitions) : null)
+  : null))
 const returnToDetailId = ref<string | null>(null)
 
 function editFromDetail() {
@@ -425,6 +512,7 @@ function openDetail(product: Product) {
 }
 
 function toggleArchive() {
+  if (connected.value) return
   const product = detailProduct.value
   if (!product) return
   if (!canEdit.value) {
@@ -443,6 +531,7 @@ function toggleArchive() {
 }
 
 function batchSetStatus(target: ProductStatus) {
+  if (connected.value) return
   if (!canEdit.value) {
     toast.add({ title: '没有编辑权限', description: '?state=forbidden 演示只读身份。', color: 'error' })
     return
@@ -468,6 +557,37 @@ async function reloadPage() {
   await navigateTo({ path: route.path, query: {} })
 }
 
+watch(() => remote.owner, () => {
+  if (!connected.value) return
+  drawerOpen.value = false
+  createOpen.value = false
+  detailId.value = null
+  current.value = null
+  editForm.name = ''
+  editForm.sku = ''
+  editForm.category = ''
+  editForm.unit = ''
+  clearSelection()
+  resetFilters()
+}, { flush: 'sync' })
+
+async function resumeSubmission() {
+  const resumed = await editor.resume()
+  if (!resumed) return
+  populateEditor(catalogProduct(resumed.item, remote.definitions))
+  editForm.name = resumed.payload.name
+  editForm.category = resumed.payload.categoryId
+  editForm.unit = resumed.item.unitId
+  editForm.status = resumed.payload.isActive ? 'active' : 'archived'
+}
+
+async function confirmSubmission(retry = false) {
+  if (await (retry ? editor.retry() : editor.check())) {
+    drawerOpen.value = false
+    toast.add({ title: '已确认本次提交', color: 'success' })
+  }
+}
+
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const overflowItems = [[{
@@ -476,11 +596,16 @@ const overflowItems = [[{
   onSelect: exportCatalog
 }, {
   label: '导入商品（CSV 演示）',
+  disabled: connected.value,
   icon: 'i-carbon-document-import',
   onSelect: () => fileInput.value?.click()
 }]]
 
 function exportCatalog() {
+  if (connected.value) {
+    downloadCsv('商品目录当前页.csv', ['编码', '名称', '分类', '单位', '状态', '版本'], filteredRows.value.map(item => [item.sku, item.name, item.category, item.unit, item.status === 'active' ? '启用' : '停用', item.updatedAt]))
+    return
+  }
   downloadCsv(
     '商品目录-' + new Date().toISOString().slice(0, 10) + '.csv',
     ['SKU', '商品名称', '分类', '单位', '单价', '库存', '状态', '更新时间'],
@@ -503,7 +628,12 @@ function exportCatalog() {
   })
 }
 
-function refreshCatalog() {
+async function refreshCatalog() {
+  if (connected.value) {
+    await remote.session.refreshAccess()
+    await remote.refresh()
+    return
+  }
   runRefresh(() => {
     toast.add({
       title: '商品列表已刷新',
@@ -528,6 +658,26 @@ async function onImportFile(event: Event) {
   })
   input.value = ''
 }
+
+async function restoreCreation() {
+  const saved = creation.resume()
+  if (!saved) return
+  createForm.name = String(saved.payload.name)
+  createForm.sku = String(saved.payload.code)
+  createForm.category = String(saved.payload.categoryId)
+  createForm.unit = String(saved.payload.unitId)
+  createForm.kind = saved.payload.kind === 'service' ? 'service' : 'goods'
+  createForm.tracking = saved.payload.tracksInventory ? 'batch' : 'none'
+  createForm.status = 'active'
+  createOpen.value = true
+}
+async function checkCreation(retry = false) {
+  const confirmed = retry ? await creation.retry() : await creation.check(saved => masterDataApi.receipt(saved.workspaceId, saved.operationId, saved.action))
+  if (confirmed) {
+    createOpen.value = false
+    await remote.refresh()
+  }
+}
 </script>
 
 <template>
@@ -546,7 +696,7 @@ async function onImportFile(event: Event) {
               icon="i-carbon-add"
               color="primary"
               size="sm"
-              :disabled="!canEdit"
+              :disabled="!canEdit || (connected && !!creation.record)"
               data-testid="catalog-new"
               @click="openCreate"
             />
@@ -600,7 +750,7 @@ async function onImportFile(event: Event) {
 
           <template #right>
             <p class="text-xs text-muted">
-              共 {{ filteredRows.length }} 条结果<template v-if="selectedCount > 0">
+              {{ connected ? '当前页 ' + filteredRows.length + ' 条' : '共 ' + filteredRows.length + ' 条结果' }}<template v-if="selectedCount > 0">
                 · 已选 {{ selectedCount }} 项
               </template>
             </p>
@@ -619,7 +769,7 @@ async function onImportFile(event: Event) {
                 color="neutral"
                 variant="ghost"
                 size="sm"
-                :loading="loading"
+                :loading="showSkeleton"
                 aria-label="刷新商品列表"
                 data-testid="catalog-refresh"
                 @click="refreshCatalog"
@@ -631,6 +781,35 @@ async function onImportFile(event: Event) {
 
       <template #body>
         <AppBreadcrumb current="商品目录" class="mb-3" />
+        <UAlert
+          v-if="connected && creation.record"
+          class="mb-3"
+          color="warning"
+          title="商品创建结果待核对"
+          data-testid="catalog-create-recovery"
+        >
+          <template #actions>
+            <UButton label="恢复上次创建" @click="restoreCreation" />
+          </template>
+        </UAlert>
+        <UAlert
+          v-if="connected"
+          class="mb-3"
+          color="neutral"
+          variant="subtle"
+          :title="remote.auth.simulated ? 'MSW 模拟商品目录' : '当前工作区商品目录'"
+          description="当前支持名称、分类和状态维护；搜索与筛选只作用于当前页。"
+          data-testid="catalog-data-source"
+        />
+        <UAlert
+          v-if="connected && editor.record && !drawerOpen"
+          class="mb-3"
+          color="warning"
+          title="有待核对或继续的提交"
+          description="请先恢复原提交，核对结果后再决定下一步。"
+          :actions="[{ label: '恢复上次提交', onClick: resumeSubmission }]"
+          data-testid="catalog-recovery-banner"
+        />
 
         <div
           v-if="selectedCount > 0"
@@ -648,7 +827,7 @@ async function onImportFile(event: Event) {
               color="neutral"
               variant="outline"
               size="xs"
-              :disabled="!canEdit"
+              :disabled="!canEdit || connected"
               data-testid="catalog-batch-archive"
               @click="batchSetStatus('archived')"
             />
@@ -658,7 +837,7 @@ async function onImportFile(event: Event) {
               color="neutral"
               variant="outline"
               size="xs"
-              :disabled="!canEdit"
+              :disabled="!canEdit || connected"
               data-testid="catalog-batch-restore"
               @click="batchSetStatus('active')"
             />
@@ -682,27 +861,27 @@ async function onImportFile(event: Event) {
               color="error"
               variant="soft"
               icon="i-carbon-warning-alt"
-              title="商品加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              :title="connected ? '商品目录暂不可用' : '商品加载失败（演示）'"
+              :description="connected ? remote.problem?.message || remote.session.error : '?state=error 会模拟一次加载失败。本原型不会访问后端。'"
+              :actions="[{ label: connected ? '重新读取' : '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: connected ? remote.refresh : reloadPage }]"
             />
           </div>
           <div v-else-if="isForbidden" class="py-6" data-testid="catalog-state-forbidden">
             <UEmpty
               variant="naked"
               icon="i-carbon-view-off"
-              title="没有商品读取权限（演示）"
-              description="?state=forbidden 模拟演示身份缺少 catalog.view 权限。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              :title="connected ? remote.auth.user ? '当前工作区不可访问' : '请先登录' : '没有商品读取权限（演示）'"
+              :description="connected ? '请通过左侧用户菜单登录，或选择有权访问的工作区。' : '?state=forbidden 模拟演示身份缺少 catalog.view 权限。'"
+              :actions="[{ label: connected ? '重新读取' : '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: connected ? remote.refresh : reloadPage }]"
             />
           </div>
           <div v-else-if="isEmpty" class="py-6" data-testid="catalog-state-empty">
             <UEmpty
               variant="naked"
               icon="i-carbon-catalog"
-              title="空状态演示"
-              description="?state=empty 让商品列表返回 0 条数据；真实空态会引导清空筛选。"
-              :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
+              :title="connected ? remote.session.workspace ? '当前工作区暂无商品' : '尚无可用工作区' : '空状态演示'"
+              :description="connected ? '可选择其他工作区或稍后重新读取。' : '?state=empty 让商品列表返回 0 条数据；真实空态会引导清空筛选。'"
+              :actions="[{ label: connected ? '重新读取' : '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: connected ? remote.refresh : reloadPage }]"
             />
           </div>
           <div v-else :key="'catalog-page-' + page" class="nx-fade">
@@ -748,7 +927,7 @@ async function onImportFile(event: Event) {
                     data-testid="catalog-kind-badge"
                   />
                   <span class="text-[11px] text-muted">
-                    {{ (row.original.tracking ?? 'none') === 'none' ? '不跟踪库存' : '跟踪库存' }}
+                    {{ connected ? remote.item(row.original.id)?.tracksInventory ? '跟踪库存' : '不跟踪库存' : (row.original.tracking ?? 'none') === 'none' ? '不跟踪库存' : '跟踪库存' }}
                   </span>
                 </div>
               </template>
@@ -757,7 +936,7 @@ async function onImportFile(event: Event) {
                   :color="productStatusColors[row.original.status]"
                   variant="subtle"
                   size="sm"
-                  :label="productStatusLabels[row.original.status]"
+                  :label="connected ? row.original.status === 'active' ? '启用' : '停用' : productStatusLabels[row.original.status]"
                 />
               </template>
               <template #actions-cell="{ row }">
@@ -790,7 +969,7 @@ async function onImportFile(event: Event) {
                     :description="emptyDescription"
                     :actions="activeFilters
                       ? [{ label: '清空筛选', color: 'neutral', variant: 'outline', size: 'sm', onClick: resetFilters }]
-                      : [{ label: '新建商品', color: 'neutral', variant: 'outline', size: 'sm', onClick: openCreate }]"
+                      : connected ? [] : [{ label: '新建商品', color: 'neutral', variant: 'outline', size: 'sm', onClick: openCreate }]"
                   />
                 </div>
               </template>
@@ -803,11 +982,12 @@ async function onImportFile(event: Event) {
               class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5"
             >
               <p class="text-xs text-muted">
-                第 {{ pageStart }}–{{ pageEnd }} 条，共 {{ filteredRows.length }} 条
+                {{ connected ? '当前第 ' + page + ' 页，共 ' + filteredRows.length + ' 条' + (remote.hasMore ? '，还有下一页' : '') : '第 ' + pageStart + '–' + pageEnd + ' 条，共 ' + filteredRows.length + ' 条' }}
               </p>
               <UPagination
                 v-model:page="page"
-                :total="filteredRows.length"
+                :total="paginationTotal"
+                :ui="connected ? { first: 'hidden', last: 'hidden' } : undefined"
                 :items-per-page="pageSize"
                 size="sm"
                 data-testid="catalog-pagination"
@@ -816,128 +996,159 @@ async function onImportFile(event: Event) {
           </template>
         </UCard>
         <p class="mt-2 text-[11px] text-dimmed">
-          本地原型 · 模拟数据 · 写操作仅本次预览，刷新后恢复
+          {{ connected ? remote.auth.simulated ? 'MSW 模拟接口 · 提交通过同源请求验证' : '按当前账号与工作区读取 · 保存后重新查询当前状态' : '本地原型 · 模拟数据 · 写操作仅本次预览，刷新后恢复' }}
         </p>
       </template>
     </UDashboardPanel>
 
     <USlideover v-model:open="createOpen" title="新建商品" :ui="{ content: 'sm:max-w-lg' }">
       <template #description>
-        <span class="text-sm text-muted">填写商品基础信息，保存后加入本次预览列表</span>
+        <span class="text-sm text-muted">{{ connected ? '创建后默认启用，编码与基础单位固定；库存数量由仓库流程维护' : '填写商品基础信息，保存后加入本次预览列表' }}</span>
       </template>
 
       <template #body>
-        <UForm
-          id="product-create-form"
-          data-testid="product-create-form"
-          :schema="productEditSchema"
-          :state="createForm"
-          class="space-y-4"
-          @submit="saveCreate"
+        <UAlert
+          v-if="connected && creation.message"
+          class="mb-3"
+          color="warning"
+          :title="creation.message"
+          data-testid="catalog-create-feedback"
         >
-          <UFormField label="商品名称" name="name" required>
-            <UInput v-model="createForm.name" class="w-full" data-testid="catalog-create-name" />
-          </UFormField>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="SKU" name="sku" required>
-              <UInput
-                v-model="createForm.sku"
-                placeholder="SKU-1001"
-                class="w-full"
-                data-testid="catalog-create-sku"
-              />
-            </UFormField>
-            <UFormField label="分类" name="category" required>
-              <USelect
-                v-model="createForm.category"
-                :items="productCategoryOptions"
-                placeholder="选择分类"
-                class="w-full"
-                data-testid="catalog-create-category"
-              />
-            </UFormField>
-          </div>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="品牌" name="brand">
-              <UInput
-                v-model="createForm.brand"
-                placeholder="如 ThinkPad"
-                class="w-full"
-                data-testid="catalog-create-brand"
-              />
-            </UFormField>
-            <UFormField label="条码" name="barcode">
-              <UInput
-                v-model="createForm.barcode"
-                placeholder="EAN-13 或内部条码"
-                class="w-full"
-                data-testid="catalog-create-barcode"
-              />
-            </UFormField>
-          </div>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="单位" name="unit" required>
-              <USelect
-                v-model="createForm.unit"
-                :items="productUnitOptions"
-                placeholder="选择单位"
-                class="w-full"
-                data-testid="catalog-create-unit"
-              />
-            </UFormField>
-            <UFormField label="类型" name="kind">
-              <USelect
-                v-model="createForm.kind"
-                :items="kindItems"
-                class="w-full"
-                data-testid="catalog-create-kind"
-              />
-            </UFormField>
-            <UFormField label="状态" name="status">
-              <USelect
-                v-model="createForm.status"
-                :items="[{ label: '在售', value: 'active' }, { label: '草稿', value: 'draft' }, { label: '已归档', value: 'archived' }]"
-                class="w-full"
-                data-testid="catalog-create-status"
-              />
-            </UFormField>
-          </div>
-          <UFormField label="规格" name="spec">
-            <UInput
-              v-model="createForm.spec"
-              placeholder="如 i7/16G/512G、40×50cm"
-              class="w-full"
-              data-testid="catalog-create-spec"
+          <template #actions>
+            <UButton
+              v-if="creation.failure?.kind === 'mfa'"
+              label="重新验证身份"
+              :to="'/bff/login?prompt=login&returnTo=' + encodeURIComponent(route.fullPath)"
+              external
             />
-          </UFormField>
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UFormField label="追踪方式" name="tracking">
-              <USelect
-                v-model="createForm.tracking"
-                :items="trackingItems"
-                :disabled="createForm.kind === 'service'"
+          </template>
+        </UAlert>
+        <UAlert
+          v-if="connected && creation.mutation.unknown"
+          class="mb-3"
+          color="warning"
+          title="结果待确认"
+          data-testid="catalog-create-unknown"
+        >
+          <template #actions>
+            <UButton label="查询提交结果" :loading="creation.mutation.busy" @click="checkCreation()" />
+            <UButton label="重试原提交" :disabled="!creation.mutation.operation?.retryAvailable || creation.mutation.busy" @click="checkCreation(true)" />
+          </template>
+        </UAlert>
+        <fieldset :disabled="connected && !!creation.record" class="contents">
+          <UForm
+            id="product-create-form"
+            data-testid="product-create-form"
+            :schema="connected ? createSchema : productEditSchema"
+            :state="createForm"
+            class="space-y-4"
+            @submit="saveCreate"
+          >
+            <UFormField label="商品名称" name="name" required>
+              <UInput v-model="createForm.name" class="w-full" data-testid="catalog-create-name" />
+            </UFormField>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="SKU" name="sku" required>
+                <UInput
+                  v-model="createForm.sku"
+                  placeholder="SKU-1001"
+                  class="w-full"
+                  data-testid="catalog-create-sku"
+                />
+              </UFormField>
+              <UFormField label="分类" name="category" required>
+                <USelect
+                  v-model="createForm.category"
+                  :items="connected ? remote.definitions.filter(value => value.kind === 'category' && value.isActive).map(value => ({ value: value.id, label: value.name })) : productCategoryOptions"
+                  placeholder="选择分类"
+                  class="w-full"
+                  data-testid="catalog-create-category"
+                />
+              </UFormField>
+            </div>
+            <div v-if="!connected" class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="品牌" name="brand">
+                <UInput
+                  v-model="createForm.brand"
+                  placeholder="如 ThinkPad"
+                  class="w-full"
+                  data-testid="catalog-create-brand"
+                />
+              </UFormField>
+              <UFormField label="条码" name="barcode">
+                <UInput
+                  v-model="createForm.barcode"
+                  placeholder="EAN-13 或内部条码"
+                  class="w-full"
+                  data-testid="catalog-create-barcode"
+                />
+              </UFormField>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="单位" name="unit" required>
+                <USelect
+                  v-model="createForm.unit"
+                  :items="connected ? remote.definitions.filter(value => value.kind === 'unit' && value.isActive).map(value => ({ value: value.id, label: value.name })) : productUnitOptions"
+                  placeholder="选择单位"
+                  class="w-full"
+                  data-testid="catalog-create-unit"
+                />
+              </UFormField>
+              <UFormField label="类型" name="kind">
+                <USelect
+                  v-model="createForm.kind"
+                  :items="kindItems"
+                  class="w-full"
+                  data-testid="catalog-create-kind"
+                />
+              </UFormField>
+              <UFormField label="状态" name="status">
+                <USelect
+                  v-model="createForm.status"
+                  :items="connected ? [{ label: '启用', value: 'active' }] : [{ label: '在售', value: 'active' }, { label: '草稿', value: 'draft' }, { label: '已归档', value: 'archived' }]"
+                  :disabled="connected"
+                  class="w-full"
+                  data-testid="catalog-create-status"
+                />
+              </UFormField>
+            </div>
+            <UFormField v-if="!connected" label="规格" name="spec">
+              <UInput
+                v-model="createForm.spec"
+                placeholder="如 i7/16G/512G、40×50cm"
                 class="w-full"
-                data-testid="catalog-create-tracking"
+                data-testid="catalog-create-spec"
               />
             </UFormField>
-            <UFormField label="销售税率" name="taxRate">
-              <USelect
-                v-model="createForm.taxRate"
-                :items="productTaxOptions"
-                class="w-full"
-                data-testid="catalog-create-tax"
-              />
-            </UFormField>
-          </div>
-          <UAlert
-            color="neutral"
-            variant="soft"
-            icon="i-carbon-information"
-            title="单价与库存不在商品档案维护"
-            description="单价在销售 / 采购交易行录入；库存数量由仓库收发货、盘点与调拨流程调整。"
-            data-testid="catalog-create-policy"
-          />
-        </UForm>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <UFormField label="追踪方式" name="tracking">
+                <USelect
+                  v-model="createForm.tracking"
+                  :items="connected ? [{ value: 'none', label: '不跟踪库存' }, { value: 'batch', label: '跟踪库存' }] : trackingItems"
+                  :disabled="createForm.kind === 'service'"
+                  class="w-full"
+                  data-testid="catalog-create-tracking"
+                />
+              </UFormField>
+              <UFormField v-if="!connected" label="销售税率" name="taxRate">
+                <USelect
+                  v-model="createForm.taxRate"
+                  :items="productTaxOptions"
+                  class="w-full"
+                  data-testid="catalog-create-tax"
+                />
+              </UFormField>
+            </div>
+            <UAlert
+              color="neutral"
+              variant="soft"
+              icon="i-carbon-information"
+              title="单价与库存不在商品档案维护"
+              description="单价在销售 / 采购交易行录入；库存数量由仓库收发货、盘点与调拨流程调整。"
+              data-testid="catalog-create-policy"
+            />
+          </UForm>
+        </fieldset>
       </template>
 
       <template #footer>
@@ -954,6 +1165,8 @@ async function onImportFile(event: Event) {
             type="submit"
             form="product-create-form"
             color="primary"
+            :loading="creation.mutation.busy"
+            :disabled="connected && !!creation.record"
             data-testid="catalog-create-save"
           />
         </div>
@@ -962,34 +1175,98 @@ async function onImportFile(event: Event) {
 
     <USlideover v-model:open="drawerOpen" title="编辑商品" :ui="{ content: 'sm:max-w-lg' }">
       <template #description>
-        <span class="text-sm text-muted">{{ current?.sku }} · 修改后仅作用于本次预览</span>
+        <span class="text-sm text-muted">{{ current?.sku }} · {{ connected ? '保存时校验当前记录版本' : '修改后仅作用于本次预览' }}</span>
       </template>
 
       <template #body>
+        <UAlert
+          v-if="connected && editor.message"
+          class="mb-4"
+          color="warning"
+          variant="subtle"
+          :title="editor.message"
+          data-testid="catalog-write-feedback"
+        >
+          <template #actions>
+            <UButton
+              v-if="editor.failure?.kind === 'mfa'"
+              label="重新验证身份"
+              :to="'/bff/login?prompt=login&returnTo=' + encodeURIComponent(route.fullPath)"
+              external
+            />
+            <UButton
+              v-if="!editor.mutation.unknown"
+              label="读取当前版本"
+              :loading="editor.reading"
+              data-testid="catalog-read-current"
+              @click="editor.readCurrent()"
+            />
+          </template>
+        </UAlert>
+        <UAlert
+          v-if="connected && editor.mutation.unknown"
+          class="mb-4"
+          color="warning"
+          title="结果待确认"
+          description="请先查询原操作，不会自动再次提交。"
+          data-testid="catalog-write-unknown"
+        >
+          <template #actions>
+            <UButton
+              label="查询提交结果"
+              :loading="editor.mutation.busy"
+              data-testid="catalog-check-write"
+              @click="confirmSubmission()"
+            />
+            <UButton
+              label="重试原提交"
+              :disabled="!editor.mutation.operation?.retryAvailable || editor.mutation.busy"
+              data-testid="catalog-retry-write"
+              @click="confirmSubmission(true)"
+            />
+          </template>
+        </UAlert>
+        <p v-if="connected && editor.failure?.traceId" class="mb-3 text-xs text-muted">
+          跟踪编号：{{ editor.failure.traceId }}
+        </p>
+        <p v-if="connected && editor.baseline" class="mb-3 text-xs text-muted" data-testid="catalog-current-version">
+          当前版本 {{ editor.baseline.item.version }} · 服务端名称 {{ editor.baseline.item.name }}
+        </p>
         <UForm
           id="product-editor"
-          :schema="productEditSchema"
+          :schema="connected ? connectedItemEditSchema : productEditSchema"
           :state="editForm"
           class="space-y-4"
           @submit="saveEditor"
         >
-          <UFormField label="商品名称" name="name" required>
-            <UInput v-model="editForm.name" class="w-full" data-testid="catalog-edit-name" />
+          <UFormField
+            label="商品名称"
+            name="name"
+            required
+            :error="connected ? editor.fieldError('Name') : undefined"
+          >
+            <UInput
+              v-model="editForm.name"
+              :disabled="connected && !!editor.record"
+              class="w-full"
+              data-testid="catalog-edit-name"
+            />
           </UFormField>
           <div class="grid gap-4 sm:grid-cols-2">
             <UFormField label="SKU" name="sku">
-              <UInput v-model="editForm.sku" class="w-full" />
+              <UInput v-model="editForm.sku" :disabled="connected" class="w-full" />
             </UFormField>
-            <UFormField label="分类" name="category">
+            <UFormField label="分类" name="category" :error="connected ? editor.fieldError('CategoryId') : undefined">
               <USelect
                 v-model="editForm.category"
+                :disabled="connected && !!editor.record"
                 :items="productCategoryOptions"
                 class="w-full"
                 data-testid="catalog-edit-category"
               />
             </UFormField>
           </div>
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div v-if="!connected" class="grid gap-4 sm:grid-cols-2">
             <UFormField label="品牌" name="brand">
               <UInput v-model="editForm.brand" class="w-full" data-testid="catalog-edit-brand" />
             </UFormField>
@@ -997,13 +1274,14 @@ async function onImportFile(event: Event) {
               <UInput v-model="editForm.barcode" class="w-full" data-testid="catalog-edit-barcode" />
             </UFormField>
           </div>
-          <UFormField label="规格" name="spec">
+          <UFormField v-if="!connected" label="规格" name="spec">
             <UInput v-model="editForm.spec" class="w-full" data-testid="catalog-edit-spec" />
           </UFormField>
           <div class="grid gap-4 sm:grid-cols-2">
             <UFormField label="单位" name="unit">
               <USelect
                 v-model="editForm.unit"
+                :disabled="connected"
                 :items="productUnitOptions"
                 class="w-full"
                 data-testid="catalog-edit-unit"
@@ -1012,6 +1290,7 @@ async function onImportFile(event: Event) {
             <UFormField label="类型" name="kind">
               <USelect
                 v-model="editForm.kind"
+                :disabled="connected"
                 :items="kindItems"
                 class="w-full"
                 data-testid="catalog-edit-kind"
@@ -1022,13 +1301,13 @@ async function onImportFile(event: Event) {
             <UFormField label="追踪方式" name="tracking">
               <USelect
                 v-model="editForm.tracking"
-                :items="trackingItems"
-                :disabled="editForm.kind === 'service'"
+                :items="connected ? [{ value: 'none', label: editor.baseline?.item.tracksInventory ? '跟踪库存' : '不跟踪库存' }] : trackingItems"
+                :disabled="connected || editForm.kind === 'service'"
                 class="w-full"
                 data-testid="catalog-edit-tracking"
               />
             </UFormField>
-            <UFormField label="销售税率" name="taxRate">
+            <UFormField v-if="!connected" label="销售税率" name="taxRate">
               <USelect
                 v-model="editForm.taxRate"
                 :items="productTaxOptions"
@@ -1037,10 +1316,11 @@ async function onImportFile(event: Event) {
               />
             </UFormField>
           </div>
-          <UFormField label="状态" name="status">
+          <UFormField label="状态" name="status" :error="connected ? editor.fieldError('IsActive') : undefined">
             <USelect
               v-model="editForm.status"
-              :items="[{ label: '在售', value: 'active' }, { label: '草稿', value: 'draft' }, { label: '已归档', value: 'archived' }]"
+              :items="statusItems.filter(item => item.value !== 'all')"
+              :disabled="connected && !!editor.record"
               class="w-full"
               data-testid="catalog-edit-status"
             />
@@ -1069,6 +1349,8 @@ async function onImportFile(event: Event) {
             type="submit"
             form="product-editor"
             color="primary"
+            :disabled="connected && (!canEdit || editor.reading || !!editor.record)"
+            :loading="connected && editor.mutation.busy"
             data-testid="catalog-edit-save"
           />
         </div>
@@ -1084,7 +1366,7 @@ async function onImportFile(event: Event) {
 
       <template #body>
         <div v-if="detailProduct" class="space-y-5" data-testid="catalog-detail-panel">
-          <div class="grid grid-cols-3 gap-2" data-testid="catalog-detail-refs">
+          <div v-if="!connected" class="grid grid-cols-3 gap-2" data-testid="catalog-detail-refs">
             <div class="rounded-sm border border-default p-3">
               <p class="text-[11px] text-muted">
                 采购单引用
@@ -1139,8 +1421,7 @@ async function onImportFile(event: Event) {
                 是否跟踪库存
               </dt>
               <dd data-testid="catalog-detail-track-stock">
-                {{ (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking
-                  ?? 'none'] + '）' }}
+                {{ connected ? detailWireItem?.tracksInventory ? '是' : '否' : (detailProduct.tracking ?? 'none') === 'none' ? '否' : '是（' + trackingLabels[detailProduct.tracking ?? 'none'] + '）' }}
               </dd>
             </div>
             <div>
@@ -1148,7 +1429,7 @@ async function onImportFile(event: Event) {
                 品牌 / 条码
               </dt>
               <dd data-testid="catalog-detail-brand">
-                {{ detailProduct.brand || '未填写' }} / {{ detailProduct.barcode || '未填写' }}
+                {{ connected ? '扩展信息暂不可用' : (detailProduct.brand || '未填写') + ' / ' + (detailProduct.barcode || '未填写') }}
               </dd>
             </div>
             <div>
@@ -1156,7 +1437,7 @@ async function onImportFile(event: Event) {
                 规格 / 税率
               </dt>
               <dd data-testid="catalog-detail-spec">
-                {{ detailProduct.spec || '未填写' }} / {{ detailProduct.taxRate || '13%' }}
+                {{ connected ? '扩展信息暂不可用' : (detailProduct.spec || '未填写') + ' / ' + (detailProduct.taxRate || '13%') }}
               </dd>
             </div>
             <div>
@@ -1164,7 +1445,7 @@ async function onImportFile(event: Event) {
                 追踪方式
               </dt>
               <dd data-testid="catalog-detail-tracking">
-                {{ trackingLabels[detailProduct.tracking ?? 'none'] }}
+                {{ connected ? '追踪明细暂不可用' : trackingLabels[detailProduct.tracking ?? 'none'] }}
               </dd>
             </div>
             <div>
@@ -1182,7 +1463,7 @@ async function onImportFile(event: Event) {
           </dl>
 
           <UAlert
-            v-if="detailRefs > 0"
+            v-if="!connected && detailRefs > 0"
             color="warning"
             variant="soft"
             icon="i-carbon-link"
@@ -1210,10 +1491,10 @@ async function onImportFile(event: Event) {
               变更记录
             </h3>
             <ChangeLogTimeline
-              :entries="detailChangeEntries"
+              :entries="connected ? [] : detailChangeEntries"
               compact
               empty-title="暂无变更记录"
-              empty-description="该商品还没有创建、编辑或归档记录。"
+              :empty-description="connected ? '当前页面尚未加载完整变更记录。' : '该商品还没有创建、编辑或归档记录。'"
             />
           </section>
         </div>
@@ -1227,7 +1508,7 @@ async function onImportFile(event: Event) {
             color="neutral"
             variant="outline"
             size="sm"
-            :disabled="!canEdit"
+            :disabled="!canEdit || connected"
             data-testid="catalog-detail-toggle-status"
             @click="toggleArchive"
           />

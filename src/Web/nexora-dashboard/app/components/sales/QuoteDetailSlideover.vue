@@ -2,16 +2,24 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { Quote, QuoteLine } from '~/mocks'
 import { quoteStatusColors, quoteStatusLabels } from '~/mocks'
+import { displayDecimal } from '~/utils/api/decimal-display'
 
 const props = defineProps<{
   quote: Quote | null
   canCreate: boolean
+  live?: boolean
+  canEdit?: boolean
+  canSend?: boolean
+  canConvert?: boolean
+  canCancel?: boolean
+  minorUnits?: number
 }>()
 
 const emit = defineEmits<{
   convert: []
   edit: []
   send: []
+  cancel: []
   back: []
   openOrder: [orderId: string]
 }>()
@@ -24,15 +32,19 @@ const subtotal = computed(() => detailLines.value.reduce((sum, line) => sum + Nu
 const tax = computed(() => subtotal.value * 0.13)
 const total = computed(() => subtotal.value + tax.value)
 
-const canEditSelected = computed(() => Boolean(
-  props.quote && props.canCreate && ['draft', 'sent'].includes(props.quote.status) && !props.quote.convertedOrderId
-))
-const canConvertSelected = computed(() => Boolean(
-  props.quote
-  && props.canCreate
-  && ['sent', 'accepted'].includes(props.quote.status)
-  && !props.quote.convertedOrderId
-))
+const canEditSelected = computed(() => props.live
+  ? !!props.canEdit
+  : Boolean(
+      props.quote && props.canCreate && ['draft', 'sent'].includes(props.quote.status) && !props.quote.convertedOrderId
+    ))
+const canConvertSelected = computed(() => props.live
+  ? !!props.canConvert
+  : Boolean(
+      props.quote
+      && props.canCreate
+      && ['sent', 'accepted'].includes(props.quote.status)
+      && !props.quote.convertedOrderId
+    ))
 
 const lineColumns: TableColumn<QuoteLine>[] = [{
   accessorKey: 'lineNo',
@@ -67,13 +79,13 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p class="font-mono text-xs text-muted">
-            {{ quote?.id }}
+            {{ quote?.documentNumber ?? quote?.id }}
           </p>
           <h2 class="mt-1 text-base font-semibold text-highlighted">
             {{ quote?.customerName }}
           </h2>
           <p class="mt-0.5 text-xs text-muted">
-            报价人 {{ quote?.owner }} · 有效期至 {{ quote?.validUntil }}
+            报价人 {{ quote?.owner }} · {{ live ? '报价日期' : '有效期至' }} {{ quote?.validUntil }}
           </p>
           <p v-if="quote?.sentAt" class="mt-0.5 text-xs text-muted" data-testid="quote-sent-at">
             正式发出于 {{ quote.sentAt }}
@@ -91,9 +103,10 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
     </template>
 
     <template #body>
+      <slot name="feedback" />
       <div v-if="quote" class="space-y-5">
-        <AppBreadcrumb current="报价单" :detail="quote.id" />
-        <SalesStatusSteps kind="quote" :status="quote.status" />
+        <AppBreadcrumb current="报价单" :detail="quote.documentNumber ?? quote.id" />
+        <SalesStatusSteps kind="quote" :status="quote.status" :live="live" />
 
         <UAlert
           v-if="quote.status === 'rejected'"
@@ -114,21 +127,22 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
           data-testid="quote-expired-alert"
         />
         <div
-          v-else-if="quote.convertedOrderId"
+          v-else-if="quote.convertedOrderId || quote.status === 'converted'"
           class="flex flex-wrap items-center justify-between gap-2 rounded-sm border border-default px-3 py-2"
           data-testid="quote-converted-alert"
         >
           <p class="text-xs text-muted">
-            已转为销售订单 <span class="font-mono text-default">{{ quote.convertedOrderId }}</span>，本报价不可重复转换。
+            已转为销售订单 <span class="font-mono text-default">{{ quote.convertedOrderNumber ?? quote.convertedOrderId }}</span>。
           </p>
           <UButton
+            v-if="quote.convertedOrderId"
             label="查看销售订单"
             icon="i-carbon-arrow-right"
             color="neutral"
             variant="ghost"
             size="xs"
             data-testid="quote-open-order"
-            @click="emit('openOrder', quote.convertedOrderId)"
+            @click="emit('openOrder', quote.convertedOrderId ?? '')"
           />
         </div>
 
@@ -143,7 +157,7 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
           </div>
           <div>
             <dt class="text-xs text-muted">
-              有效期至
+              {{ live ? '报价日期' : '有效期至' }}
             </dt>
             <dd class="mt-0.5 text-default">
               {{ quote.validUntil }}
@@ -157,7 +171,7 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
               {{ quote.lines.length }} 行
             </dd>
           </div>
-          <div>
+          <div v-if="!live">
             <dt class="text-xs text-muted">
               更新时间
             </dt>
@@ -179,13 +193,13 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
           <div class="max-h-72 overflow-auto">
             <ResizableTable
               :data="detailLines"
-              :columns="lineColumns"
+              :columns="live ? lineColumns.filter(column => !('accessorKey' in column) || column.accessorKey !== 'taxRate') : lineColumns"
               class="nx-table"
               :ui="{ th: 'sticky top-0 z-10 bg-elevated py-2', td: 'py-2', root: 'text-[12.5px]' }"
               data-testid="quote-lines"
             >
               <template #amount-cell="{ row }">
-                {{ formatMoney(Number(row.original.amount)) }}
+                {{ live ? displayDecimal(row.original.amount, minorUnits) : formatMoney(Number(row.original.amount)) }}
               </template>
             </ResizableTable>
           </div>
@@ -198,10 +212,10 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
                 未税合计
               </dt>
               <dd class="tabular-nums text-default">
-                {{ formatMoney(subtotal) }}
+                {{ live ? displayDecimal(quote.totalAmount, minorUnits) : formatMoney(subtotal) }}
               </dd>
             </div>
-            <div class="flex justify-between gap-3">
+            <div v-if="!live" class="flex justify-between gap-3">
               <dt class="text-muted">
                 税额（13%）
               </dt>
@@ -209,7 +223,7 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
                 {{ formatMoney(tax) }}
               </dd>
             </div>
-            <div class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
+            <div v-if="!live" class="flex justify-between gap-3 border-t border-default pt-1.5 text-sm font-semibold">
               <dt class="text-highlighted">
                 价税合计
               </dt>
@@ -249,9 +263,17 @@ const lineColumns: TableColumn<QuoteLine>[] = [{
             color="warning"
             variant="outline"
             size="sm"
-            :disabled="!canCreate || quote?.status !== 'draft' || Boolean(quote?.convertedOrderId)"
+            :disabled="live ? !canSend : !canCreate || quote?.status !== 'draft' || Boolean(quote?.convertedOrderId)"
             data-testid="quote-send"
             @click="emit('send')"
+          />
+          <UButton
+            v-if="canCancel"
+            label="取消草稿"
+            color="error"
+            variant="ghost"
+            size="sm"
+            @click="emit('cancel')"
           />
           <UButton
             label="转为销售订单"

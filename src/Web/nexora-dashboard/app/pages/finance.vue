@@ -32,13 +32,31 @@ import FinanceTradeDocuments from '~/components/finance/TradeDocuments.vue'
 import FinanceTreasury from '~/components/finance/Treasury.vue'
 import FinanceClosing from '~/components/finance/Closing.vue'
 import FinanceTaxCenter from '~/components/finance/TaxCenter.vue'
+import { accountingTabs, useAccountingBook } from '~/composables/finance/useAccountingBook'
 
-type FinanceTab = 'workbench' | 'accounts' | 'journals' | 'imported' | 'reports' | 'reporting' | 'aging' | 'payables' | 'documents' | 'donations' | 'opening' | 'bank' | 'treasury' | 'closing' | 'tax-center'
+type FinanceTab
+  = | 'workbench'
+    | 'accounts'
+    | 'journals'
+    | 'imported'
+    | 'reports'
+    | 'reporting'
+    | 'aging'
+    | 'payables'
+    | 'documents'
+    | 'donations'
+    | 'opening'
+    | 'bank'
+    | 'treasury'
+    | 'closing'
+    | 'tax-center'
 
 const toast = useToast()
 const route = useRoute()
 const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
 const permissions = useMockPermissions()
+const auth = useAuthSessionStore()
+const live = useLiveSessionStore()
 const receivables = useReceivablesStore()
 const bankRecon = useBankReconStore()
 const externalJournals = useExternalJournalsStore()
@@ -62,7 +80,15 @@ const booksReady = ref(true)
 
 const receivableBuckets = computed(() => receivables.agingBucketsFor(workspace.value.id))
 const receivableOpenInvoices = computed(() => receivables.openInvoiceRowsFor(workspace.value.id))
-const canView = computed(() => permissions.can('finance.view'))
+const canView = computed(() => (auth.connected ? live.canVisit('/finance') : permissions.can('finance.view')))
+const payablesPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const treasuryPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const donationsPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const taxPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const statementsPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const agingPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const overviewPanel = ref<{ refresh: () => Promise<void> } | null>(null)
+const projectionPanel = ref<{ refresh: () => Promise<void> } | null>(null)
 const canPost = computed(() => permissions.can('finance.post'))
 
 const tabItems = [
@@ -85,39 +111,61 @@ const tabItems = [
 
 function normalizeTab(value: unknown): FinanceTab {
   const raw = typeof value === 'string' ? value : ''
-  if (raw === 'tax') return 'aging'
-  return tabItems.some(item => item.value === raw) ? raw as FinanceTab : 'workbench'
+  if (raw === 'tax') return auth.connected ? 'tax-center' : 'aging'
+  return tabItems.some(item => item.value === raw) ? (raw as FinanceTab) : 'workbench'
 }
 
-activeTab.value = normalizeTab(route.query.tab)
+activeTab.value = auth.connected && !route.query.tab ? 'documents' : normalizeTab(route.query.tab)
+const accounting = useAccountingBook(activeTab)
+const connectedAccounting = computed(() => auth.connected ? accounting : undefined)
+const ledgerAccounts = computed<FinanceAccount[]>(() => accounting.accounts.map(row => ({
+  id: row.id, code: row.code, name: row.name, balance: '0',
+  type: (row.category === 'income' ? 'revenue' : row.category) as FinanceAccount['type']
+})))
+const backendTabs = [...accountingTabs, 'reports', 'reporting', 'payables', 'aging', 'documents', 'treasury', 'bank', 'donations', 'tax-center']
 const initialBillId = computed(() => (typeof route.query.bill === 'string' ? route.query.bill : undefined))
 
-watch(() => route.query.tab, (value) => {
-  if (value) activeTab.value = normalizeTab(value)
-})
+watch(
+  () => route.query.tab,
+  (value) => {
+    if (value) activeTab.value = normalizeTab(value)
+  }
+)
 
-const { loading, run: loadFinance } = useMockAsync(async () => {
-  accounts.value = structuredClone(financeAccounts)
-  journals.value = structuredClone(journalEntries)
-  periods.value = structuredClone(financePeriods)
-  taxPeriodList.value = structuredClone(taxPeriods)
-  filings.value = structuredClone(taxFilings)
-  agingRows.value = structuredClone(agingBuckets)
-  ledgerRows.value = structuredClone(partnerLedgers)
-  booksReady.value = true
-}, { delay: 480, immediate: true })
+const { loading, run: loadFinance } = useMockAsync(
+  async () => {
+    accounts.value = structuredClone(financeAccounts)
+    journals.value = structuredClone(journalEntries)
+    periods.value = structuredClone(financePeriods)
+    taxPeriodList.value = structuredClone(taxPeriods)
+    filings.value = structuredClone(taxFilings)
+    agingRows.value = structuredClone(agingBuckets)
+    ledgerRows.value = structuredClone(partnerLedgers)
+    booksReady.value = true
+  },
+  { delay: 480, immediate: true }
+)
 
 const { loading: refreshing, run: runRefresh } = useMockRefresh()
 
 // 与财务工作台保持一致：优先显示最近一个尚未关账的期间。
 const currentPeriod = computed(() => periods.value.find(period => period.status !== 'closed') ?? periods.value[0] ?? null)
 const currentPeriodLabel = computed(() => currentPeriod.value?.period ?? '—')
-const currentPeriodStatusLabel = computed(() => (currentPeriod.value ? financePeriodStatusLabels[currentPeriod.value.status] : '未建账'))
-const currentPeriodStatusColor = computed(() => (currentPeriod.value ? financePeriodStatusColors[currentPeriod.value.status] : 'neutral'))
+const currentPeriodStatusLabel = computed(() =>
+  currentPeriod.value ? financePeriodStatusLabels[currentPeriod.value.status] : '未建账'
+)
+const currentPeriodStatusColor = computed(() =>
+  currentPeriod.value ? financePeriodStatusColors[currentPeriod.value.status] : 'neutral'
+)
 
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const showSkeleton = computed(() => (auth.connected ? live.loading : loading.value || stateLoading.value))
 
-function notify(title: string, description: string, color: 'success' | 'neutral' | 'warning' | 'error' = 'success', icon = 'i-carbon-checkmark') {
+function notify(
+  title: string,
+  description: string,
+  color: 'success' | 'neutral' | 'warning' | 'error' = 'success',
+  icon = 'i-carbon-checkmark'
+) {
   toast.add({ title, description, color, icon })
 }
 
@@ -126,6 +174,34 @@ function reloadPage() {
 }
 
 async function refreshPage() {
+  if (auth.connected && accountingTabs.includes(activeTab.value)) {
+    await Promise.all([accounting.query.refresh(), overviewPanel.value?.refresh()])
+    return
+  }
+  if (auth.connected && ['reports', 'reporting'].includes(activeTab.value)) {
+    await Promise.all([statementsPanel.value?.refresh(), projectionPanel.value?.refresh()])
+    return
+  }
+  if (auth.connected && activeTab.value === 'aging') {
+    await agingPanel.value?.refresh()
+    return
+  }
+  if (auth.connected && activeTab.value === 'payables') {
+    payablesPanel.value?.refresh()
+    return
+  }
+  if (auth.connected && (activeTab.value === 'treasury' || activeTab.value === 'bank')) {
+    await treasuryPanel.value?.refresh()
+    return
+  }
+  if (auth.connected && activeTab.value === 'donations') {
+    await donationsPanel.value?.refresh()
+    return
+  }
+  if (auth.connected && activeTab.value === 'tax-center') {
+    await taxPanel.value?.refresh()
+    return
+  }
   await runRefresh(() => loadFinance())
   bankRecon.reset()
   externalJournals.reset()
@@ -141,15 +217,22 @@ function handleNavigate(tab: string) {
 }
 
 function handleTogglePeriod(period: FinancePeriod, closed: boolean, passed: number, total: number) {
-  periods.value = periods.value.map(item => (item.id === period.id
-    ? {
-        ...item,
-        status: (closed ? 'closed' : 'open') as FinancePeriod['status'],
-        closedAt: closed ? '2026-11-18 18:00' : undefined
-      }
-    : item))
+  periods.value = periods.value.map(item =>
+    item.id === period.id
+      ? {
+          ...item,
+          status: (closed ? 'closed' : 'open') as FinancePeriod['status'],
+          closedAt: closed ? '2026-11-18 18:00' : undefined
+        }
+      : item
+  )
   if (closed && passed < total) {
-    notify('期间已关闭，但检查项未全部通过', period.period + ' 关账检查仅通过 ' + passed + '/' + total + ' 项；仅本次预览，刷新后恢复。', 'warning', 'i-carbon-warning-alt')
+    notify(
+      '期间已关闭，但检查项未全部通过',
+      period.period + ' 关账检查仅通过 ' + passed + '/' + total + ' 项；仅本次预览，刷新后恢复。',
+      'warning',
+      'i-carbon-warning-alt'
+    )
   } else if (closed) {
     notify('会计期间已关账', period.period + ' 已标记为已关账；仅本次预览，刷新后恢复。')
   } else {
@@ -179,7 +262,10 @@ function handleUpdateAccount(account: FinanceAccount) {
 
 function handleCreateJournal(entry: JournalEntry) {
   journals.value = [entry, ...journals.value]
-  notify(entry.status === 'draft' ? '凭证已保存为草稿' : '凭证已提交审批', entry.id + ' ' + entry.description + '；仅本次预览，刷新后恢复。')
+  notify(
+    entry.status === 'draft' ? '凭证已保存为草稿' : '凭证已提交审批',
+    entry.id + ' ' + entry.description + '；仅本次预览，刷新后恢复。'
+  )
 }
 
 function handlePostJournal(id: string) {
@@ -190,48 +276,89 @@ function handlePostJournal(id: string) {
 }
 
 function handleFileTax(id: string) {
-  filings.value = filings.value.map(filing => (filing.id === id ? { ...filing, status: 'filed' as const, filedAt: '2026-11-18 18:00' } : filing))
+  filings.value = filings.value.map(filing =>
+    filing.id === id ? { ...filing, status: 'filed' as const, filedAt: '2026-11-18 18:00' } : filing
+  )
   const target = filings.value.find(filing => filing.id === id)
   notify('申报已提交（本地演示）', (target ? target.period + ' ' : '') + '申报状态已更新为已申报；仅本次预览，刷新后恢复。')
 }
 
 function handleMatchTransaction(transactionId: string, journalId: string) {
   const result = bankRecon.match(transactionId, journalId)
-  notify(result.ok ? '流水已匹配' : '流水未匹配', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '流水已匹配' : '流水未匹配',
+    result.message,
+    result.ok ? 'success' : 'warning',
+    result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleUnmatchTransaction(transactionId: string) {
   const result = bankRecon.unmatch(transactionId)
-  notify(result.ok ? '已解除匹配' : '未解除匹配', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-unlink' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '已解除匹配' : '未解除匹配',
+    result.message,
+    result.ok ? 'neutral' : 'warning',
+    result.ok ? 'i-carbon-unlink' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleExcludeTransaction(transactionId: string) {
   const result = bankRecon.exclude(transactionId)
-  notify(result.ok ? '流水已排除' : '流水未排除', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-subtract' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '流水已排除' : '流水未排除',
+    result.message,
+    result.ok ? 'neutral' : 'warning',
+    result.ok ? 'i-carbon-subtract' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleIncludeTransaction(transactionId: string) {
   const result = bankRecon.include(transactionId)
-  notify(result.ok ? '流水已恢复' : '流水未恢复', result.message, result.ok ? 'neutral' : 'warning', result.ok ? 'i-carbon-add' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '流水已恢复' : '流水未恢复',
+    result.message,
+    result.ok ? 'neutral' : 'warning',
+    result.ok ? 'i-carbon-add' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleImportTransactions(rows: BankTransaction[]) {
   const result = bankRecon.importRows(rows)
-  notify(result.ok ? '流水导入完成（本地演示）' : '流水未导入', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '流水导入完成（本地演示）' : '流水未导入',
+    result.message,
+    result.ok ? 'success' : 'warning',
+    result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleReconcileAccount(accountId: string) {
   const result = bankRecon.completeReconciliation(accountId)
-  notify(result.ok ? '对账已完成' : '对账未完成', result.message, result.ok ? 'success' : 'warning', result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '对账已完成' : '对账未完成',
+    result.message,
+    result.ok ? 'success' : 'warning',
+    result.ok ? 'i-carbon-checkmark' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleUndoReconciliation(recordId: string, reason: string) {
   const result = bankRecon.undoReconciliation(recordId, reason)
-  notify(result.ok ? '对账已撤销' : '对账未撤销', result.message, result.ok ? 'warning' : 'error', result.ok ? 'i-carbon-undo' : 'i-carbon-warning-alt')
+  notify(
+    result.ok ? '对账已撤销' : '对账未撤销',
+    result.message,
+    result.ok ? 'warning' : 'error',
+    result.ok ? 'i-carbon-undo' : 'i-carbon-warning-alt'
+  )
 }
 
 function handleExportAging() {
-  downloadCsv('aging-report.csv', ['账龄区间', '应收金额', '应付金额'], agingRows.value.map(row => [row.bucket, row.receivable, row.payable]))
+  downloadCsv(
+    'aging-report.csv',
+    ['账龄区间', '应收金额', '应付金额'],
+    agingRows.value.map(row => [row.bucket, row.receivable, row.payable])
+  )
   notify('账龄表已导出', '已生成 aging-report.csv 本地下载，不请求后端。', 'neutral', 'i-carbon-download')
 }
 </script>
@@ -246,7 +373,7 @@ function handleExportAging() {
           </template>
           <template #right>
             <UBadge
-              label="本地原型"
+              :label="auth.connected && backendTabs.includes(activeTab) ? auth.simulated ? 'MSW 接口' : '当前工作区接口' : '本地原型'"
               color="neutral"
               variant="subtle"
               size="sm"
@@ -276,7 +403,7 @@ function handleExportAging() {
             />
           </template>
           <template #right>
-            <div class="flex items-center gap-2 text-xs">
+            <div v-if="!auth.connected || !backendTabs.includes(activeTab)" class="flex items-center gap-2 text-xs">
               <span class="text-muted">当前期间</span>
               <UBadge
                 :label="currentPeriodLabel + ' · ' + currentPeriodStatusLabel"
@@ -301,6 +428,14 @@ function handleExportAging() {
 
       <template #body>
         <AppBreadcrumb current="财务" class="mb-3" />
+        <UAlert
+          v-if="auth.connected && !backendTabs.includes(activeTab)"
+          class="mb-3 shrink-0"
+          color="info"
+          title="模拟预览"
+          description="此页使用本地演示数据。"
+          data-testid="finance-connection-scope"
+        />
 
         <UCard
           v-if="showSkeleton"
@@ -329,7 +464,7 @@ function handleExportAging() {
           variant="naked"
           icon="i-carbon-view-off"
           title="没有访问权限"
-          description="当前演示身份缺少 finance.view 权限，无法查看财务模块。可切换演示身份，或恢复正常演示数据。"
+          :description="auth.connected ? '当前身份缺少财务读取权限或模块权益。' : '当前演示身份缺少 finance.view 权限。'"
           :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
           data-testid="finance-forbidden"
         />
@@ -345,31 +480,36 @@ function handleExportAging() {
         />
 
         <div v-else :key="'finance-' + activeTab" class="nx-fade">
-          <FinanceWorkbench
-            v-if="activeTab === 'workbench'"
-            :accounts="accounts"
-            :journals="journals"
-            :periods="periods"
-            :tax-filings="filings"
-            :bank-transactions="bankTxList"
-            :aging="agingRows"
-            :books-ready="booksReady"
-            @navigate="handleNavigate"
-            @toggle-period="handleTogglePeriod"
-            @setup="handleSetupBooks"
-            @complete-year-end="handleCompleteYearEnd"
-          />
+          <div v-if="activeTab === 'workbench'" class="space-y-4">
+            <FinanceWorkbench
+              :live="connectedAccounting"
+              :accounts="accounts"
+              :journals="journals"
+              :periods="periods"
+              :tax-filings="filings"
+              :bank-transactions="bankTxList"
+              :aging="agingRows"
+              :books-ready="booksReady"
+              @navigate="handleNavigate"
+              @toggle-period="handleTogglePeriod"
+              @setup="handleSetupBooks"
+              @complete-year-end="handleCompleteYearEnd"
+            />
+            <FinanceReportingOverview v-if="auth.connected && accounting.query.data?.book.settings" ref="overviewPanel" />
+          </div>
 
           <FinanceAccountTree
             v-else-if="activeTab === 'accounts'"
-            :accounts="accounts"
-            :can-edit="canPost"
+            :live="connectedAccounting"
+            :accounts="auth.connected ? ledgerAccounts : accounts"
+            :can-edit="auth.connected ? accounting.query.data?.chart?.canManage === true : canPost"
             @create="handleCreateAccount"
             @update="handleUpdateAccount"
           />
 
           <FinanceJournalPanel
             v-else-if="activeTab === 'journals'"
+            :live="connectedAccounting"
             :journals="ledgerJournals"
             :accounts="accounts"
             :can-post="canPost"
@@ -377,8 +517,12 @@ function handleExportAging() {
             @post="handlePostJournal"
           />
 
-          <FinanceImportedJournals v-else-if="activeTab === 'imported'" :accounts="accounts" />
+          <FinanceImportedJournals v-else-if="activeTab === 'imported'" :live="connectedAccounting" :accounts="accounts" />
 
+          <div v-else-if="auth.connected && ['reports', 'reporting'].includes(activeTab)" class="space-y-4">
+            <FinanceWorkspaceProjection v-if="activeTab === 'reporting'" ref="projectionPanel" page-path="/finance" />
+            <FinanceReportStatements ref="statementsPanel" :tab="activeTab === 'reports' ? 'reports' : 'reporting'" :initial-kind="activeTab === 'reports' ? 'trial-balance' : 'profit-and-loss'" />
+          </div>
           <FinanceReports
             v-else-if="activeTab === 'reports'"
             :report-rows="reportRows"
@@ -387,13 +531,16 @@ function handleExportAging() {
           />
 
           <div v-else-if="activeTab === 'aging'" class="space-y-4">
+            <FinanceReportAging v-if="auth.connected" ref="agingPanel" />
             <FinanceAgingLedger
+              v-else
               :aging="agingRows"
               :receivable-buckets="receivableBuckets"
               :receivable-open-invoices="receivableOpenInvoices"
               :partner-ledgers="ledgerRows"
             />
             <FinanceTax
+              v-if="!auth.connected"
               :tax-periods="taxPeriodList"
               :tax-filings="filings"
               :tax-rates="taxRates"
@@ -401,19 +548,26 @@ function handleExportAging() {
               :can-post="canPost"
               @file="handleFileTax"
             />
+            <UButton
+              v-else label="查看纳税期间" icon="i-carbon-calendar" variant="outline"
+              :to="{ path: '/finance', query: { workspace: live.activeWorkspaceId, tab: 'tax-center' } }"
+            />
           </div>
 
           <FinanceSupplierPayables
             v-else-if="activeTab === 'payables'"
+            ref="payablesPanel"
             :can-post="canPost"
             :initial-bill-id="initialBillId"
           />
 
           <FinanceTradeDocuments v-else-if="activeTab === 'documents'" :can-post="canPost" />
 
-          <FinanceDonations v-else-if="activeTab === 'donations'" />
+          <FinanceDonations v-else-if="activeTab === 'donations'" ref="donationsPanel" />
 
-          <FinanceOpening v-else-if="activeTab === 'opening'" :can-post="canPost" />
+          <FinanceOpening v-else-if="activeTab === 'opening'" :live="connectedAccounting" :can-post="canPost" />
+
+          <FinanceTreasury v-else-if="activeTab === 'bank' && auth.connected" ref="treasuryPanel" :can-post="canPost" bank-only />
 
           <FinanceBankRecon
             v-else-if="activeTab === 'bank'"
@@ -432,17 +586,21 @@ function handleExportAging() {
             @undo="handleUndoReconciliation"
           />
 
-          <FinanceTreasury v-else-if="activeTab === 'treasury'" :can-post="canPost" />
+          <FinanceTreasury v-else-if="activeTab === 'treasury'" ref="treasuryPanel" :can-post="canPost" />
 
           <FinanceClosing
             v-else-if="activeTab === 'closing'"
+            :live="connectedAccounting"
             :accounts="accounts"
             :periods="periods"
             :journals="journals"
             :can-post="canPost"
           />
 
-          <FinanceTaxCenter v-else-if="activeTab === 'tax-center'" />
+          <template v-else-if="activeTab === 'tax-center'">
+            <FinanceTaxWorkspace v-if="auth.connected" ref="taxPanel" />
+            <FinanceTaxCenter v-else />
+          </template>
 
           <FinanceReportingCenter v-else-if="activeTab === 'reporting'" />
         </div>

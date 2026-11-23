@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { z } from 'zod'
+import { useWarehouseConnection } from '~/composables/inventory/useWarehouseConnection'
+import { useWarehouseReturns } from '~/composables/inventory/useWarehouseReturns'
+import { useWarehouseOperations } from '~/composables/inventory/useWarehouseOperations'
 import StockPermitExecutionSlideover from '~/components/inventory/StockPermitExecutionSlideover.vue'
 import InventoryLowStockTab from '~/components/inventory/LowStockTab.vue'
 import InventoryMovementsTab from '~/components/inventory/MovementsTab.vue'
@@ -67,14 +71,26 @@ interface TransferConfirmPayload {
   lines: { sku: string, quantity: number }[]
 }
 
+const connection = useWarehouseConnection()
+const connected = computed(() => connection.query.connected)
 const toast = useToast()
 const route = useRoute()
 const { workspace } = useMockWorkspace()
-const { isLoading: stateLoading, isEmpty, isError, isForbidden } = useMockState()
+const mockState = useMockState()
+const stateLoading = computed(() => (connected.value ? connection.query.loading : mockState.isLoading.value))
+const isEmpty = computed(() => (connected.value ? false : mockState.isEmpty.value))
+const isError = computed(() =>
+  connected.value ? !!connection.query.problem && ![403, 404].includes(connection.query.status) : mockState.isError.value
+)
+const isForbidden = computed(() =>
+  connected.value
+    ? (!connection.query.enabled && !connection.query.loading) || [403, 404].includes(connection.query.status)
+    : mockState.isForbidden.value
+)
 const { can } = useMockPermissions()
 const session = useSessionStore()
 
-const canAdjust = computed(() => can('inventory.adjust'))
+const canAdjust = computed(() => (connected.value ? connection.query.data?.selected?.canReceive === true : can('inventory.adjust')))
 
 const inventory = useInventoryStore()
 
@@ -86,15 +102,17 @@ const transferList = ref<TransferOrder[]>(transfers.map(cloneTransferOrder))
 const inboundOrders = ref<PurchaseOrder[]>(cloneInboundOrders())
 const outboundOrders = ref<SalesOrder[]>(cloneOutboundOrders())
 
-const { loading, run: runLoad } = useMockAsync(async () => {
-  resetLocalState()
-  return true
-}, { delay: 420, immediate: true })
+const { loading, run: runLoad } = useMockAsync(
+  async () => {
+    resetLocalState()
+    return true
+  },
+  { delay: 420, immediate: true }
+)
 
-const showSkeleton = computed(() => loading.value || stateLoading.value)
+const showSkeleton = computed(() => (connected.value ? false : loading.value) || stateLoading.value)
 
-const tab = ref('warehouses')
-const tabItems = [
+const mockTabItems = [
   { label: '仓库总览', value: 'warehouses', icon: 'i-carbon-building' },
   { label: '库存位置', value: 'positions', icon: 'i-carbon-package' },
   { label: '库存流水', value: 'movements', icon: 'i-carbon-flow' },
@@ -102,14 +120,26 @@ const tabItems = [
   { label: '仓网与调拨', value: 'warehouse-ops', icon: 'i-carbon-network-4' },
   { label: '低库存', value: 'low-stock', icon: 'i-carbon-warning-alt' }
 ]
+const initialTab = () => mockTabItems.some(item => item.value === route.query.tab) ? String(route.query.tab) : 'warehouses'
+const tab = ref(initialTab())
+const returnFlow = useWarehouseReturns(connection, tab)
+const warehouseOps = useWarehouseOperations(connection, tab)
+watch(() => route.query.tab, () => { if (connected.value) tab.value = initialTab() })
 
+const tabItems = computed(() =>
+  connected.value
+    ? mockTabItems.filter(value => value.value !== 'low-stock')
+    : mockTabItems
+)
 const lowStockItems = computed(() => summarizeLowStock(rows.value))
 
-const warehouseRows = computed(() => warehouses.map(warehouse => ({
-  warehouse,
-  address: warehouseAddresses[warehouse.id] ?? warehouse.city,
-  summary: summarizeWarehouse(rows.value, warehouse.id)
-})))
+const warehouseRows = computed(() =>
+  warehouses.map(warehouse => ({
+    warehouse,
+    address: warehouseAddresses[warehouse.id] ?? warehouse.city,
+    summary: summarizeWarehouse(rows.value, warehouse.id)
+  }))
+)
 
 const overviewStats = computed(() => [
   { label: '仓库', value: warehouseRows.value.length, unit: '个', hint: '华东 / 华南 / 杭州' },
@@ -135,7 +165,17 @@ function makeLocalId(prefix: string) {
 function nowStamp() {
   const now = new Date()
   const pad = (value: number) => String(value).padStart(2, '0')
-  return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes())
+  return (
+    now.getFullYear()
+    + '-'
+    + pad(now.getMonth() + 1)
+    + '-'
+    + pad(now.getDate())
+    + ' '
+    + pad(now.getHours())
+    + ':'
+    + pad(now.getMinutes())
+  )
 }
 
 function cloneInboundOrders() {
@@ -198,40 +238,70 @@ function pushMovement(
   quantity: number,
   reference: string
 ) {
-  movementRows.value = [{
-    id: makeLocalId('mv'),
-    type,
-    warehouseId,
-    sku,
-    name,
-    quantity,
-    reference,
-    at: nowStamp()
-  }, ...movementRows.value]
+  movementRows.value = [
+    {
+      id: makeLocalId('mv'),
+      type,
+      warehouseId,
+      sku,
+      name,
+      quantity,
+      reference,
+      at: nowStamp()
+    },
+    ...movementRows.value
+  ]
 }
 
 const stockFlow = useStockFlowStore()
 const permitExecOpen = ref(false)
 const permitExecId = ref<string | null>(null)
-const activePermits = computed(() => stockFlow.permits
-  .filter(permit => permit.workspaceId === workspace.value.id && (permit.status === 'pending' || permit.status === 'partial'))
-  .sort((a, b) => a.direction.localeCompare(b.direction) || a.sourceNo.localeCompare(b.sourceNo)))
+const activePermits = computed(() =>
+  connected.value
+    ? connection.taskRows
+    : stockFlow.permits
+        .filter(permit => permit.workspaceId === workspace.value.id && (permit.status === 'pending' || permit.status === 'partial'))
+        .sort((a, b) => a.direction.localeCompare(b.direction) || a.sourceNo.localeCompare(b.sourceNo))
+)
 
-const permitColumns: TableColumn<StockPermit>[] = [{
-  accessorKey: 'id', header: '许可号', meta: { class: { td: 'whitespace-nowrap font-mono text-[12px]' } }
-}, {
-  accessorKey: 'sourceNo', header: '来源单据', meta: { class: { td: 'whitespace-nowrap font-mono text-[12px]' } }
-}, {
-  accessorKey: 'partner', header: '往来单位', meta: { class: { td: 'min-w-[180px]' } }
-}, {
-  accessorKey: 'direction', header: '方向', meta: { class: { th: 'w-24' } }
-}, {
-  accessorKey: 'status', header: '状态', meta: { class: { th: 'w-24' } }
-}, {
-  id: 'actions', header: '操作', meta: { class: { th: 'w-28', td: 'text-right' } }
-}]
+const permitColumns: TableColumn<Pick<StockPermit, 'id' | 'sourceNo' | 'partner' | 'direction' | 'status'>>[] = [
+  {
+    accessorKey: 'id',
+    header: '许可号',
+    meta: { class: { td: 'whitespace-nowrap font-mono text-[12px]' } }
+  },
+  {
+    accessorKey: 'sourceNo',
+    header: '来源单据',
+    meta: { class: { td: 'whitespace-nowrap font-mono text-[12px]' } }
+  },
+  {
+    accessorKey: 'partner',
+    header: '往来单位',
+    meta: { class: { td: 'min-w-[180px]' } }
+  },
+  {
+    accessorKey: 'direction',
+    header: '方向',
+    meta: { class: { th: 'w-24' } }
+  },
+  {
+    accessorKey: 'status',
+    header: '状态',
+    meta: { class: { th: 'w-24' } }
+  },
+  {
+    id: 'actions',
+    header: '操作',
+    meta: { class: { th: 'w-28', td: 'text-right' } }
+  }
+]
 
 function openPermitExecution(id: string) {
+  if (connected.value) {
+    if (!connection.canExecute(id)) return
+    connection.start(id)
+  }
   permitExecId.value = id
   permitExecOpen.value = true
 }
@@ -251,7 +321,11 @@ function handlePermitExecute(payload: {
       if (!permitLine) continue
       const available = availableIn(payload.warehouseId, permitLine.sku)
       if (available < line.quantity) {
-        toast.add({ title: '仓库可用量不足', description: permitLine.name + ' 当前可用 ' + available + '，本次需 ' + line.quantity + '。', color: 'error' })
+        toast.add({
+          title: '仓库可用量不足',
+          description: permitLine.name + ' 当前可用 ' + available + '，本次需 ' + line.quantity + '。',
+          color: 'error'
+        })
         return
       }
     }
@@ -276,7 +350,10 @@ function handlePermitExecute(payload: {
     }
     pushMovement(
       permit.direction === 'inbound' ? 'inbound' : 'outbound',
-      payload.warehouseId, line.sku, line.name, line.quantity,
+      payload.warehouseId,
+      line.sku,
+      line.name,
+      line.quantity,
       permit.sourceNo + ' / ' + result.execution.id
     )
   }
@@ -302,10 +379,19 @@ function requireAdjust() {
 
 /* ---------------- 仓库总览 ---------------- */
 
-const positionsTab = ref<{ filterByWarehouse: (id: string) => void, filterBySku: (sku: string) => void, exportCsv: () => void } | null>(null)
+const positionsTab = ref<{
+  filterByWarehouse: (id: string) => void
+  filterBySku: (sku: string) => void
+  exportCsv: () => void
+} | null>(null)
 const movementsTab = ref<{ searchBySku: (sku: string) => void } | null>(null)
 
 function openWarehouse(id: string) {
+  if (connected.value) {
+    connection.warehouseId = id
+    tab.value = 'operations'
+    return
+  }
   positionsTab.value?.filterByWarehouse(id)
   tab.value = 'positions'
 }
@@ -319,6 +405,15 @@ function openPositionMovements(position: InventoryPosition) {
 
 const returnDetailOpen = ref(false)
 const returnDetailId = ref<string | null>(null)
+const returnOpen = ref(false)
+watch(() => [returnFlow.query.owner, connection.warehouseId], () => {
+  returnOpen.value = returnDetailOpen.value = false
+  returnDetailId.value = null
+}, { flush: 'sync' })
+
+function startReturn(id: string) {
+  if (returnFlow.start(id)) returnOpen.value = true
+}
 
 function openReturnDetail(returnId: string) {
   returnDetailId.value = returnId
@@ -326,6 +421,26 @@ function openReturnDetail(returnId: string) {
 }
 
 function openMovementReference(movement: InventoryMovement) {
+  if (connected.value) {
+    const returned = returnFlow.list.find(row => row.movementId === movement.id)
+    if (returned) {
+      openReturnDetail(returned.id)
+      return
+    }
+    const task = connection.tasks.find(value => value.id === movement.reference)
+    if (task) {
+      navigateTo({
+        path: task.direction === 'outbound' ? '/sales' : '/purchase-orders',
+        query: { workspace: connection.query.session.activeWorkspaceId, order: task.sourceNo }
+      })
+      return
+    }
+    if (z.uuid().safeParse(movement.reference).success) {
+      tab.value = 'warehouse-ops'
+      warehouseOps.openDetail(movement.reference)
+    }
+    return
+  }
   if (movement.returnId) {
     openReturnDetail(movement.returnId)
     return
@@ -370,6 +485,10 @@ const editingStocktake = ref<Stocktake | null>(null)
 const editingTransfer = ref<TransferOrder | null>(null)
 
 function openReceive() {
+  if (connected.value) {
+    tab.value = 'operations'
+    return
+  }
   if (!requireAdjust()) return
   if (!inboundOrders.value.length) {
     toast.add({
@@ -427,7 +546,8 @@ function handleReceive(payload: ReceivePayload) {
   inboundOrders.value = inboundOrders.value.filter(item => item.lines.some(line => line.received < line.quantity))
   toast.add({
     title: '收货入库完成',
-    description: order.id + ' · ' + warehouseName(payload.warehouseId) + ' · 本次入库 ' + total + ' 件；仅本次预览，刷新后恢复初始数据。',
+    description:
+      order.id + ' · ' + warehouseName(payload.warehouseId) + ' · 本次入库 ' + total + ' 件；仅本次预览，刷新后恢复初始数据。',
     color: 'success',
     icon: 'i-carbon-inventory-management'
   })
@@ -470,7 +590,8 @@ function handleIssue(payload: IssuePayload) {
   outboundOrders.value = outboundOrders.value.filter(item => item.lines.some(line => line.shipped < line.quantity))
   toast.add({
     title: '销售出库完成',
-    description: order.id + ' · ' + warehouseName(payload.warehouseId) + ' · 本次出库 ' + total + ' 件；仅本次预览，刷新后恢复初始数据。',
+    description:
+      order.id + ' · ' + warehouseName(payload.warehouseId) + ' · 本次出库 ' + total + ' 件；仅本次预览，刷新后恢复初始数据。',
     color: 'success',
     icon: 'i-carbon-arrow-up-right'
   })
@@ -524,7 +645,15 @@ function handleStocktakeSave(payload: StocktakeSavePayload) {
   stocktakeList.value = [stocktake, ...stocktakeList.value]
   toast.add({
     title: '盘点单已创建',
-    description: stocktake.id + ' · ' + warehouseName(payload.warehouseId) + ' · ' + payload.lines.length + ' 行，差异 ' + diffLineCount(payload.lines) + ' 行；仅本次预览，刷新后恢复。',
+    description:
+      stocktake.id
+      + ' · '
+      + warehouseName(payload.warehouseId)
+      + ' · '
+      + payload.lines.length
+      + ' 行，差异 '
+      + diffLineCount(payload.lines)
+      + ' 行；仅本次预览，刷新后恢复。',
     color: 'success',
     icon: 'i-carbon-task-complete'
   })
@@ -554,18 +683,21 @@ function applyStocktake(warehouseId: string, lines: StocktakeLine[], reference: 
       position.available = Math.max(quantity - position.reserved, 0)
       position.updatedAt = nowStamp()
     } else {
-      rows.value = [{
-        id: makeLocalId('ip'),
-        warehouseId,
-        sku: line.sku,
-        name: line.name,
-        lotNo: 'LOT-' + new Date().getFullYear() + '-ST',
-        quantity,
-        reserved: 0,
-        available: quantity,
-        unit: line.unit,
-        updatedAt: nowStamp()
-      }, ...rows.value]
+      rows.value = [
+        {
+          id: makeLocalId('ip'),
+          warehouseId,
+          sku: line.sku,
+          name: line.name,
+          lotNo: 'LOT-' + new Date().getFullYear() + '-ST',
+          quantity,
+          reserved: 0,
+          available: quantity,
+          unit: line.unit,
+          updatedAt: nowStamp()
+        },
+        ...rows.value
+      ]
     }
     pushMovement('adjust', warehouseId, line.sku, line.name, Math.abs(diff), reference)
     adjusted += 1
@@ -648,7 +780,13 @@ function handleTransferConfirm(payload: TransferConfirmPayload) {
   transferList.value = [transfer, ...transferList.value]
   toast.add({
     title: '调拨单已生成并执行',
-    description: transfer.id + ' · ' + warehouseName(payload.fromWarehouseId) + ' → ' + warehouseName(payload.toWarehouseId) + '；仅本次预览，刷新后恢复。',
+    description:
+      transfer.id
+      + ' · '
+      + warehouseName(payload.fromWarehouseId)
+      + ' → '
+      + warehouseName(payload.toWarehouseId)
+      + '；仅本次预览，刷新后恢复。',
     color: 'success',
     icon: 'i-carbon-arrows-horizontal'
   })
@@ -676,7 +814,13 @@ function handleTransferExecute(id: string) {
   transfer.status = 'completed'
   toast.add({
     title: '调拨单已执行',
-    description: transfer.id + ' · ' + warehouseName(transfer.fromWarehouseId) + ' → ' + warehouseName(transfer.toWarehouseId) + '；仅本次预览，刷新后恢复。',
+    description:
+      transfer.id
+      + ' · '
+      + warehouseName(transfer.fromWarehouseId)
+      + ' → '
+      + warehouseName(transfer.toWarehouseId)
+      + '；仅本次预览，刷新后恢复。',
     color: 'success',
     icon: 'i-carbon-arrows-horizontal'
   })
@@ -709,6 +853,12 @@ function openLowStockItem(item: LowStockItem) {
 }
 
 function refreshInventory() {
+  if (connected.value) {
+    connection.query.refresh()
+    returnFlow.query.refresh()
+    warehouseOps.query.refresh()
+    return
+  }
   void runLoad().then(() => {
     if (isError.value || isForbidden.value) return
     toast.add({
@@ -725,29 +875,44 @@ async function reloadPage() {
 }
 
 const overflowItems = computed(() => [
-  [{
-    label: '出库发货',
-    icon: 'i-carbon-arrow-up-right',
-    disabled: !canAdjust.value,
-    onSelect: openIssue
-  }],
-  [{
-    label: '新建盘点',
-    icon: 'i-carbon-task-complete',
-    disabled: !canAdjust.value,
-    onSelect: openStocktakeCreate
-  }, {
-    label: '新建调拨',
-    icon: 'i-carbon-arrows-horizontal',
-    disabled: !canAdjust.value,
-    onSelect: openTransferCreate
-  }],
-  [{
-    label: '导出当前库存位置',
-    icon: 'i-carbon-download',
-    onSelect: () => positionsTab.value?.exportCsv()
-  }]
+  [
+    {
+      label: '出库发货',
+      icon: 'i-carbon-arrow-up-right',
+      disabled: !canAdjust.value,
+      onSelect: openIssue
+    }
+  ],
+  [
+    {
+      label: '新建盘点',
+      icon: 'i-carbon-task-complete',
+      disabled: !canAdjust.value,
+      onSelect: openStocktakeCreate
+    },
+    {
+      label: '新建调拨',
+      icon: 'i-carbon-arrows-horizontal',
+      disabled: !canAdjust.value,
+      onSelect: openTransferCreate
+    }
+  ],
+  [
+    {
+      label: '导出当前库存位置',
+      icon: 'i-carbon-download',
+      onSelect: () => positionsTab.value?.exportCsv()
+    }
+  ]
 ])
+watch(
+  () => connection.query.owner,
+  () => {
+    permitExecOpen.value = false
+    permitExecId.value = null
+  },
+  { flush: 'sync' }
+)
 </script>
 
 <template>
@@ -770,7 +935,7 @@ const overflowItems = computed(() => [
               data-testid="inventory-receive"
               @click="openReceive"
             />
-            <UDropdownMenu :items="overflowItems" :content="{ align: 'end' }">
+            <UDropdownMenu v-if="!connected" :items="overflowItems" :content="{ align: 'end' }">
               <UButton
                 icon="i-carbon-overflow-menu-horizontal"
                 color="neutral"
@@ -796,7 +961,7 @@ const overflowItems = computed(() => [
 
           <template #right>
             <UBadge
-              v-if="lowStockItems.length"
+              v-if="!connected && lowStockItems.length"
               color="warning"
               variant="subtle"
               size="sm"
@@ -804,7 +969,10 @@ const overflowItems = computed(() => [
             >
               低库存 {{ lowStockItems.length }} 个 SKU
             </UBadge>
-            <p class="text-xs text-muted">
+            <p v-if="connected" class="text-xs text-muted">
+              {{ connection.query.data?.selected?.name ?? '选择仓库' }} · 当前仓许可 {{ connection.tasks.length }} 张
+            </p>
+            <p v-else class="text-xs text-muted">
               共 {{ rows.length }} 个库存位置 · {{ movementRows.length }} 条流水
             </p>
             <UTooltip text="刷新库存数据">
@@ -825,6 +993,36 @@ const overflowItems = computed(() => [
 
       <template #body>
         <AppBreadcrumb current="库存管理" class="mb-3" />
+        <div v-if="connected" class="mb-3 space-y-3">
+          <UFormField label="当前授权仓库">
+            <USelect
+              v-model="connection.warehouseId"
+              :items="connection.query.data?.warehouses.warehouses.map(value => ({ label: value.code + ' ' + value.name, value: value.id })) ?? []"
+              placeholder="选择仓库"
+              class="w-full sm:w-80"
+              data-testid="inventory-live-warehouse"
+            />
+          </UFormField>
+          <UAlert color="neutral" title="当前工作区仓库任务与库存" :description="connection.query.data?.movements == null ? '当前可执行已授权的许可。库存查询权限由仓库范围决定。' : '从库存流水回查收发货来源和退货。'" />
+          <UAlert
+            v-if="connection.submission.record || connection.submission.message"
+            color="warning"
+            :title="connection.submission.message || '存在上次待恢复收货'"
+            data-testid="warehouse-recovery"
+          >
+            <template v-if="connection.submission.record" #description>
+              原提交数量 {{ connection.submission.record.payload.quantity }} · 业务日期 {{ connection.submission.record.payload.on }}
+            </template>
+            <template #actions>
+              <UButton v-if="connection.submission.record" label="恢复上次提交" @click="connection.recover('resume')" /><UButton label="读取当前状态" :disabled="!connection.submission.mutation.unknown || connection.submission.mutation.busy" @click="connection.recover('check')" /><UButton label="重试原提交" :disabled="!connection.submission.mutation.operation?.retryAvailable || connection.submission.mutation.busy" @click="connection.recover('retry')" /><UButton
+                v-if="connection.submission.failure?.kind === 'mfa' || connection.submission.record?.state === 'mfa'"
+                label="重新验证"
+                to="/bff/login?returnTo=/inventory"
+                external
+              />
+            </template>
+          </UAlert>
+        </div>
         <UCard class="nx-reveal rounded-sm" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:p-0' }">
           <div v-if="showSkeleton" class="space-y-2 p-4" data-testid="inventory-skeleton">
             <USkeleton v-for="n in 8" :key="n" class="h-9 w-full" />
@@ -834,8 +1032,8 @@ const overflowItems = computed(() => [
               color="error"
               variant="soft"
               icon="i-carbon-warning-alt"
-              title="库存数据加载失败（演示）"
-              description="?state=error 会模拟一次加载失败。本原型不会访问后端。"
+              :title="connected ? '库存数据加载失败' : '库存数据加载失败（演示）'"
+              :description="connected ? connection.query.problem : '?state=error 会模拟一次加载失败。本原型不会访问后端。'"
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
           </div>
@@ -843,7 +1041,7 @@ const overflowItems = computed(() => [
             <UEmpty
               variant="naked"
               icon="i-carbon-view-off"
-              title="没有库存读取权限（演示）"
+              :title="connected ? '没有可访问的仓库' : '没有库存读取权限（演示）'"
               description="?state=forbidden 模拟演示身份缺少 inventory.view 权限。"
               :actions="[{ label: '恢复正常', color: 'neutral', variant: 'outline', size: 'sm', onClick: reloadPage }]"
             />
@@ -860,6 +1058,7 @@ const overflowItems = computed(() => [
           <div v-else class="nx-fade">
             <InventoryOverviewTab
               v-show="tab === 'warehouses'"
+              :live="connected ? connection : undefined"
               :stats="overviewStats"
               :rows="warehouseRows"
               @open="openWarehouse"
@@ -868,6 +1067,7 @@ const overflowItems = computed(() => [
             <InventoryPositionsTab
               v-show="tab === 'positions'"
               ref="positionsTab"
+              :live="connected ? connection : undefined"
               :rows="rows"
               @open-movements="openPositionMovements"
             />
@@ -875,8 +1075,12 @@ const overflowItems = computed(() => [
             <InventoryMovementsTab
               v-show="tab === 'movements'"
               ref="movementsTab"
+              :live="connected ? connection : undefined"
+              :returns="connected ? returnFlow : undefined"
               :rows="movementRows"
               @open-reference="openMovementReference"
+              @start-return="startReturn"
+              @open-return="openReturnDetail"
             />
 
             <div v-show="tab === 'operations'" class="grid gap-4 p-4 xl:grid-cols-2" data-testid="inventory-operations">
@@ -895,7 +1099,7 @@ const overflowItems = computed(() => [
                       color="neutral"
                       variant="subtle"
                       size="sm"
-                      :label="activePermits.length + ' 张待执行'"
+                      :label="activePermits.length + (connected ? ' 张许可' : ' 张待执行')"
                     />
                   </div>
                 </template>
@@ -924,6 +1128,7 @@ const overflowItems = computed(() => [
                   <template #actions-cell="{ row }">
                     <div class="flex justify-end">
                       <UButton
+                        :disabled="connected && !connection.canExecute(row.original.id)"
                         label="执行"
                         color="primary"
                         variant="ghost"
@@ -939,13 +1144,8 @@ const overflowItems = computed(() => [
                     </div>
                   </template>
                 </ResizableTable>
-                <StockPermitExecutionSlideover
-                  v-model:open="permitExecOpen"
-                  :permit-id="permitExecId"
-                  @confirm="handlePermitExecute"
-                />
               </UCard>
-              <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0', header: 'p-3 sm:px-4' }">
+              <UCard v-if="!connected" class="rounded-sm" :ui="{ body: 'p-0 sm:p-0', header: 'p-3 sm:px-4' }">
                 <template #header>
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -1018,7 +1218,7 @@ const overflowItems = computed(() => [
                 </div>
               </UCard>
 
-              <UCard class="rounded-sm" :ui="{ body: 'p-0 sm:p-0', header: 'p-3 sm:px-4' }">
+              <UCard v-if="!connected" class="rounded-sm" :ui="{ body: 'p-0 sm:p-0', header: 'p-3 sm:px-4' }">
                 <template #header>
                   <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
@@ -1087,17 +1287,31 @@ const overflowItems = computed(() => [
               </UCard>
             </div>
 
-            <InventoryWarehouseOperations v-show="tab === 'warehouse-ops'" />
+            <InventoryWarehouseOperations v-if="tab === 'warehouse-ops'" :live="connected ? warehouseOps : undefined" />
 
-            <InventoryLowStockTab v-show="tab === 'low-stock'" :items="lowStockItems" @open-item="openLowStockItem" />
+            <InventoryLowStockTab
+              v-if="!connected"
+              v-show="tab === 'low-stock'"
+              :items="lowStockItems"
+              @open-item="openLowStockItem"
+            />
           </div>
         </UCard>
       </template>
     </UDashboardPanel>
 
-    <StockReturnDetailSlideover v-model:open="returnDetailOpen" :return-id="returnDetailId" />
+    <StockPermitExecutionSlideover
+      v-model:open="permitExecOpen"
+      :live="connected ? connection : undefined"
+      :permit-id="permitExecId"
+      @confirm="handlePermitExecute"
+    />
+
+    <InventoryStockReturnSlideover v-if="connected" v-model:open="returnOpen" :execution-id="returnFlow.sourceId" :live="returnFlow" @created="openReturnDetail" />
+    <StockReturnDetailSlideover v-model:open="returnDetailOpen" :return-id="returnDetailId" :live="connected ? returnFlow : undefined" />
 
     <InventoryReceiveSlideover
+      v-if="!connected"
       v-model:open="receiveOpen"
       :orders="inboundOrders"
       :warehouses="warehouses"
@@ -1106,6 +1320,7 @@ const overflowItems = computed(() => [
     />
 
     <InventoryIssueSlideover
+      v-if="!connected"
       v-model:open="issueOpen"
       :orders="outboundOrders"
       :warehouses="warehouses"
@@ -1115,6 +1330,7 @@ const overflowItems = computed(() => [
     />
 
     <InventoryStocktakeSlideover
+      v-if="!connected"
       v-model:open="stocktakeOpen"
       :stocktake="editingStocktake"
       :warehouses="warehouses"
@@ -1125,6 +1341,7 @@ const overflowItems = computed(() => [
     />
 
     <InventoryTransferSlideover
+      v-if="!connected"
       v-model:open="transferOpen"
       :transfer="editingTransfer"
       :warehouses="warehouses"

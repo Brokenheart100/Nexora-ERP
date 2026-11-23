@@ -1,3 +1,10 @@
+const assistantId = '[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}'
+const assistantRoute = new RegExp('^/api/assistant/workspaces/(' + assistantId + ')/(capabilities|sessions(?:/' + assistantId + ')?|runs|executions/(' + assistantId + ')/(cancel|resume|approve|reject))$')
+
+export function matchAssistantRoute(path: string) {
+  return assistantRoute.exec(path)
+}
+
 // Published web API paths captured at D0. Update from owning contracts when adding a route.
 const routes: ReadonlyArray<readonly [string, RegExp]> = [
   ['GET', /^\/api\/account\/deletion-preflight$/],
@@ -245,5 +252,7 @@ const routes: ReadonlyArray<readonly [string, RegExp]> = [
 
 export function businessRouteAllowed(method: string, path: string): boolean {
   if (!path.startsWith('/api/') || /[%\\?#]/.test(path) || path.split('/').some(segment => segment === '.' || segment === '..')) return false
+  const assistant = matchAssistantRoute(path)?.[2]
+  if (assistant) return method === (assistant === 'capabilities' || assistant.startsWith('sessions') ? 'GET' : 'POST')
   return routes.some(([verb, pattern]) => verb === method && pattern.test(path))
 }

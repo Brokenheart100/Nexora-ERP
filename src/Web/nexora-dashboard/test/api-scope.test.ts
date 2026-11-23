@@ -88,6 +88,19 @@ describe('identity scoped API requests', () => {
     await expect(changed).rejects.toBeInstanceOf(ScopeChangedError)
   })
 
+  it('sends a revision and CSRF without an operation ID for writes without idempotency support', async () => {
+    const scope = new RequestScope(initial)
+    const api = createApiClient(scope, async (path, options) => {
+      if (path === '/bff/antiforgery') return response(200, { requestToken: 'csrf' })
+      expect(options).toMatchObject({ method: 'PUT', headers: { 'If-Match': '"3"', 'X-CSRF-TOKEN': 'csrf' }, body: { name: '新品牌' } })
+      expect(options.headers).not.toHaveProperty('Idempotency-Key')
+      expect(options.body).not.toHaveProperty('operationId')
+      return response(200, {}, { 'Content-Type': 'application/json' })
+    })
+    const operation = api.createWrite('/bff/api/workspaces/one/settings', { name: '新品牌' }, { method: 'PUT', etag: '"3"', idempotent: false })
+    await expect(operation.send()).resolves.toMatchObject({ status: 200 })
+  })
+
   it('retains binary headers and treats a non-JSON write response as unknown', async () => {
     const scope = new RequestScope(initial)
     const api = createApiClient(scope, async (_path, options) => options.method === 'GET'

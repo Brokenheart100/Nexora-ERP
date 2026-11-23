@@ -3,7 +3,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { setupServer } from 'msw/node'
 import { createDashboardHandlers, mockWorkspaceId } from '../app/mocks/api/handlers'
 import { catalogSchema } from '../shared/types/wire'
-import { accrualSchema, taxSnapshotSchema, tradeDocumentSchema } from '../shared/types/trade'
+import { accrualSchema, tradeDocumentSchema } from '../shared/types/trade'
+import { taxSnapshotSchema } from '../shared/types/tax'
 
 let scenario = 'normal'
 const server = setupServer(...createDashboardHandlers({ scenario: () => scenario }))
@@ -46,7 +47,7 @@ describe('shared MSW API scenarios', () => {
     const input = { operationId: crypto.randomUUID(), on: '2026-01-04', groupCode: 'MSW-VAT13', itemId: receipts[0]!.fact.itemId, partnerId: receipts[0]!.fact.supplierId, quantity: '5', unitPrice: '10', discount: '0', includesTax: false }
     const assess = async () => taxSnapshotSchema.parse(await (await fetch(finance + '/tax/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) })).json())
     const first = await assess()
-    expect(first.amounts).toEqual({ net: '50', tax: '6.5', total: '56.5' })
+    expect(first.amounts).toEqual({ net: '50', tax: '6.5', total: '56.5', components: [] })
     expect((await assess()).id).toBe(first.id)
   })
 })

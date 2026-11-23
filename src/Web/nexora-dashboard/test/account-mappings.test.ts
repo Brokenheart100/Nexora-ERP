@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { mappingCandidates, tradeMappingFields, tradeMappingSchema, receivableMappingSchema } from '../app/utils/api/account-mappings'
+import { mappingCandidates, tradeMappingFields, receivableMappingFields, tradeMappingSchema, receivableMappingSchema } from '../app/utils/api/account-mappings'
 
 describe('transaction account mappings', () => {
+  it('offers an output-tax control account required by the receivable endpoint', () => {
+    const field = receivableMappingFields.find(value => value.key === 'outputTaxAccountId')!
+    const accounts = [{ id: 'tax-control', code: 'TAX', name: 'Output tax', category: 'liability', purpose: 'control', isArchived: false, isUsed: false, parentCode: null, version: 1 }]
+    expect(mappingCandidates(accounts, field, []).map(account => account.id)).toEqual(['tax-control'])
+  })
   it('offers active matching accounts and excludes bank control accounts', () => {
     const accounts = [
       { id: 'inventory', code: 'INV', name: 'Inventory', category: 'asset', purpose: 'control', isArchived: false, isUsed: true, parentCode: null, version: 1 },

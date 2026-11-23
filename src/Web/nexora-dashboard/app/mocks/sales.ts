@@ -15,7 +15,9 @@ export const quoteStatusLabels: Record<QuoteStatus, string> = {
   sent: '已发送',
   accepted: '已接受',
   rejected: '已拒绝',
-  expired: '已过期'
+  expired: '已过期',
+  converted: '已转单',
+  cancelled: '已取消'
 }
 
 export const quoteStatusColors: Record<QuoteStatus, 'neutral' | 'info' | 'success' | 'error' | 'warning'> = {
@@ -23,7 +25,9 @@ export const quoteStatusColors: Record<QuoteStatus, 'neutral' | 'info' | 'succes
   sent: 'info',
   accepted: 'success',
   rejected: 'error',
-  expired: 'warning'
+  expired: 'warning',
+  converted: 'success',
+  cancelled: 'neutral'
 }
 
 export const salesStatusLabels: Record<SalesOrderStatus, string> = {

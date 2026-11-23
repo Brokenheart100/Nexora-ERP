@@ -58,7 +58,7 @@ function normalizePolicy(raw: unknown): BffSessionPolicy | undefined {
     workspaceCount,
     checkedAt: typeof value.checkedAt === 'string' ? value.checkedAt : new Date().toISOString(),
     cached: false,
-    stale: false,
+    stale: value.stale === true,
     unavailable: value.unavailable === true
   }
 }
@@ -85,7 +85,8 @@ async function writePolicy(
     sources: policy.sources,
     workspaceCount: policy.workspaceCount,
     checkedAt: policy.checkedAt,
-    unavailable: policy.unavailable
+    unavailable: policy.unavailable,
+    stale: policy.stale
   }
   await withBffRedis(event, async (redis) => {
     await redis.set(keys.cache, JSON.stringify(stored), { EX: cacheSeconds })
@@ -133,7 +134,8 @@ export async function enforceSessionIdle(
   handle: string,
   policy: BffSessionPolicy
 ) {
-  const lastSeenAt = await bffSessionLastSeen(event, handle) ?? Date.now()
+  const lastSeenAt = await bffSessionLastSeen(event, handle)
+  if (!lastSeenAt) throw createError({ statusCode: 401, statusMessage: 'Sign in required' })
   if (Date.now() - lastSeenAt >= policy.idleTimeoutMinutes * 60_000) {
     await removeBffSession(event)
     throw createError({

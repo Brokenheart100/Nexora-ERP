@@ -12,6 +12,9 @@ export function useOrganizationApi() {
     workspace: async (id: string) => workspaceSchema.parse((await api.get(`/bff/api/workspaces/${id}`)).data),
     entitlements: async (id: string) => entitlementSchema.parse((await api.get(`/bff/api/workspaces/${id}/billing/entitlements`)).data),
     departments: async (id: string, signal?: AbortSignal) => z.array(departmentSchema).parse((await api.get(`/bff/api/workspaces/${id}/departments`, { signal })).data),
+    members: async (id: string, signal?: AbortSignal) => z.array(z.object({
+      id: z.uuid(), email: z.string().nullable(), subject: z.string(), isActive: z.boolean()
+    })).parse((await api.get(`/bff/api/workspaces/${id}/members`, { signal })).data),
     authorize: async (id: string, permission: string) => {
       if (!/^[a-z][a-z.-]+$/.test(permission)) throw new Error('权限标识无效。')
       return accessSchema.parse((await api.get(`/bff/api/workspaces/${id}/authorization/${permission}`)).data)

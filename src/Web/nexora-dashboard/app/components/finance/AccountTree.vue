@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { FinanceAccount, FinanceAccountType } from '~/mocks'
 import { accountBalanceDirections, accountTypeLabels, accountTypeOrder } from '~/mocks'
+import type { AccountingBookConnection } from '~/composables/finance/useAccountingBook'
+import { financePath, useLedgerApi } from '~/composables/api/useLedgerApi'
+import { useScopedSubmission } from '~/composables/api/useScopedSubmission'
+import { chartChangeSchema } from '#shared/types/ledger'
 
 function money(value: string | number) {
   return formatMoney(Number(value))
@@ -9,6 +13,7 @@ function money(value: string | number) {
 const props = defineProps<{
   accounts: FinanceAccount[]
   canEdit: boolean
+  live?: AccountingBookConnection
 }>()
 
 const emit = defineEmits<{
@@ -24,12 +29,20 @@ const editorMode = ref<'create' | 'edit'>('create')
 const editingId = ref('')
 const errorMessage = ref('')
 const { loading: submitting, run: runSubmit } = useMockAsync(async () => undefined, { delay: 500 })
+const api = useLedgerApi()
+const submission = useScopedSubmission('save-chart-account', () => props.live?.query.enabled === true, chartChangeSchema.parse)
+const baseline = shallowRef<{ revision: string | number, version: string | number | null } | null>(null)
+const liveAccount = (id: string) => props.live?.accounts.find(account => account.id === id)
+const noParent = '(none)'
 
 const form = reactive({
   code: '',
   name: '',
   type: 'asset' as FinanceAccountType,
-  balance: '0.00'
+  balance: '0.00',
+  parentCode: noParent,
+  purpose: 'posting',
+  isArchived: false
 })
 
 const typeItems = accountTypeOrder.map(type => ({ label: accountTypeLabels[type], value: type }))
@@ -69,6 +82,8 @@ function toggleGroup(type: FinanceAccountType) {
 }
 
 function openCreate() {
+  if (submission.record) return
+  submission.reset()
   editorMode.value = 'create'
   editingId.value = ''
   errorMessage.value = ''
@@ -76,10 +91,15 @@ function openCreate() {
   form.name = ''
   form.type = 'asset'
   form.balance = '0.00'
+  Object.assign(form, { parentCode: noParent, purpose: 'posting', isArchived: false })
+  const chart = props.live?.query.data?.chart
+  baseline.value = chart ? { revision: chart.revision, version: null } : null
   editorOpen.value = true
 }
 
 function openEdit(account: FinanceAccount) {
+  if (submission.record) return
+  submission.reset()
   editorMode.value = 'edit'
   editingId.value = account.id
   errorMessage.value = ''
@@ -87,12 +107,32 @@ function openEdit(account: FinanceAccount) {
   form.name = account.name
   form.type = account.type
   form.balance = account.balance
+  const current = liveAccount(account.id), chart = props.live?.query.data?.chart
+  if (current && chart) {
+    baseline.value = { revision: chart.revision, version: current.version }
+    Object.assign(form, { parentCode: current.parentCode ?? noParent, purpose: current.purpose, isArchived: current.isArchived })
+  }
   editorOpen.value = true
 }
 
 async function submit() {
   const code = form.code.trim()
   const name = form.name.trim()
+  if (props.live) {
+    if (!props.canEdit || !baseline.value || !code || !name) {
+      errorMessage.value = '请填写科目编码和名称。'
+      return
+    }
+    errorMessage.value = ''
+    if (await submission.send('chart.account.save', financePath(props.live.workspace()) + '/chart/accounts', {
+      expectedRevision: baseline.value.revision, expectedVersion: baseline.value.version,
+      account: { code, name, category: form.type === 'revenue' ? 'income' : form.type, parentCode: form.parentCode === noParent ? null : form.parentCode, purpose: form.purpose, isArchived: form.isArchived }
+    })) {
+      editorOpen.value = false
+      await props.live.query.refresh()
+    }
+    return
+  }
   if (!/^\d{4}$/.test(code)) {
     errorMessage.value = '科目编码需为 4 位数字，例如 1001'
     return
@@ -125,6 +165,22 @@ async function submit() {
   editorOpen.value = false
 }
 
+async function readSubmission() {
+  if (!submission.mutation.unknown) submission.resume()
+  await submission.check(async (saved) => { await api.chart(saved.workspaceId); return null })
+}
+async function retrySubmission() {
+  if (await submission.retry()) {
+    editorOpen.value = false
+    await props.live?.query.refresh()
+  }
+}
+watch(() => props.live?.query.owner, () => {
+  baseline.value = null
+  editorOpen.value = false
+  errorMessage.value = ''
+})
+
 function reset() {
   errorMessage.value = ''
 }
@@ -151,7 +207,7 @@ function reset() {
             class="w-56"
             data-testid="account-search"
           />
-          <UTooltip :text="canEdit ? '新增科目（本地演示）' : '当前演示身份没有 finance.post 权限'">
+          <UTooltip :text="canEdit ? '新增科目' : '当前身份没有科目维护权限'">
             <UButton
               label="新增科目"
               icon="i-carbon-add"
@@ -165,12 +221,14 @@ function reset() {
       </div>
     </template>
 
+    <FinanceChartImports v-if="live" :live="live" />
+    <SalesOperationStatus v-if="live && !editorOpen" :message="live.query.problem" :submission="submission" @check="readSubmission" @retry="retrySubmission" />
     <div class="grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_4.5rem_9rem_4rem] items-center gap-2 border-b border-default px-3 py-2 text-xs font-medium text-muted">
       <span>科目编码</span>
       <span>科目名称</span>
       <span>科目类型</span>
       <span>余额方向</span>
-      <span class="text-right">期末余额</span>
+      <span class="text-right">{{ live ? '状态' : '期末余额' }}</span>
       <span class="text-right">操作</span>
     </div>
 
@@ -197,7 +255,7 @@ function reset() {
         />
         <span class="text-[13px] font-semibold text-highlighted">{{ group.label }}</span>
         <span class="text-xs text-muted">{{ group.count }} 个科目 · 余额方向 {{ group.direction }}</span>
-        <span class="ml-auto text-xs tabular-nums text-muted">{{ money(group.total) }}</span>
+        <span v-if="!live" class="ml-auto text-xs tabular-nums text-muted">{{ money(group.total) }}</span>
       </button>
 
       <template v-if="group.expanded">
@@ -216,9 +274,12 @@ function reset() {
             size="sm"
           />
           <span class="text-xs text-muted">{{ accountBalanceDirections[account.type] }}方</span>
-          <span class="text-right text-[13px] tabular-nums text-highlighted">{{ money(account.balance) }}</span>
+          <span class="text-right text-[13px] tabular-nums text-highlighted">
+            {{ live ? (liveAccount(account.id)?.isArchived ? '已归档' : liveAccount(account.id)?.isUsed ? '使用中' : '启用') : money(account.balance) }}
+            <span v-if="liveAccount(account.id)?.parentCode" class="block text-xs text-muted">上级 {{ liveAccount(account.id)?.parentCode }}</span>
+          </span>
           <div class="flex justify-end">
-            <UTooltip :text="canEdit ? '编辑科目' : '当前演示身份没有 finance.post 权限'">
+            <UTooltip :text="canEdit ? '编辑科目' : '当前身份没有科目维护权限'">
               <UButton
                 label="编辑"
                 color="neutral"
@@ -247,7 +308,7 @@ function reset() {
           <h2 class="mt-1 text-base font-semibold text-highlighted">
             {{ editorMode === 'create' ? '新增会计科目' : '编辑会计科目' }}
           </h2>
-          <p class="mt-0.5 text-xs text-muted">
+          <p v-if="!live" class="mt-0.5 text-xs text-muted">
             仅修改本地演示数据，保存后刷新页面恢复初始科目表。
           </p>
         </div>
@@ -255,8 +316,9 @@ function reset() {
 
       <template #body>
         <div class="space-y-4">
+          <SalesOperationStatus v-if="live" :message="errorMessage" :submission="submission" @check="readSubmission" @retry="retrySubmission" />
           <UAlert
-            v-if="errorMessage"
+            v-if="!live && errorMessage"
             color="error"
             variant="soft"
             icon="i-carbon-warning-alt"
@@ -268,6 +330,7 @@ function reset() {
             <UFormField label="科目编码" required>
               <UInput
                 v-model="form.code"
+                :readonly="!!live && editorMode === 'edit'"
                 placeholder="如 1001"
                 class="w-full"
                 data-testid="account-code"
@@ -285,12 +348,13 @@ function reset() {
               <USelect
                 v-model="form.type"
                 :items="typeItems"
+                :disabled="!!live && editorMode === 'edit'"
                 class="w-full"
                 data-testid="account-type"
                 @update:model-value="reset"
               />
             </UFormField>
-            <UFormField label="期初余额" required>
+            <UFormField v-if="!live" label="期初余额" required>
               <UInput
                 v-model="form.balance"
                 type="number"
@@ -299,6 +363,11 @@ function reset() {
                 data-testid="account-balance"
               />
             </UFormField>
+            <template v-else>
+              <UFormField label="上级科目"><USelect v-model="form.parentCode" :items="[{ label: '无上级科目', value: noParent }, ...live.accounts.filter(row => row.id !== editingId && row.purpose === 'group' && !row.isArchived).map(row => ({ label: row.code + ' ' + row.name, value: row.code }))]" class="w-full" /></UFormField>
+              <UFormField label="科目用途"><USelect v-model="form.purpose" :items="[{ value: 'posting', label: '可记账' }, { value: 'group', label: '分组' }, { value: 'control', label: '统驭' }]" :disabled="!!liveAccount(editingId)?.isUsed" class="w-full" /></UFormField>
+              <UCheckbox v-model="form.isArchived" label="归档科目" />
+            </template>
           </div>
 
           <div class="flex items-center justify-between gap-2 rounded-sm bg-elevated/60 px-3 py-2">
@@ -311,7 +380,7 @@ function reset() {
             />
           </div>
 
-          <p class="text-xs text-muted">
+          <p v-if="!live" class="text-xs text-muted">
             纯 UI 演示：新增/编辑只写入本地科目列表，不调用后端，也不会影响凭证金额。
           </p>
         </div>
@@ -329,7 +398,8 @@ function reset() {
           <UButton
             :label="editorMode === 'create' ? '保存科目' : '保存修改'"
             icon="i-carbon-save"
-            :loading="submitting"
+            :loading="live ? submission.mutation.busy : submitting"
+            :disabled="!!live && (!canEdit || !!submission.record)"
             data-testid="account-submit"
             @click="submit"
           />

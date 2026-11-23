@@ -1,33 +1,48 @@
 <script setup lang="ts">
-import type { RecurringInvoicePlan } from '~/mocks'
 import { recurringIntervalLabels, recurringServiceOptions } from '~/mocks'
+import type { InvoiceScheduleInput } from '#shared/types/invoicing'
 import type { RecurringPlanInput } from '~/stores/recurringInvoices'
 import { addMonths, RECURRING_DEMO_TODAY } from '~/stores/recurringInvoices'
+import type { RecurringRow } from '~/utils/sales/recurring'
+
+type Option = { label: string, value: string }
 
 const props = defineProps<{
-  plan: RecurringInvoicePlan | null
+  plan: RecurringRow | null
   customers: string[]
   canManage: boolean
   error?: string
+  live?: boolean
+  customerItems?: Option[]
+  serviceItems?: Option[]
+  lookupError?: string
 }>()
 
-const emit = defineEmits<{ save: [input: RecurringPlanInput] }>()
+const emit = defineEmits<{ save: [input: RecurringPlanInput], 'save-live': [input: InvoiceScheduleInput] }>()
 const open = defineModel<boolean>('open', { default: false })
 
 const customerName = ref('')
 const serviceId = ref('svc-it')
-const quantity = ref(1)
-const unitPrice = ref(12800)
+const quantity = ref('1')
+const unitPrice = ref('12800')
 const firstOn = ref('2026-12-01')
 const endsOn = ref('')
-const intervalMonths = ref<1 | 3 | 6 | 12>(1)
+const intervalMonths = ref(1)
 const dueDays = ref(30)
 
-const intervalItems = computed(() => ([1, 3, 6, 12] as (1 | 3 | 6 | 12)[])
-  .map(value => ({ label: recurringIntervalLabels[value], value })))
+const intervalItems = computed(() => (props.live
+  ? Array.from({ length: 24 }, (_, index) => ({ label: '每 ' + (index + 1) + ' 个月', value: index + 1 }))
+  : ([1, 3, 6, 12] as const).map(value => ({ label: recurringIntervalLabels[value], value }))))
+
+function keepSelected(items: Option[] | undefined, value: string | undefined, label: string | undefined) {
+  const rows = items ?? []
+  return value && label && !rows.some(row => row.value === value) ? [{ value, label }, ...rows] : rows
+}
+const displayedCustomers = computed(() => props.live ? keepSelected(props.customerItems, props.plan?.customerId, props.plan?.customerName) : props.customers)
+const displayedServices = computed(() => props.live ? keepSelected(props.serviceItems, props.plan?.serviceId, props.plan?.serviceName) : recurringServiceOptions)
 
 const service = computed(() => recurringServiceOptions.find(item => item.value === serviceId.value))
-const amount = computed(() => quantity.value * unitPrice.value)
+const amount = computed(() => Number(quantity.value) * Number(unitPrice.value))
 
 const preview = computed(() => {
   if (!firstOn.value) return []
@@ -50,40 +65,46 @@ const preview = computed(() => {
 watch([open, () => props.plan?.id], () => {
   if (!open.value) return
   if (props.plan) {
-    customerName.value = props.plan.customerName
+    customerName.value = props.live ? props.plan.customerId ?? '' : props.plan.customerName
     serviceId.value = props.plan.serviceId
-    quantity.value = props.plan.quantity
-    unitPrice.value = props.plan.unitPrice
+    quantity.value = String(props.plan.quantity)
+    unitPrice.value = String(props.plan.unitPrice)
     firstOn.value = props.plan.firstOn
     endsOn.value = props.plan.endsOn ?? ''
     intervalMonths.value = props.plan.intervalMonths
     dueDays.value = props.plan.dueDays
     return
   }
-  customerName.value = props.customers[0] ?? ''
-  serviceId.value = 'svc-it'
-  quantity.value = 1
-  unitPrice.value = 12800
-  firstOn.value = '2026-12-01'
+  customerName.value = props.live ? '' : props.customers[0] ?? ''
+  serviceId.value = props.live ? '' : 'svc-it'
+  quantity.value = '1'
+  unitPrice.value = props.live ? '' : '12800'
+  firstOn.value = props.live ? '' : '2026-12-01'
   endsOn.value = ''
   intervalMonths.value = 1
   dueDays.value = 30
 }, { immediate: true })
 
 watch(serviceId, (value) => {
+  if (props.live) return
   const item = recurringServiceOptions.find(option => option.value === value)
-  if (item) unitPrice.value = item.unitPrice
+  if (item) unitPrice.value = String(item.unitPrice)
 })
 
 function submit() {
   if (!props.canManage) return
+  if (props.live) {
+    emit('save-live', { customerId: customerName.value, serviceId: serviceId.value, quantity: String(quantity.value).trim(), unitPrice: String(unitPrice.value).trim(),
+      nextOn: firstOn.value, endsOn: endsOn.value || null, intervalMonths: intervalMonths.value, dueDays: Number(dueDays.value) })
+    return
+  }
   emit('save', {
     customerName: customerName.value,
     serviceId: serviceId.value,
     serviceName: service.value?.label ?? '',
     quantity: Number(quantity.value),
     unitPrice: Number(unitPrice.value),
-    intervalMonths: intervalMonths.value,
+    intervalMonths: intervalMonths.value as 1 | 3 | 6 | 12,
     dueDays: Number(dueDays.value),
     firstOn: firstOn.value,
     ...(endsOn.value ? { endsOn: endsOn.value } : {}),
@@ -116,19 +137,20 @@ function submit() {
 
     <template #body>
       <div class="space-y-3" data-testid="recurring-form">
+        <slot name="operation" />
         <UAlert
-          v-if="error"
+          v-if="error || lookupError"
           color="error"
           variant="subtle"
           icon="i-carbon-warning"
-          :title="error"
+          :title="error || lookupError"
           data-testid="recurring-form-error"
         />
         <div class="grid gap-3 sm:grid-cols-2">
           <UFormField label="客户" required>
             <USelect
               v-model="customerName"
-              :items="customers"
+              :items="displayedCustomers"
               class="w-full"
               data-testid="recurring-form-customer"
             />
@@ -136,15 +158,16 @@ function submit() {
           <UFormField label="服务项目" required>
             <USelect
               v-model="serviceId"
-              :items="recurringServiceOptions"
+              :items="displayedServices"
               class="w-full"
               data-testid="recurring-form-service"
             />
           </UFormField>
           <UFormField label="数量" required>
             <UInput
-              v-model.number="quantity"
-              type="number"
+              v-model="quantity"
+              :type="live ? 'text' : 'number'"
+              inputmode="decimal"
               min="1"
               class="w-full"
               data-testid="recurring-form-qty"
@@ -152,15 +175,16 @@ function submit() {
           </UFormField>
           <UFormField label="单价（未税）" required>
             <UInput
-              v-model.number="unitPrice"
-              type="number"
+              v-model="unitPrice"
+              :type="live ? 'text' : 'number'"
+              inputmode="decimal"
               min="0"
               step="0.01"
               class="w-full"
               data-testid="recurring-form-price"
             />
           </UFormField>
-          <UFormField label="首期日期" required>
+          <UFormField :label="live && plan ? '下次执行日' : '首期日期'" required>
             <UInput
               v-model="firstOn"
               type="date"
@@ -195,7 +219,8 @@ function submit() {
           </UFormField>
         </div>
 
-        <div class="rounded-sm border border-default p-3">
+        <p v-if="live" class="text-xs text-muted">保存后可在计划详情查看服务端计算的执行日期。</p>
+        <div v-else class="rounded-sm border border-default p-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-xs font-medium text-highlighted">
               未来执行日期

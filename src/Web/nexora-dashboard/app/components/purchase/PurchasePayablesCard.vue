@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import type { SupplierBill } from '~/mocks'
 
-const props = defineProps<{ orderId: string }>()
+const props = defineProps<{ orderId: string, connected?: boolean, connectedWorkspaceId?: string }>()
 const store = useSupplierTradeStore()
 const { activeWorkspaceId } = useMockWorkspace()
 
 const workspaceId = computed(() => activeWorkspaceId.value)
-const orderBills = computed(() => store.bills.filter(bill => bill.orderId === props.orderId && bill.workspaceId === workspaceId.value))
-const orderReceiptLines = computed(() => store.receiptLines.filter(line => line.orderId === props.orderId && line.workspaceId === workspaceId.value))
-const outstanding = computed(() => orderBills.value
-  .filter(bill => bill.status === 'posted')
-  .reduce((sum, bill) => sum + store.outstandingOf(bill), 0))
+const orderBills = computed(() =>
+  store.bills.filter(bill => bill.orderId === props.orderId && bill.workspaceId === workspaceId.value)
+)
+const orderReceiptLines = computed(() =>
+  store.receiptLines.filter(line => line.orderId === props.orderId && line.workspaceId === workspaceId.value)
+)
+const outstanding = computed(() =>
+  orderBills.value.filter(bill => bill.status === 'posted').reduce((sum, bill) => sum + store.outstandingOf(bill), 0)
+)
 const pendingCount = computed(() => orderBills.value.filter(bill => bill.status === 'pending').length)
 const accrualTotal = computed(() => orderReceiptLines.value.reduce((sum, line) => sum + line.accrualAmount, 0))
 const matchedTotal = computed(() => orderReceiptLines.value.reduce((sum, line) => sum + line.matchedQuantity, 0))
@@ -18,6 +22,10 @@ const receivedTotal = computed(() => orderReceiptLines.value.reduce((sum, line) 
 
 function openFinance(bill?: SupplierBill) {
   const query: Record<string, string> = { tab: 'payables' }
+  if (props.connected) {
+    query.workspace = props.connectedWorkspaceId ?? ''
+    query.order = props.orderId
+  }
   if (bill) query.bill = bill.id
   return navigateTo({ path: '/finance', query })
 }
@@ -32,10 +40,11 @@ function openFinance(bill?: SupplierBill) {
             应付与供应商账单
           </p>
           <p class="mt-0.5 text-xs text-muted">
-            收货暂估、账单匹配与付款核销均来自本地采购到付款样例。
+            {{ connected ? '在财务中按当前采购单查询实收、暂估和账单；读取权限由财务服务核对。' : '收货暂估、账单匹配与付款核销均来自本地采购到付款样例。' }}
           </p>
         </div>
         <UBadge
+          v-if="!connected"
           :label="orderBills.length + ' 张账单'"
           color="neutral"
           variant="subtle"
@@ -45,7 +54,7 @@ function openFinance(bill?: SupplierBill) {
     </template>
 
     <div class="space-y-3 p-3">
-      <div class="grid gap-2 sm:grid-cols-3">
+      <div v-if="!connected" class="grid gap-2 sm:grid-cols-3">
         <div class="rounded-sm border border-default p-2.5">
           <p class="text-xs text-muted">
             应付未结
@@ -75,7 +84,7 @@ function openFinance(bill?: SupplierBill) {
         </div>
       </div>
 
-      <div v-if="orderBills.length" class="overflow-hidden rounded-sm border border-default">
+      <div v-if="!connected && orderBills.length" class="overflow-hidden rounded-sm border border-default">
         <div class="grid grid-cols-[minmax(0,1fr)_7rem_7rem_5rem] items-center gap-2 border-b border-default bg-elevated/40 px-3 py-2 text-xs font-medium text-muted">
           <span>账单</span><span class="text-right">价税合计</span><span class="text-right">未结</span><span class="text-right">操作</span>
         </div>
@@ -104,7 +113,7 @@ function openFinance(bill?: SupplierBill) {
       </div>
 
       <UEmpty
-        v-else
+        v-else-if="!connected"
         variant="naked"
         icon="i-carbon-receipt"
         title="该采购单尚无供应商账单"

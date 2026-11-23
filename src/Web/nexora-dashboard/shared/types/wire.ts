@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const revision = z.union([z.number().int().nonnegative(), z.string().regex(/^\d+$/)])
+export const changeReceiptSchema = z.object({ id: z.uuid(), version: revision })
 export const workspaceSchema = z.object({
   id: z.uuid(), tenantId: z.uuid(), name: z.string(), countryCode: z.string(), baseCurrency: z.string(), version: revision, isPersonal: z.boolean()
 })

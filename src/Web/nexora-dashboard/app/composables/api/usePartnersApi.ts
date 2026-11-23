@@ -7,8 +7,9 @@ export function usePartnersApi() {
   const profile = (input: PartnerInput) => ({ name: input.name, taxNumber: input.taxNumber || null, address: input.address || null, roles: input.roles,
     contacts: input.contacts.map(contact => ({ ...contact, email: contact.email || null, phone: contact.phone || null })) })
   return {
-    list: async (workspaceId: string, page = 1, role?: PartnerRole, signal?: AbortSignal) => partnerListSchema.parse((await api.get(
-      `/bff/api/masterdata/workspaces/${workspaceId}/partners?${new URLSearchParams({ page: String(page), pageSize: '20', ...(role ? { role } : {}) })}`, { signal })).data),
+    profile,
+    list: async (workspaceId: string, page = 1, role?: PartnerRole, signal?: AbortSignal, pageSize = 20) => partnerListSchema.parse((await api.get(
+      `/bff/api/masterdata/workspaces/${workspaceId}/partners?${new URLSearchParams({ page: String(page), pageSize: String(pageSize), ...(role ? { role } : {}) })}`, { signal })).data),
     detail: async (workspaceId: string, id: string) => {
       const response = await api.get(`/bff/api/masterdata/workspaces/${workspaceId}/partners/${id}`)
       return { ...response, data: partnerDetailSchema.parse(response.data) }

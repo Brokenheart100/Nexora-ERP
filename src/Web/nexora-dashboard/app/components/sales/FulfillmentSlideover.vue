@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { SalesOrder } from '~/mocks'
+import type { SalesFulfillmentConnection } from '~/composables/sales/useSalesFulfillment'
 
-const props = defineProps<{ order: SalesOrder | null }>()
+const props = defineProps<{ order: SalesOrder | null, live?: SalesFulfillmentConnection }>()
 
 const emit = defineEmits<{
   confirm: [payload: { shippedAt: string, shipper: string, lines: { lineNo: number, quantity: number }[] }]
 }>()
 
 const open = defineModel<boolean>('open', { default: false })
+const liveForm = computed(() => props.live?.form)
 
 const shippers = ['顺丰速运', '德邦物流', '京东物流', '客户自提']
 const form = reactive({ shippedAt: '', shipper: shippers[0]! })
@@ -43,6 +45,10 @@ function updateQuantity(lineNo: number, value: string | number) {
 }
 
 async function submit() {
+  if (props.live) {
+    if (await props.live.issue()) open.value = false
+    return
+  }
   const order = props.order
   if (!order) return
   formError.value = ''
@@ -81,16 +87,60 @@ async function submit() {
           {{ order?.customerName || '销售订单' }}
         </h2>
         <p class="mt-0.5 font-mono text-xs text-muted">
-          {{ order?.id }}
+          {{ order?.documentNumber ?? order?.id }}
         </p>
         <p class="mt-1 text-xs text-muted">
-          纯 UI 演示：确认后只更新本地履约记录与订单状态，刷新页面恢复初始数据。
+          {{ live ? '许可由发货仓确认预留，默认保留 15 分钟。实发数量在库存页确认。' : '纯 UI 演示：确认后只更新本地履约记录与订单状态，刷新页面恢复初始数据。' }}
         </p>
       </div>
     </template>
 
     <template #body>
-      <UForm :state="form" class="space-y-4" @submit.prevent>
+      <UForm
+        v-if="live && liveForm"
+        :state="liveForm"
+        class="space-y-4"
+        @submit.prevent
+      >
+        <SalesOperationStatus
+          :message="live.error"
+          :submission="live.submission"
+          @check="live.check()"
+          @retry="live.retry().then(ok => { if (ok) open = false })"
+        />
+        <UFormField label="发货仓库" required>
+          <USelect
+            v-model="liveForm.warehouseId"
+            :items="live.warehouses.map(row => ({ label: row.code + ' ' + row.name, value: row.id }))"
+            :disabled="live.busy"
+            class="w-full"
+            data-testid="sales-fulfillment-warehouse"
+          />
+        </UFormField>
+        <div v-for="line in live.sales.detail?.lines" :key="line.id" class="flex items-center justify-between gap-3 rounded-sm border border-default p-2.5">
+          <div class="text-xs">
+            <p>{{ line.itemCode }} {{ line.itemName }}</p>
+            <p class="text-muted">
+              订购 {{ line.quantity }} · 可签发 {{ live.allowanceFor(line.id, line.quantity) }}
+            </p>
+          </div>
+          <UInput
+            v-model="liveForm.quantities[line.id]"
+            inputmode="decimal"
+            aria-label="许可数量"
+            placeholder="许可数量"
+            :disabled="live.busy"
+            class="w-28"
+            data-testid="sales-fulfillment-qty"
+          />
+        </div>
+      </UForm>
+      <UForm
+        v-else
+        :state="form"
+        class="space-y-4"
+        @submit.prevent
+      >
         <UAlert
           v-if="formError"
           color="error"
@@ -170,9 +220,10 @@ async function submit() {
           @click="open = false"
         />
         <UButton
-          label="确认发货"
-          icon="i-carbon-truck"
-          :loading="saving"
+          :label="live ? '签发发货许可' : '确认发货'"
+          icon="i-carbon-delivery-truck"
+          :loading="saving || live?.busy"
+          :disabled="live ? !live.canManage || live.busy : false"
           data-testid="sales-fulfillment-confirm"
           @click="submit"
         />

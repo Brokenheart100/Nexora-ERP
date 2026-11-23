@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw/http'
 import type { AccrualReceipt, TradeDocument } from '#shared/types/trade'
 import { tradeTermsSchema } from '#shared/types/trade'
+import type { TaxSnapshot } from '#shared/types/tax'
 import { multiplyDecimals, roundDecimal, sumDecimals } from '#shared/utils/decimal'
 import { mockSupplierId } from './purchasing'
 
@@ -20,6 +21,7 @@ export function createFinanceHandlers(context: { workspaceId: string, itemId: st
   const documents = new Map<string, TradeDocument>([[bill.id, bill], [payment.id, payment]])
   receipts.push({ ...receipts[0]!, fact: { ...receipts[0]!.fact, id: id(32), orderId: id(46), permitId: id(47), sequence: 3, quantity: '5', cost: '50' }, journalId: id(52), matchedQuantity: '0', matchedCost: '0' })
   const operations = new Map<string, object>()
+  const assessments = new Map<string, TaxSnapshot>()
   const problem = (status: number, detail: string) => HttpResponse.json({ status, code: 'mock.finance', detail, traceId: 'msw-demo' }, { status })
   const page = (request: Request) => Number(new URL(request.url).searchParams.get('page') ?? '1')
   const empty = (request: Request) => context.scenario() === 'empty' || page(request) > 1
@@ -60,10 +62,15 @@ export function createFinanceHandlers(context: { workspaceId: string, itemId: st
       if (input.groupCode !== group.code) return problem(400, '请选择已配置的演示税组。')
       const net = roundDecimal(multiplyDecimals(input.unitPrice, input.quantity), 2)
       const tax = roundDecimal(multiplyDecimals(net, '0.13'), 2)
-      const snapshot = { id: crypto.randomUUID(), on: input.on, currency: 'CNY', minorUnits: 2, policy: 'msw-demo', group, unitPrice: input.unitPrice, quantity: input.quantity, discount: '0', includesTax: false,
+      const snapshot: TaxSnapshot = { id: crypto.randomUUID(), on: input.on, currency: 'CNY', minorUnits: 2, policy: 'msw-demo', group, unitPrice: input.unitPrice, quantity: input.quantity, discount: '0', includesTax: false,
         references: [{ kind: 'partner', resourceId: input.partnerId, version: 1, classificationVersion: null }, { kind: 'item', resourceId: input.itemId, version: 1, classificationVersion: null }], amounts: { net, tax, total: sumDecimals([net, tax]), components: [] } }
       operations.set(input.operationId, snapshot)
+      assessments.set(snapshot.id, snapshot)
       return HttpResponse.json(snapshot)
+    }),
+    http.get(root + '/tax/assessments/:id', ({ params }) => {
+      const snapshot = assessments.get(String(params.id))
+      return snapshot ? HttpResponse.json(snapshot) : problem(404, '模拟税额快照不存在。')
     }),
     http.get(root + '/trade/banks/:bankId/movements', ({ request }) => HttpResponse.json(empty(request) ? [] : [{ id: id(70), bankId: bank.id, documentId: payment.id, journalId: payment.journalId, on: payment.terms.on, amount: '-600', matched: '0', voided: false, reversesId: null }])),
     http.get(root + '/reporting/aging/payables', () => HttpResponse.json({ kind: 'payables', currency: 'CNY', minorUnits: 2, through: '2026-01-31', watermark: 4, total: '530', buckets: [{ key: 'current', count: 1, amount: '530' }], items: [{ id: bill.id, partnerId: mockSupplierId, partnerName: 'MSW 演示供应商', number: bill.terms.number, on: bill.terms.on, dueOn: '2026-01-31', journalId: bill.journalId, original: '1130', outstanding: '530', bucket: 'current' }] })),

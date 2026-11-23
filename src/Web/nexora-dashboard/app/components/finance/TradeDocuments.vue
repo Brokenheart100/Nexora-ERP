@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import { useTradePrerequisites } from '~/composables/api/useTradePrerequisites'
+import { tradeMappingFields, receivableMappingFields, tradeMappingSchema, receivableMappingSchema } from '~/utils/api/account-mappings'
 import type { ProvisionalBill, TradeDocument, TradeDocumentKind } from '~/mocks'
 import {
   provisionalBillStatusColors,
@@ -13,6 +15,10 @@ import {
 const props = defineProps<{ canPost?: boolean }>()
 
 const toast = useToast()
+const route = useRoute()
+const prerequisites = useTradePrerequisites()
+const connected = computed(() => prerequisites.query.connected)
+const mappingSubmissions = computed(() => [{ kind: 'trade' as const, label: '应付映射', submission: prerequisites.tradeSubmission }, { kind: 'receivables' as const, label: '应收映射', submission: prerequisites.receivableSubmission }])
 const trade = useTradeDocumentsStore()
 const { actor: demoActor, isMaker, isApprover, setActorRole } = useDemoActor()
 
@@ -131,11 +137,11 @@ const columns: TableColumn<TradeDocument>[] = [{
 const provisionalColumns: TableColumn<ProvisionalBill>[] = [{
   accessorKey: 'id',
   header: '暂估单',
-  meta: { class: { td: 'whitespace-nowrap font-mono text-[12px]' } }
+  meta: { class: { td: 'whitespace-nowrap font-mono text-[11px]' } }
 }, {
   accessorKey: 'supplier',
   header: '供应商',
-  meta: { class: { td: 'min-w-[160px] whitespace-normal' } }
+  meta: { class: { td: 'min-w-[108px] whitespace-normal text-[11px]' } }
 }, {
   accessorKey: 'amount',
   header: '暂估金额',
@@ -161,7 +167,7 @@ const provisionalColumns: TableColumn<ProvisionalBill>[] = [{
           提交、独立复核、过账与取消分开记录；复核人不能与制单人相同。
         </p>
       </div>
-      <div class="flex items-center gap-1 rounded-lg border border-default p-0.5" data-testid="trade-actor-switch">
+      <div v-if="!connected" class="flex items-center gap-1 rounded-lg border border-default p-0.5" data-testid="trade-actor-switch">
         <UButton
           label="张明远 · 制单"
           size="xs"
@@ -181,8 +187,8 @@ const provisionalColumns: TableColumn<ProvisionalBill>[] = [{
       </div>
     </div>
 
-    <div class="grid gap-4 xl:grid-cols-2" data-testid="trade-overview">
-      <UCard class="rounded-sm" :ui="{ body: 'space-y-3' }">
+    <div class="grid items-start gap-4 min-[1400px]:grid-cols-2" data-testid="trade-overview">
+      <UCard class="self-start rounded-sm" :ui="{ body: 'space-y-3' }">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-medium text-highlighted">
@@ -192,13 +198,180 @@ const provisionalColumns: TableColumn<ProvisionalBill>[] = [{
               color="success"
               variant="subtle"
               size="sm"
-              label="映射就绪"
+              :label="connected ? prerequisites.trade?.setup && prerequisites.receivables?.accounts ? '已读取映射' : '待核对配置' : '映射就绪'"
               data-testid="trade-mapping-status"
             />
           </div>
         </template>
+        <template v-if="connected">
+          <UAlert v-if="prerequisites.query.loading" title="正在核对当前工作区" data-testid="finance-prerequisites-loading" />
+          <UAlert v-if="prerequisites.query.problem || !prerequisites.query.enabled" color="warning" :title="prerequisites.query.problem || '当前身份无法读取财务配置'" />
+          <UButton
+            label="重新核对配置"
+            size="sm"
+            :loading="prerequisites.query.loading"
+            data-testid="finance-prerequisites-refresh"
+            @click="prerequisites.query.refresh()"
+          />
+          <div class="grid gap-3 sm:grid-cols-2">
+            <UFormField label="业务日期">
+              <UInput
+                v-model="prerequisites.on"
+                type="date"
+                class="w-full"
+                data-testid="finance-prerequisites-date"
+              />
+            </UFormField>
+            <UFormField label="订单范围">
+              <USelect v-model="prerequisites.flow" :items="[{ value: 'purchasing', label: '采购读取范围' }, { value: 'sales', label: '销售读取范围' }]" class="w-full" />
+            </UFormField>
+            <UFormField label="可读取订单的部门">
+              <USelect
+                v-model="prerequisites.departmentId"
+                :items="prerequisites.departmentOptions"
+                placeholder="当前授权部门"
+                class="w-full"
+                data-testid="finance-prerequisites-department"
+              />
+            </UFormField>
+            <UFormField label="仓库引用">
+              <USelect
+                :model-value="prerequisites.warehouseId"
+                :items="prerequisites.warehouseOptions"
+                placeholder="选择仓库核对权限"
+                class="w-full"
+                data-testid="finance-prerequisites-warehouse"
+                @update:model-value="value => prerequisites.selectWarehouse(String(value))"
+              />
+            </UFormField>
+          </div>
+          <p class="text-xs text-muted">
+            部门按当前订单读取授权与业务日期筛选；写入和审批范围仍由对应单据接口校验。
+          </p>
+          <p v-if="prerequisites.warehouse" class="text-xs" data-testid="finance-warehouse-capability">
+            {{ prerequisites.warehouse.name }} · {{ prerequisites.warehouse.canReadStock ? '可查看库存' : '无库存读取权限' }} · {{ prerequisites.warehouse.canReceive ? '可执行收货' : '当前身份仅可查看仓库资料' }}
+          </p>
+          <UAlert v-if="prerequisites.recoveryMessage" color="warning" :title="prerequisites.recoveryMessage" />
+          <UAlert v-if="prerequisites.warehouseMessage" color="warning" :title="prerequisites.warehouseMessage" />
+          <dl class="grid gap-x-5 sm:grid-cols-2" data-testid="finance-prerequisites">
+            <div
+              v-for="check in prerequisites.checks"
+              :key="check.key"
+              class="flex items-center justify-between gap-3 border-b border-default py-2"
+              :data-testid="'finance-prerequisite-' + check.key"
+            >
+              <dt class="text-sm">
+                {{ check.label }}
+              </dt>
+              <dd><UBadge :color="check.state === 'ready' ? 'success' : 'warning'" variant="subtle" :label="check.state === 'ready' ? '已核对' : check.state === 'denied' ? '无读取权限' : check.state === 'unavailable' ? '暂不可用' : '待配置'" /></dd>
+            </div>
+          </dl>
+          <UAlert
+            v-for="entry in mappingSubmissions.filter(value => value.submission.message || value.submission.record)"
+            :key="entry.kind"
+            color="warning"
+            :title="entry.submission.message || entry.label + '有上次提交待恢复'"
+            :data-testid="'finance-mapping-' + entry.kind + '-feedback'"
+          >
+            <template #actions>
+              <UButton v-if="entry.submission.record" label="恢复上次提交" @click="prerequisites.recover(entry.kind, 'resume')" />
+              <UButton v-if="entry.submission.mutation.unknown" label="查询当前配置" @click="prerequisites.recover(entry.kind, 'check')" />
+              <UButton
+                v-if="entry.submission.mutation.unknown"
+                label="重试原提交"
+                :disabled="!entry.submission.mutation.operation?.retryAvailable || entry.submission.mutation.busy"
+                @click="prerequisites.recover(entry.kind, 'retry')"
+              />
+              <UButton
+                v-if="entry.submission.failure?.kind === 'mfa'"
+                label="重新验证身份"
+                :to="'/bff/login?prompt=login&returnTo=' + encodeURIComponent(route.fullPath)"
+                external
+              />
+            </template>
+          </UAlert>
+          <UForm
+            :schema="tradeMappingSchema"
+            :state="prerequisites.tradeForm"
+            class="space-y-3"
+            data-testid="finance-trade-setup"
+            @submit="prerequisites.saveTrade"
+          >
+            <fieldset :disabled="!prerequisites.trade?.canConfigure || !!prerequisites.trade?.setup || !!prerequisites.tradeSubmission.record" class="space-y-3">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <UFormField
+                  v-for="field in tradeMappingFields"
+                  :key="field.key"
+                  :label="field.label"
+                  :name="field.key"
+                  :required="!field.optional"
+                >
+                  <USelect
+                    v-model="prerequisites.tradeForm[field.key]"
+                    :items="prerequisites.mappingOptions(field)"
+                    :placeholder="field.optional ? '可留空' : '选择当前工作区科目'"
+                    class="w-full"
+                    :data-testid="'finance-trade-' + field.key"
+                  />
+                  <p v-if="!prerequisites.mappingOptions(field).length" class="text-xs text-muted">
+                    暂无符合类别与用途的科目，请先由有权限的人员维护科目表。
+                  </p>
+                </UFormField>
+              </div>
+              <div class="flex justify-end">
+                <UButton
+                  :label="prerequisites.trade?.setup ? '应付映射已配置' : '保存应付科目映射'"
+                  type="submit"
+                  :loading="prerequisites.tradeSubmission.mutation.busy"
+                  data-testid="finance-save-trade"
+                />
+              </div>
+            </fieldset>
+          </UForm>
+          <UForm
+            :schema="receivableMappingSchema"
+            :state="prerequisites.receivableForm"
+            class="space-y-3 border-t border-default pt-3"
+            data-testid="finance-receivables-setup"
+            @submit="prerequisites.saveReceivables"
+          >
+            <fieldset :disabled="!prerequisites.receivables?.canConfigure || !!prerequisites.receivables?.accounts || !!prerequisites.receivableSubmission.record" class="space-y-3">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <UFormField
+                  v-for="field in receivableMappingFields"
+                  :key="field.key"
+                  :label="field.label"
+                  :name="field.key"
+                  required
+                >
+                  <USelect
+                    v-model="prerequisites.receivableForm[field.key]"
+                    :items="prerequisites.mappingOptions(field)"
+                    placeholder="选择当前工作区科目"
+                    class="w-full"
+                    :data-testid="'finance-receivables-' + field.key"
+                  />
+                  <p v-if="!prerequisites.mappingOptions(field).length" class="text-xs text-muted">
+                    暂无符合类别与用途的科目，请先由有权限的人员维护科目表。
+                  </p>
+                </UFormField>
+              </div>
+              <div class="flex justify-end">
+                <UButton
+                  :label="prerequisites.receivables?.accounts ? '应收映射已配置' : '保存应收科目映射'"
+                  type="submit"
+                  :loading="prerequisites.receivableSubmission.mutation.busy"
+                  data-testid="finance-save-receivables"
+                />
+              </div>
+            </fieldset>
+          </UForm>
+          <p class="text-xs text-muted">
+            科目映射配置后只读。税组、账簿、期间和资金账户缺失时，请由有权限的人员完成对应设置；检查结果不代替实际交易校验。
+          </p>
+        </template>
         <div
-          v-for="mapping in trade.accountMappings"
+          v-for="mapping in connected ? [] : trade.accountMappings"
           :key="mapping.id"
           class="flex items-start justify-between gap-3 rounded-sm border border-default px-3 py-2"
           :data-testid="'trade-mapping-' + mapping.kind.toLowerCase()"
@@ -218,12 +391,12 @@ const provisionalColumns: TableColumn<ProvisionalBill>[] = [{
             :label="mapping.status === 'mapped' ? '已映射' : '未映射'"
           />
         </div>
-        <p class="text-[11px] text-dimmed">
+        <p v-if="!connected" class="text-[11px] text-dimmed">
           未映射时账单与核销不能过账；本原型固定展示两项已映射科目。
         </p>
       </UCard>
 
-      <UCard class="rounded-sm" :ui="{ body: 'space-y-3' }" data-testid="trade-provisional">
+      <UCard class="self-start rounded-sm min-[1400px]:sticky min-[1400px]:top-4" :ui="{ body: 'space-y-3' }" data-testid="trade-provisional">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-medium text-highlighted">
